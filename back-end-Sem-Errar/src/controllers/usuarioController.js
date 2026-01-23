@@ -1,6 +1,31 @@
 const Usuario = require("../models/Usuario");
 
 module.exports = {
+
+ async logar(req, res) {
+    try {
+      const { email, senha } = req.body;
+
+      // Buscar usuário pelo email
+      const usuario = await Usuario.findOne({ where: { email } });
+
+      if (!usuario) {
+        return res.status(404).json({ erro: "Usuário não encontrado" });
+      }
+
+      // Verificar senha
+      if (usuario.senha !== senha) {
+        return res.status(401).json({ erro: "Senha incorreta" });
+      }
+
+      // Retornar dados do usuário (sem a senha)
+      const { senha: _, ...usuarioSemSenha } = usuario.toJSON();
+      return res.json(usuarioSemSenha);
+    } catch (error) {
+      return res.status(500).json({ erro: error.message });
+    }
+  },
+
   async listar(req, res) {
     try {
       const usuarios = await Usuario.findAll({

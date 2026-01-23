@@ -6,5 +6,6 @@ router.get("/", usuarioController.listar);
 router.get("/:id", usuarioController.buscarPorId);
 router.post("/", usuarioController.criar);
 router.delete("/:id", usuarioController.deletar);
+router.post('/logar', usuarioController.logar);  // Rota delega para controller
 
 module.exports = router;
