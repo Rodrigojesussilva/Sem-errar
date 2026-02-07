@@ -21,7 +21,7 @@ export default function DadosScreen() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   
-  // Estados dos inputs (agora como string pura)
+  // Estados dos inputs
   const [idade, setIdade] = useState('32');
   const [altura, setAltura] = useState('182');
   const [peso, setPeso] = useState('102.8');
@@ -290,7 +290,7 @@ export default function DadosScreen() {
     
     setLoading(false);
     router.push({
-      pathname: '/resultados',
+      pathname: '/perfil',
       params: dadosUsuario
     });
   }
@@ -572,7 +572,7 @@ export default function DadosScreen() {
               </View>
             ) : null}
 
-            {/* BOTÕES DE AÇÃO */}
+            {/* BOTÕES DE AÇÃO - SEM BOTÃO VOLTAR */}
             <View style={styles.buttonsContainer}>
               <TouchableOpacity
                 style={styles.primaryButton}
@@ -587,19 +587,6 @@ export default function DadosScreen() {
                   {!loading && <MaterialIcons name="calculate" size={22} color="#FFFFFF" />}
                 </View>
                 <Text style={styles.buttonSubtext}>Ver análise completa</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.secondaryButton, loading && styles.buttonDisabled]}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  router.back();
-                }}
-                activeOpacity={0.6}
-                disabled={loading}
-              >
-                <Ionicons name="arrow-back" size={18} color="#475569" />
-                <Text style={styles.secondaryButtonText}>Voltar</Text>
               </TouchableOpacity>
             </View>
             
@@ -720,7 +707,6 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 8,
     textAlign: 'center',
-    fontFamily: 'Inter',
   },
   subtitle: {
     fontSize: 15,
@@ -728,7 +714,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
     lineHeight: 22,
-    fontFamily: 'Inter',
   },
 
   // CARDS GRID
@@ -769,7 +754,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#334155',
-    fontFamily: 'Inter',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -787,7 +771,6 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    fontFamily: 'Inter',
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
@@ -805,12 +788,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#64748B',
     fontWeight: '600',
-    fontFamily: 'Inter',
   },
   cardHelperText: {
     fontSize: 12,
     color: '#94A3B8',
-    fontFamily: 'Inter',
   },
 
   // SEXO CARD
@@ -836,13 +817,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1E293B',
-    fontFamily: 'Inter',
   },
   sexoCardDescription: {
     fontSize: 14,
     color: '#64748B',
     marginBottom: 20,
-    fontFamily: 'Inter',
   },
   sexoButtonsContainer: {
     flexDirection: 'row',
@@ -869,7 +848,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#64748B',
-    fontFamily: 'Inter',
   },
   sexoButtonTextSelected: {
     color: '#FFFFFF',
@@ -894,13 +872,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1E40AF',
-    fontFamily: 'Inter',
   },
   infoText: {
     fontSize: 14,
     color: '#1E40AF',
     lineHeight: 22,
-    fontFamily: 'Inter',
     opacity: 0.9,
   },
 
@@ -921,7 +897,6 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     flex: 1,
     lineHeight: 20,
-    fontFamily: 'Inter',
   },
 
   // BOTÕES
@@ -955,30 +930,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
-    fontFamily: 'Inter',
   },
   buttonSubtext: {
     color: '#E3F2FD',
     fontSize: 13,
     textAlign: 'center',
-    fontFamily: 'Inter',
-  },
-  secondaryButton: {
-    height: 52,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    backgroundColor: 'transparent',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  secondaryButtonText: {
-    color: '#475569',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Inter',
   },
 
   // LOADER MODAL
@@ -1018,7 +974,6 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 12,
     textAlign: 'center',
-    fontFamily: 'Inter',
   },
   loaderSubtitle: {
     fontSize: 14,
@@ -1026,7 +981,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
-    fontFamily: 'Inter',
   },
   loaderDots: {
     flexDirection: 'row',
@@ -1077,6 +1031,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
-    fontFamily: 'Inter',
   },
 });

@@ -1,28 +1,57 @@
 const Usuario = require("../models/Usuario");
-
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 module.exports = {
 
- async logar(req, res) {
+  async logar(req, res) {
     try {
       const { email, senha } = req.body;
 
-      // Buscar usuário pelo email
+      if (!email || !senha) {
+        return res.status(400).json({
+          erro: "Email e senha são obrigatórios",
+        });
+      }
+
       const usuario = await Usuario.findOne({ where: { email } });
 
       if (!usuario) {
-        return res.status(404).json({ erro: "Usuário não encontrado" });
+        return res.status(404).json({
+          erro: "Usuário não encontrado",
+        });
       }
 
-      // Verificar senha
-      if (usuario.senha !== senha) {
-        return res.status(401).json({ erro: "Senha incorreta" });
+      const senhaValida = await bcrypt.compare(senha, usuario.senha);
+
+      if (!senhaValida) {
+        return res.status(401).json({
+          erro: "Senha incorreta",
+        });
       }
 
-      // Retornar dados do usuário (sem a senha)
-      const { senha: _, ...usuarioSemSenha } = usuario.toJSON();
-      return res.json(usuarioSemSenha);
+      const JWT_SECRET = process.env.JWT_SECRET || "CHAVE_SUPER_SECRETA_123";
+
+      const token = jwt.sign(
+        {
+          id: usuario.id,
+          tipoUsuario: usuario.tipoUsuario,
+        },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      const { senha: _senha, ...usuarioSemSenha } = usuario.toJSON();
+
+      return res.status(200).json({
+        ...usuarioSemSenha,
+        token,
+      });
+
     } catch (error) {
-      return res.status(500).json({ erro: error.message });
+      console.error("ERRO LOGIN:", error);
+      return res.status(500).json({
+        erro: "Erro interno ao realizar login",
+      });
     }
   },
 
