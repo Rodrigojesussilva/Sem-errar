@@ -22,27 +22,12 @@ export default function HomeScreen() {
   const userName = auth?.usuario?.nome?.split(' ')[0] || '';
 
   const handleIniciarDesafio = () => {
-    if (isLoggedIn) {
-      router.push('/(drawer)/diarias');
-    } else {
-      router.push('/(drawer)/login');
-    }
+    // Vai sempre para a tela de objetivo, independente de estar logado ou não
+    router.push('/ObjetivoScreen');
   };
 
-  const handleVerResultados = () => {
-    if (isLoggedIn) {
-      //router.push('/(drawer)/resultados');
-    } else {
-      router.push('/(drawer)/login');
-    }
-  };
-
-  const handleAcompanharProgresso = () => {
-    if (isLoggedIn) {
-     // router.push('/(drawer)/historico');
-    } else {
-      router.push('/(drawer)/login');
-    }
+  const handleJaTenhoConta = () => {
+    router.push('/(drawer)/login');
   };
 
   return (
@@ -66,7 +51,6 @@ export default function HomeScreen() {
             maxWidth: 400,
             alignSelf: 'center',
             width: '90%',
-            maxHeight: screenHeight * 0.8,
           }
         ]}>
           {/* IMAGEM NO TOPO DO CONTAINER */}
@@ -124,81 +108,30 @@ export default function HomeScreen() {
             
             <View style={styles.divider} />
             
-            {/* BOTÃO PRINCIPAL - INICIAR DESAFIO */}
+            {/* BOTÃO PRINCIPAL - COMEÇAR DESAFIO */}
             <Pressable 
               style={styles.primaryButton}
               onPress={handleIniciarDesafio}
             >
               <View style={styles.buttonContent}>
                 <FontAwesome name="bolt" size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>Iniciar Desafio</Text>
+                <Text style={styles.primaryText}>Começar Desafio</Text>
               </View>
               <Text style={styles.buttonSubtitle}>
-                {isLoggedIn ? 'Comece agora seu treino do dia' : 'Faça login para começar'}
+                Defina seu objetivo e inicie sua jornada fitness agora
               </Text>
             </Pressable>
             
-            {/* AÇÕES SECUNDÁRIAS */}
-            <View style={styles.secondaryActions}>
-              <Pressable 
-                style={styles.secondaryButton}
-                onPress={handleVerResultados}
-              >
-                <View style={styles.secondaryButtonContent}>
-                  <FontAwesome name="line-chart" size={18} color="#1E88E5" />
-                  <Text style={styles.secondaryText}>Ver Resultados</Text>
-                </View>
-              </Pressable>
-              
-              <Pressable 
-                style={styles.secondaryButton}
-                onPress={handleAcompanharProgresso}
-              >
-                <View style={styles.secondaryButtonContent}>
-                  <FontAwesome name="calendar" size={18} color="#8E44AD" />
-                  <Text style={styles.secondaryText}>Acompanhar Progresso</Text>
-                </View>
-              </Pressable>
-            </View>
-            
-            {/* FOOTER DINÂMICO */}
-            <Text style={styles.footerText}>
-              {isLoggedIn ? (
-                <>
-                  <Text>Complete desafios e ganhe recompensas. </Text>
-                  <Link href="/(drawer)/perfil" asChild>
-                    <Text style={styles.linkText}>Ver meu perfil →</Text>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  Já tem uma conta?{' '}
-                  <Link href="/(drawer)/login" asChild>
-                    <Text style={styles.linkText}>Entre aqui</Text>
-                  </Link>
-                  {' • '}
-                  <Link href="/(drawer)/cadastro" asChild>
-                    <Text style={styles.linkText}>Criar conta</Text>
-                  </Link>
-                </>
-              )}
-            </Text>
-            
-            {/* ESTATÍSTICAS DA COMUNIDADE */}
-            <View style={styles.communityStats}>
-              <View style={styles.statItem}>
-                <FontAwesome name="users" size={14} color="#666666" />
-                <Text style={styles.statText}>+10k membros</Text>
+            {/* BOTÃO JÁ TENHO UMA CONTA */}
+            <Pressable 
+              style={styles.secondaryButton}
+              onPress={handleJaTenhoConta}
+            >
+              <View style={styles.secondaryButtonContent}>
+                <FontAwesome name="user" size={18} color="#1E88E5" />
+                <Text style={styles.secondaryButtonText}>Já tenho uma conta</Text>
               </View>
-              <View style={styles.statItem}>
-                <FontAwesome name="trophy" size={14} color="#666666" />
-                <Text style={styles.statText}>+50k desafios</Text>
-              </View>
-              <View style={styles.statItem}>
-                <FontAwesome name="heartbeat" size={14} color="#666666" />
-                <Text style={styles.statText}>Transformando vidas</Text>
-              </View>
-            </View>
+            </Pressable>
           </View>
         </View>
       </SafeAreaView>
@@ -216,13 +149,14 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingTop: StatusBar.currentHeight || 0,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
 
   topBar: {
     paddingTop: 10,
     paddingHorizontal: 20,
     alignItems: 'flex-end',
+    marginBottom: 20,
   },
 
   infoButton: {
@@ -254,7 +188,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
-    marginBottom: 20,
   },
 
   imageContainer: {
@@ -271,7 +204,8 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    paddingVertical: 25,
+    paddingTop: 25,
+    paddingBottom: 25,
     alignItems: 'center',
   },
 
@@ -347,7 +281,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
-    marginBottom: 16,
+    marginBottom: 12,
   },
 
   buttonContent: {
@@ -370,66 +304,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  secondaryActions: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-
   secondaryButton: {
-    flex: 1,
+    width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 16,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: '#1E88E5',
     alignItems: 'center',
   },
 
   secondaryButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
 
-  secondaryText: {
-    color: '#333333',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  footerText: {
-    color: '#666666',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-
-  linkText: {
+  secondaryButtonText: {
     color: '#1E88E5',
+    fontSize: 16,
     fontWeight: '600',
-  },
-
-  communityStats: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 20,
-    marginTop: 10,
-  },
-
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  statText: {
-    color: '#666666',
-    fontSize: 12,
-    fontWeight: '500',
   },
 });

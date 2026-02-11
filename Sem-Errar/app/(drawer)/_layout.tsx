@@ -17,6 +17,8 @@ import {
   View,
 } from "react-native";
 
+// Importações das telas adicionais
+
 // Extender os tipos do Expo Router
 declare global {
   namespace ReactNavigation {
@@ -34,12 +36,33 @@ declare global {
       configuracoes: undefined;
       ajuda: undefined;
       sobre: undefined;
+      BoasVindas1: undefined;
+      BoasVindas2: undefined;
+      BoasVindas3: undefined;
+      ObjetivoScreen: undefined;
+      SexoScreen: undefined;
+      IdadeScreen: undefined;
+      AlturaScreen: undefined;
+      PesoScreen: undefined;
+      TreinoScreen: undefined;
+      FrequenciaScreen: undefined;
+      AguaScreen: undefined;
+      CardioScreen: undefined;
+      RegistrarTreinoScreen: undefined;
+      RegistrarCardioScreen: undefined;
+      ContextoBFScreen: undefined;
+      QuandoCalcularBFScreen: undefined;
+      PescocoScreen: undefined;
+      CinturaScreen: undefined;
+      QuadrilScreen: undefined;
+      CalculoBFScreen: undefined;
+      FinalizacaoScreen: undefined;
     }
   }
 }
 
 // Tipo para as rotas permitidas
-type RouteName = 
+type RouteName =
   | 'index'
   | 'login'
   | 'cadastro'
@@ -52,7 +75,28 @@ type RouteName =
   | 'privacidade'
   | 'configuracoes'
   | 'ajuda'
-  | 'sobre';
+  | 'sobre'
+  | 'BoasVindas1'
+  | 'BoasVindas2'
+  | 'BoasVindas3'
+  | 'ObjetivoScreen'
+  | 'SexoScreen'
+  | 'IdadeScreen'
+  | 'AlturaScreen'
+  | 'PesoScreen'
+  | 'TreinoScreen'
+  | 'FrequenciaScreen'
+  | 'AguaScreen'
+  | 'CardioScreen'
+  | 'RegistrarTreinoScreen'
+  | 'RegistrarCardioScreen'
+  | 'ContextoBFScreen'
+  | 'QuandoCalcularBFScreen'
+  | 'PescocoScreen'
+  | 'CinturaScreen'
+  | 'QuadrilScreen'
+  | 'CalculoBFScreen'
+  | 'FinalizacaoScreen';
 
 // Componente para redirecionamento baseado no auth
 function AuthRedirect() {
@@ -79,7 +123,7 @@ function AuthRedirect() {
           routes: [{ name: 'index' }],
         });
       }
-      
+
       // Se não está logado e tentando acessar telas protegidas, redireciona para login
       const protectedRoutes: RouteName[] = ['perfil', 'historico', 'resultados', 'diarias', 'dados'];
       if (!isLoggedIn && currentRoute && protectedRoutes.includes(currentRoute)) {
@@ -246,14 +290,14 @@ function CustomDrawerContent(props: any) {
 
   const configScreens = isLoggedIn
     ? [
-        {
-          name: "configuracoes" as RouteName,
-          label: "Configurações",
-          iconName: "settings",
-          iconLib: Ionicons,
-          colorScheme: { bg: "#F5F5F5", color: "#757575" },
-        },
-      ]
+      {
+        name: "configuracoes" as RouteName,
+        label: "Configurações",
+        iconName: "settings",
+        iconLib: Ionicons,
+        colorScheme: { bg: "#F5F5F5", color: "#757575" },
+      },
+    ]
     : [];
 
   const mainScreens = isLoggedIn ? loggedInScreens : loggedOutScreens;
@@ -287,7 +331,7 @@ function CustomDrawerContent(props: any) {
               Olá, {userData?.nome?.split(" ")[0] || "Usuário"}!
             </Text>
             <Text style={styles.userEmail}>{userData.email}</Text>
-            
+
             {/* Status dos dados biométricos */}
             {userData.altura && userData.peso && userData.idade ? (
               <View style={styles.dadosCompletosBadge}>
@@ -295,7 +339,7 @@ function CustomDrawerContent(props: any) {
                 <Text style={styles.dadosCompletosText}>Dados completos</Text>
               </View>
             ) : (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dadosIncompletosBadge}
                 onPress={() => (navigation as any).navigate("dados")}
               >
@@ -333,7 +377,7 @@ function CustomDrawerContent(props: any) {
                   isActive && styles.drawerItemActive,
                 ]}
                 onPress={() => {
-                 (navigation as any).jumpTo(screen.name);
+                  (navigation as any).jumpTo(screen.name);
                 }}
               >
                 <View
@@ -497,27 +541,276 @@ export default function DrawerLayout() {
             headerShadowVisible: true,
           };
 
-          // Telas que não mostram header
-          if (route.name === 'login' || route.name === 'cadastro' || route.name === 'dados') {
-            screenOptions.headerShown = false;
-          }
+          // Telas que não mostram header nem drawer
+          const hideHeaderAndDrawerRoutes = [
+            'login',
+            'cadastro',
+            'dados',
+            'BoasVindas1',
+            'BoasVindas2',
+            'BoasVindas3',
+            'index',
+            'ObjetivoScreen',
+            'SexoScreen',
+            'IdadeScreen',
+            'AlturaScreen',
+            'PesoScreen',
+            'TreinoScreen',
+            'FrequenciaScreen',
+            'AguaScreen',
+            'CardioScreen',
+            'RegistrarTreinoScreen',
+            'RegistrarCardioScreen',
+            'ContextoBFScreen',
+            'QuandoCalcularBFScreen',
+            'PescocoScreen',
+            'CinturaScreen',
+            'QuadrilScreen',
+            'CalculoBFScreen',
+            'FinalizacaoScreen'
+          ];
 
-          // Tela de dados não mostra botão de menu
-          if (route.name === 'dados') {
-            screenOptions.headerLeft = () => null;
+          if (hideHeaderAndDrawerRoutes.includes(route.name)) {
+            screenOptions.headerShown = false;
+            screenOptions.swipeEnabled = false; // Desabilita swipe para abrir drawer
           }
 
           return screenOptions;
         }}
       >
-        {/* Telas públicas */}
+        {/* Telas de boas-vindas (SEM aparecer no drawer) */}
+        <Drawer.Screen
+          name="BoasVindas1"
+          options={{
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="BoasVindas2"
+          options={{
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="BoasVindas3"
+          options={{
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE OBJETIVO - SEM DRAWER */}
+        <Drawer.Screen
+          name="ObjetivoScreen"
+          options={{
+            title: "Seu Objetivo",
+            drawerLabel: "Objetivo",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE SEXO - SEM DRAWER */}
+        <Drawer.Screen
+          name="SexoScreen"
+          options={{
+            title: "Seu Sexo",
+            drawerLabel: "Sexo",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE IDADE - SEM DRAWER */}
+        <Drawer.Screen
+          name="IdadeScreen"
+          options={{
+            title: "Sua Idade",
+            drawerLabel: "Idade",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE ALTURA - SEM DRAWER */}
+        <Drawer.Screen
+          name="AlturaScreen"
+          options={{
+            title: "Sua Altura",
+            drawerLabel: "Altura",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE PESO - SEM DRAWER */}
+        <Drawer.Screen
+          name="PesoScreen"
+          options={{
+            title: "Seu Peso",
+            drawerLabel: "Peso",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE TREINO - SEM DRAWER */}
+        <Drawer.Screen
+          name="TreinoScreen"
+          options={{
+            title: "Treino Atual",
+            drawerLabel: "Treino",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE FREQUÊNCIA DE TREINO - SEM DRAWER */}
+        <Drawer.Screen
+          name="FrequenciaScreen"
+          options={{
+            title: "Frequência de Treino",
+            drawerLabel: "Frequência",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE ÁGUA - SEM DRAWER */}
+        <Drawer.Screen
+          name="AguaScreen"
+          options={{
+            title: "Água",
+            drawerLabel: "Água",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE CARDIO - SEM DRAWER */}
+        <Drawer.Screen
+          name="CardioScreen"
+          options={{
+            title: "Cardio",
+            drawerLabel: "Cardio",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE REGISTRAR TREINO - SEM DRAWER */}
+        <Drawer.Screen
+          name="RegistrarTreinoScreen"
+          options={{
+            title: "Registrar Treino",
+            drawerLabel: "Reg. Treino",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE REGISTRAR CARDIO - SEM DRAWER */}
+        <Drawer.Screen
+          name="RegistrarCardioScreen"
+          options={{
+            title: "Registrar Cardio",
+            drawerLabel: "Reg. Cardio",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE CONTEXTO BF - SEM DRAWER */}
+        <Drawer.Screen
+          name="ContextoBFScreen"
+          options={{
+            title: "Contexto BF",
+            drawerLabel: "Contexto BF",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE QUANDO CALCULAR BF - SEM DRAWER */}
+        <Drawer.Screen
+          name="QuandoCalcularBFScreen"
+          options={{
+            title: "Quando Calcular BF",
+            drawerLabel: "Calcular BF",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE PESCOÇO - SEM DRAWER */}
+        <Drawer.Screen
+          name="PescocoScreen"
+          options={{
+            title: "Medida do Pescoço",
+            drawerLabel: "Pescoço",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE CINTURA - SEM DRAWER */}
+        <Drawer.Screen
+          name="CinturaScreen"
+          options={{
+            title: "Medida da Cintura",
+            drawerLabel: "Cintura",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE QUADRIL - SEM DRAWER */}
+        <Drawer.Screen
+          name="QuadrilScreen"
+          options={{
+            title: "Medida do Quadril",
+            drawerLabel: "Quadril",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE CÁLCULO BF - SEM DRAWER */}
+        <Drawer.Screen
+          name="CalculoBFScreen"
+          options={{
+            title: "Calculando BF",
+            drawerLabel: "Calculo BF",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE FINALIZAÇÃO - SEM DRAWER */}
+        <Drawer.Screen
+          name="FinalizacaoScreen"
+          options={{
+            title: "Finalização",
+            drawerLabel: "Finalização",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA INICIAL - SEM DRAWER */}
         <Drawer.Screen
           name="index"
           options={{
             title: "Início",
             drawerLabel: "Início",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
           }}
         />
+
+        {/* Telas públicas */}
         <Drawer.Screen
           name="login"
           options={{
@@ -534,7 +827,7 @@ export default function DrawerLayout() {
             headerShown: false,
           }}
         />
-        
+
         {/* Telas protegidas */}
         <Drawer.Screen
           name="perfil"
@@ -572,7 +865,7 @@ export default function DrawerLayout() {
             drawerLabel: "Resultados",
           }}
         />
-        
+
         {/* Telas comuns */}
         <Drawer.Screen
           name="termos"
@@ -602,7 +895,7 @@ export default function DrawerLayout() {
             drawerLabel: "Sobre o App",
           }}
         />
-        
+
         {/* Telas de configuração */}
         <Drawer.Screen
           name="configuracoes"
