@@ -1,218 +1,201 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, View, Easing, StatusBar, Platform, Pressable, SafeAreaView, Image } from 'react-native';
-import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Animated, Dimensions, StyleSheet, Text, View, Easing, StatusBar, Pressable, Image } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-interface IconConfig {
-  name: string;
-  color: string;
-  size: number;
-  type: 'FA5' | 'MCI';
-}
-
-const PILLARS: IconConfig[] = [
-  { name: 'weight-lifter', color: '#7052e6', size: 26, type: 'MCI' }, 
-  { name: 'heart-pulse', color: '#fa3e3e', size: 24, type: 'MCI' },   
-  { name: 'cup-water', color: '#5194e0', size: 24, type: 'MCI' },     
-  { name: 'fire', color: '#e96f04', size: 24, type: 'MCI' },          
-];
+const COLORS = {
+  line: 'rgba(112, 82, 230, 0.15)', 
+  dot: '#4ecdc4',                 
+  primary: '#7052e6',             
+  text: '#1A1A1A',
+};
 
 export default function BoasVindas4() {
   const animValue = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current; 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 1000,
       useNativeDriver: true,
     }).start();
 
     Animated.loop(
       Animated.timing(animValue, {
         toValue: 1,
-        duration: 25000,
+        duration: 35000, 
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
   }, []);
 
-  // Raio amplo para os ícones orbitarem a logo gigante
-  const RADIUS = width * 0.44; 
-  const ELLIPSE_RATIO = 0.6; 
+  const renderOrbit = (dotCount: number, radX: number, radY: number, rotation: string, reverse: boolean) => {
+    const rotateData = animValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: reverse ? ['360deg', '0deg'] : ['0deg', '360deg'],
+    });
 
-  const renderOrbit = (icon: IconConfig, rotation: string, direction: number, startAngle: number) => {
-    const inputRange = [0, 0.25, 0.5, 0.75, 1];
-    const outputX = inputRange.map(v => RADIUS * Math.cos(startAngle + (v * direction * 2 * Math.PI)));
-    const outputY = inputRange.map(v => (RADIUS * ELLIPSE_RATIO) * Math.sin(startAngle + (v * direction * 2 * Math.PI)));
+    const direction = reverse ? -1 : 1;
 
     return (
-      <View style={[styles.orbitWrapper, { transform: [{ rotate: rotation }] }]}>
-        <View style={[styles.ellipseLine, { width: RADIUS * 2, height: (RADIUS * 2) * ELLIPSE_RATIO, borderRadius: RADIUS }]} />
-        <Animated.View style={[styles.iconContainer, {
-          transform: [
-            { translateX: animValue.interpolate({ inputRange, outputRange: outputX }) },
-            { translateY: animValue.interpolate({ inputRange, outputRange: outputY }) },
-            { rotate: rotation.startsWith('-') ? rotation.substring(1) : '-' + rotation }
-          ],
-        }]}>
-          {icon.type === 'MCI' ? (
-            <MaterialCommunityIcons name={icon.name as any} size={icon.size} color={icon.color} />
-          ) : (
-            <FontAwesome5 name={icon.name as any} size={icon.size} color={icon.color} />
-          )}
-        </Animated.View>
-      </View>
+      <Animated.View 
+        style={[
+          styles.orbitWrapper, 
+          { transform: [{ rotate: rotation }, { rotateZ: rotateData }] }
+        ]}
+      >
+        <View style={[styles.ellipseLine, { width: radX * 2, height: radY * 2 }]} />
+        
+        {Array.from({ length: dotCount }).map((_, index) => {
+          const startAngle = (index * (360 / dotCount)) * (Math.PI / 180);
+          const inputRange = [0, 0.25, 0.5, 0.75, 1];
+          const outputX = inputRange.map(v => radX * Math.cos(startAngle + (v * direction * 2 * Math.PI)));
+          const outputY = inputRange.map(v => radY * Math.sin(startAngle + (v * direction * 2 * Math.PI)));
+
+          return (
+            <Animated.View
+              key={`dot-v4-${rotation}-${index}`}
+              style={[
+                styles.dotPos,
+                {
+                  transform: [
+                    { translateX: animValue.interpolate({ inputRange, outputRange: outputX }) },
+                    { translateY: animValue.interpolate({ inputRange, outputRange: outputY }) },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.hollowDot} />
+            </Animated.View>
+          );
+        })}
+      </Animated.View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      <LinearGradient colors={['#FFFFFF', '#FDFDFF', '#F2F4FF']} style={styles.background} />
+      
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#fff' }]} />
 
-      {/* ÁREA VISUAL COM LOGO GIGANTE */}
-      <View style={styles.visualArea}>
-        {renderOrbit(PILLARS[0], '0deg', 1, 0)}
-        {renderOrbit(PILLARS[1], '45deg', -1, Math.PI / 2)}
-        {renderOrbit(PILLARS[2], '90deg', 1, Math.PI)}
-        {renderOrbit(PILLARS[3], '135deg', -1, (3 * Math.PI) / 2)}
-
-        <View style={styles.centralContainer}>
-          <View style={styles.innerCircle}>
-            {/* LOGO MAXIMIZADA */}
-            <Image 
-              source={require('@/assets/images/logo-sem-fundo1.png')} 
-              style={styles.logoStyle}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* CONTEÚDO E BOTÕES */}
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <Text style={styles.titleText}>Pronto para começar?</Text>
+      <View style={styles.mainContent}>
         
-        <View style={styles.buttonContainer}>
-          <Pressable 
-            style={styles.primaryButton}
-            onPress={() => router.push('/ObjetivoScreen')}
-          >
-            <View style={styles.buttonContent}>
-              <MaterialCommunityIcons name="bolt" size={24} color="#FFFFFF" />
-              <Text style={styles.primaryText}>Iniciar Desafio</Text>
-            </View>
-          </Pressable>
+        <View style={styles.logoSection}>
+           {/* Órbitas centralizadas na logo */}
+           <View style={styles.visualArea}>
+              {renderOrbit(1, width * 0.95, height * 0.32, '30deg', false)}
+              {renderOrbit(2, width * 0.85, height * 0.28, '160deg', true)}
+              {renderOrbit(1, width * 0.55, height * 0.55, '10deg', false)}
+              {renderOrbit(1, width * 0.45, height * 0.22, '100deg', true)}
+           </View>
 
-          <Pressable 
-            style={styles.secondaryButton}
-            onPress={() => router.push('/(drawer)/login')}
-          >
-            <Text style={styles.secondaryButtonText}>Já tenho uma conta</Text>
-          </Pressable>
+           <Animated.Image 
+            source={require('@/assets/images/completa-sem-fundo1.png')} 
+            style={[styles.logoStyle, { opacity: fadeAnim }]}
+            resizeMode="contain"
+          />
         </View>
-      </Animated.View>
-    </SafeAreaView>
+
+        <Animated.View style={[styles.bottomSection, { opacity: fadeAnim }]}>
+          <Text style={styles.titleText}>Pronto para começar?</Text>
+          
+          <View style={styles.buttonContainer}>
+            <Pressable onPress={() => router.push('/ObjetivoScreen')}>
+              <LinearGradient
+                colors={['#7b42d5', '#622db2', '#4b208c']} // Tom alterado para #622db2 no centro
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryButton}
+              >
+                <View style={styles.buttonContent}>
+                  <MaterialCommunityIcons name="bolt" size={24} color="#FFFFFF" />
+                  <Text style={styles.primaryText}>Iniciar Desafio</Text>
+                </View>
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable style={styles.secondaryButton} onPress={() => router.push('/(drawer)/login')}>
+              <Text style={styles.secondaryButtonText}>Já tenho uma conta</Text>
+            </Pressable>
+          </View>
+        </Animated.View>
+
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  background: { ...StyleSheet.absoluteFillObject },
+  mainContent: { flex: 1 },
   visualArea: { 
-    flex: 0.65, 
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center', 
     alignItems: 'center',
-    marginTop: 10,
   },
   orbitWrapper: { 
     position: 'absolute', 
     justifyContent: 'center', 
     alignItems: 'center',
-    width: '100%',
-    height: '100%'
   },
   ellipseLine: {
-    position: 'absolute',
-    borderWidth: 1.2,
-    borderColor: 'rgba(112, 82, 230, 0.1)',
+    borderWidth: 1.5,
+    borderColor: COLORS.line,
+    borderRadius: 1000,
     backgroundColor: 'transparent',
+    position: 'absolute',
   },
-  iconContainer: { position: 'absolute' },
-  centralContainer: {
-    width: 160, // Aumentado significativamente
-    height: 160, 
-    borderRadius: 80,
-    backgroundColor: 'rgba(112, 82, 230, 0.04)',
-    justifyContent: 'center', alignItems: 'center', zIndex: 10,
-  },
-  innerCircle: {
-    width: 145, // Quase o tamanho total do container
-    height: 145, 
-    borderRadius: 72.5,
+  dotPos: { position: 'absolute' },
+  hollowDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLORS.dot,
     backgroundColor: '#fff',
-    justifyContent: 'center', alignItems: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 },
-      android: { elevation: 12 },
-    }),
+    elevation: 2,
+  },
+  logoSection: {
+    flex: 0.6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
   },
   logoStyle: {
-    width: '95%', // Ocupa quase todo o círculo branco
-    height: '95%',
+    width: width * 0.85,
+    height: width * 0.85,
+    zIndex: 20,
   },
-  content: { 
-    flex: 0.35, 
-    alignItems: 'center', 
-    justifyContent: 'flex-start',
-    paddingHorizontal: 30 
+  bottomSection: {
+    flex: 0.4,
+    alignItems: 'center',
+    paddingHorizontal: 35,
+    justifyContent: 'center',
   },
   titleText: {
-    color: '#333',
-    fontSize: 28,
+    color: COLORS.text,
+    fontSize: 26,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 30,
   },
-  buttonContainer: {
-    width: '100%',
-    gap: 15,
-  },
+  buttonContainer: { width: '100%', gap: 12 },
   primaryButton: {
     width: '100%',
-    backgroundColor: '#7052e6',
-    borderRadius: 18,
+    borderRadius: 20,
     paddingVertical: 18,
     alignItems: 'center',
-    elevation: 4,
+    elevation: 6,
   },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  primaryText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: '#7052e6',
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#7052e6',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  primaryText: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  secondaryButton: { width: '100%', paddingVertical: 12, alignItems: 'center' },
+  secondaryButtonText: { color: COLORS.dot, fontSize: 16, fontWeight: '700' },
 });

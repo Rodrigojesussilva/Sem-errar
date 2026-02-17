@@ -22,10 +22,22 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  SafeAreaView,
+  StatusBar
 } from 'react-native';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#622db2',
+  dot: '#4ecdc4',
+  line: 'rgba(112, 82, 230, 0.15)',
+  textMain: '#1A1A1A',
+  disabled: '#F0F0F0',
+  inputBg: '#F8F9FA',
+  success: '#622db2' // Alterado de verde para Roxo conforme pedido
+};
 
 // Tipos
 type Exercicio = {
@@ -94,18 +106,16 @@ export default function ConfiguracaoTreinosScreen() {
 
   const gruposMusculares = [
     { id: 'todos', nome: 'Todos os grupos' },
-    { id: 'Peito', nome: 'Peito', cor: '#EA4335' },
-    { id: 'Costas', nome: 'Costas', cor: '#1E88E5' },
-    { id: 'Pernas', nome: 'Pernas', cor: '#27AE60' },
+    { id: 'Peito', nome: 'Peito', cor: '#622db2' },
+    { id: 'Costas', nome: 'Costas', cor: '#7b42d5' },
+    { id: 'Pernas', nome: 'Pernas', cor: '#4ecdc4' },
     { id: 'Ombros', nome: 'Ombros', cor: '#8E44AD' },
     { id: 'Braços', nome: 'Braços', cor: '#F39C12' },
     { id: 'Abdômen', nome: 'Abdômen', cor: '#00BCD4' },
   ];
 
-  // Usar useFocusEffect para recarregar sempre que a tela ganhar foco
   useFocusEffect(
     useCallback(() => {
-      console.log('Tela de configuração ganhou foco - recarregando treinos');
       carregarQuantidadeTreinos();
     }, [])
   );
@@ -113,61 +123,33 @@ export default function ConfiguracaoTreinosScreen() {
   const carregarQuantidadeTreinos = async () => {
     setIsLoading(true);
     try {
-      // Buscar a estrutura de treinos escolhida pelo usuário
       const estruturaSalva = await AsyncStorage.getItem('@estruturaTreinos');
-      const estruturaInfo = await AsyncStorage.getItem('@estruturaTreinosInfo');
-
-      console.log('Estrutura salva:', estruturaSalva);
-      console.log('Estrutura info:', estruturaInfo);
-
       let quantidade = 0;
-
       if (estruturaSalva) {
-        // Converter a escolha do usuário em número de treinos
         switch (estruturaSalva) {
-          case '1':
-            quantidade = 1;
-            break;
-          case '2':
-            quantidade = 2;
-            break;
-          case '3':
-            quantidade = 3;
-            break;
-          case '4':
-            quantidade = 4;
-            break;
-          case 'personalizar':
-            // Para personalizar, podemos perguntar ao usuário ou definir um padrão
-            quantidade = 3; // Valor padrão para personalizar
-            break;
-          default:
-            quantidade = 1;
+          case '1': quantidade = 1; break;
+          case '2': quantidade = 2; break;
+          case '3': quantidade = 3; break;
+          case '4': quantidade = 4; break;
+          case 'personalizar': quantidade = 3; break;
+          default: quantidade = 1;
         }
       } else {
-        // Se não encontrar, usar valor padrão
         quantidade = 1;
       }
 
       setQuantidadeTreinos(quantidade);
-      console.log('Quantidade de treinos carregada:', quantidade);
-
-      // Criar treinos baseado na quantidade
       const novosTreinos: Treino[] = [];
       for (let i = 1; i <= quantidade; i++) {
-        // Verificar se já existem exercícios salvos para este treino
         const treinoSalvo = await AsyncStorage.getItem(`@treino_${i}`);
         let exerciciosSalvos: ExercicioConfigurado[] = [];
-
         if (treinoSalvo) {
           try {
             exerciciosSalvos = JSON.parse(treinoSalvo);
-            console.log(`Treino ${i} carregado com ${exerciciosSalvos.length} exercícios`);
           } catch (e) {
-            console.error('Erro ao parsear treino salvo:', e);
+            console.error(e);
           }
         }
-
         novosTreinos.push({
           id: `treino-${i}`,
           nome: `Treino ${i}`,
@@ -177,8 +159,7 @@ export default function ConfiguracaoTreinosScreen() {
       }
       setTreinos(novosTreinos);
     } catch (error) {
-      console.error('Erro ao carregar quantidade de treinos:', error);
-      Alert.alert('Erro', 'Não foi possível carregar seus treinos. Tente novamente.');
+      Alert.alert('Erro', 'Não foi possível carregar seus treinos.');
     } finally {
       setIsLoading(false);
     }
@@ -240,29 +221,22 @@ export default function ConfiguracaoTreinosScreen() {
       setSelectedGroups([]);
     } else {
       setSelectedGroups(prev =>
-        prev.includes(grupoId)
-          ? prev.filter(g => g !== grupoId)
-          : [...prev, grupoId]
+        prev.includes(grupoId) ? prev.filter(g => g !== grupoId) : [...prev, grupoId]
       );
     }
   };
 
   const toggleExercicioSelecionado = (exercicioId: string) => {
     setSelectedExercises(prev =>
-      prev.includes(exercicioId)
-        ? prev.filter(id => id !== exercicioId)
-        : [...prev, exercicioId]
+      prev.includes(exercicioId) ? prev.filter(id => id !== exercicioId) : [...prev, exercicioId]
     );
   };
 
   const handleAdicionarExercicios = async () => {
     if (!treinoSelecionado || selectedExercises.length === 0) return;
-
-    // Criar exercícios configurados a partir dos selecionados
     const novosExercicios: ExercicioConfigurado[] = selectedExercises.map(exId => {
       const exercicio = exerciciosDisponiveis.find(ex => ex.id === exId)!;
       const grupo = gruposMusculares.find(g => g.nome === exercicio.grupoMuscular);
-
       return {
         id: Date.now().toString() + exId,
         nome: exercicio.nome,
@@ -271,11 +245,10 @@ export default function ConfiguracaoTreinosScreen() {
         descanso: '60s',
         grupoMuscular: exercicio.grupoMuscular,
         icone: exercicio.icone,
-        cor: grupo?.cor || '#1E88E5',
+        cor: grupo?.cor || '#622db2',
       };
     });
 
-    // Atualizar o treino
     const treinosAtualizados = treinos.map(t => {
       if (t.id === treinoSelecionado.id) {
         return {
@@ -288,19 +261,13 @@ export default function ConfiguracaoTreinosScreen() {
     });
 
     setTreinos(treinosAtualizados);
-
-    // Salvar no AsyncStorage
     try {
       const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoSelecionado.id);
       if (treinoAtualizado) {
         const numeroTreino = treinoSelecionado.id.split('-')[1];
         await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
-        console.log(`Treino ${numeroTreino} salvo com ${treinoAtualizado.exercicios.length} exercícios`);
       }
-    } catch (error) {
-      console.error('Erro ao salvar treino:', error);
-    }
-
+    } catch (error) { console.error(error); }
     closeFormModal();
   };
 
@@ -316,34 +283,25 @@ export default function ConfiguracaoTreinosScreen() {
       }
       return t;
     });
-
     setTreinos(treinosAtualizados);
-
-    // Atualizar AsyncStorage
     try {
       const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
       if (treinoAtualizado) {
         const numeroTreino = treinoId.split('-')[1];
         await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
       }
-    } catch (error) {
-      console.error('Erro ao remover exercício:', error);
-    }
+    } catch (error) { console.error(error); }
   };
 
-  const handleVoltar = () => {
-    router.push('/RegistrarTreinoScreen');
-  };
-
+  // Alteração do destino do botão voltar conforme solicitado
+  const handleVoltar = () => router.push('/(drawer)/EstruturaTreinosScreen');
+  
   const handleContinuar = () => {
-    // Verificar se todos os treinos têm pelo menos 1 exercício
-    const todosConfigurados = treinos.every(t => t.exercicios.length > 0);
-    if (todosConfigurados) {
+    if (treinos.every(t => t.exercicios.length > 0)) {
       router.push('/OrganizacaoTreinosScreen');
     }
   };
 
-  // Filtrar exercícios baseado na pesquisa e grupos selecionados
   const exerciciosFiltrados = exerciciosDisponiveis.filter(ex => {
     const matchesSearch = ex.nome.toLowerCase().includes(searchText.toLowerCase());
     const matchesGroup = selectedGroups.length === 0 || selectedGroups.includes(ex.grupoMuscular);
@@ -352,20 +310,36 @@ export default function ConfiguracaoTreinosScreen() {
 
   const todosConfigurados = treinos.every(t => t.exercicios.length > 0);
 
+  const renderBackground = () => (
+    <View style={styles.visualArea}>
+      <View style={[styles.ellipseLine, { width: width * 1.5, height: SCREEN_HEIGHT * 0.3, top: -50, right: -width * 0.2, transform: [{ rotate: '15deg' }] }]}>
+        <View style={[styles.staticDot, { bottom: '20%', left: '20%' }]} />
+      </View>
+      <View style={[styles.ellipseLine, { width: width * 1.7, height: SCREEN_HEIGHT * 0.4, bottom: -100, left: -width * 0.3, transform: [{ rotate: '-10deg' }] }]}>
+        <View style={[styles.staticDot, { top: '30%', right: '25%' }]} />
+      </View>
+    </View>
+  );
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Carregando seus treinos...</Text>
+        <Text style={{ color: COLORS.primary, fontWeight: '700' }}>Carregando seus treinos...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.background}>
+    <SafeAreaView style={styles.background}>
+      <StatusBar barStyle="dark-content" />
+      {renderBackground()}
+
       {/* Cabeçalho */}
       <View style={styles.headerContainer}>
         <Pressable style={styles.backButton} onPress={handleVoltar}>
-          <FontAwesome name="arrow-left" size={20} color="#1E88E5" />
+          <View style={styles.backIconCircle}>
+            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+          </View>
           <Text style={styles.backButtonText}>Voltar</Text>
         </Pressable>
       </View>
@@ -375,240 +349,187 @@ export default function ConfiguracaoTreinosScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.mainContainer}>
-          <View style={styles.imageContainer}>
-            <Image
-              source={require('@/assets/images/logo2.png')}
-              style={styles.topImage}
-              resizeMode="cover"
-            />
-          </View>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('@/assets/images/logo-sem-fundo1.png')}
+            style={styles.topImage}
+            resizeMode="contain"
+          />
+        </View>
 
-          <View style={styles.content}>
-            <Text style={styles.welcomeTitle}>Vamos organizar seus treinos</Text>
+        <View style={styles.content}>
+          <Text style={styles.welcomeTitle}>Vamos organizar seus treinos</Text>
+          <Text style={styles.subtitle}>
+            Toque em cada treino para configurar os exercícios.
+          </Text>
 
-            <Text style={styles.subtitle}>
-              Toque em cada treino para configurar os exercícios.
-            </Text>
-
-            {/* Lista de treinos */}
-            <View style={styles.treinosContainer}>
-              {treinos.map((treino) => (
-                <TouchableOpacity
-                  key={treino.id}
-                  style={[
-                    styles.treinoCard,
-                    treino.configurado && styles.treinoCardConfigurado
-                  ]}
-                  onPress={() => handleTreinoPress(treino)}
-                >
-                  <View style={styles.treinoHeader}>
-                    <View style={[
-                      styles.treinoIcon,
-                      { backgroundColor: treino.configurado ? '#4CAF50' : '#E0E0E0' }
-                    ]}>
-                      <MaterialCommunityIcons
-                        name="dumbbell"
-                        size={24}
-                        color={treino.configurado ? '#FFFFFF' : '#999999'}
-                      />
-                    </View>
-                    <View style={styles.treinoInfo}>
-                      <Text style={[
-                        styles.treinoNome,
-                        !treino.configurado && styles.treinoNomeNaoConfigurado
-                      ]}>
-                        {treino.nome}
-                      </Text>
-                      <Text style={styles.treinoStatus}>
-                        {treino.configurado
-                          ? `${treino.exercicios.length} exercício(s)`
-                          : 'Não configurado'}
-                      </Text>
-                    </View>
+          {/* Lista de treinos */}
+          <View style={styles.treinosContainer}>
+            {treinos.map((treino) => (
+              <TouchableOpacity
+                key={treino.id}
+                activeOpacity={0.7}
+                style={[
+                  styles.treinoCard,
+                  treino.configurado && styles.treinoCardConfigurado
+                ]}
+                onPress={() => handleTreinoPress(treino)}
+              >
+                <View style={styles.treinoHeader}>
+                  <View style={[
+                    styles.treinoIcon,
+                    { backgroundColor: treino.configurado ? COLORS.success : '#E0E0E0' }
+                  ]}>
+                    <MaterialCommunityIcons
+                      name="dumbbell"
+                      size={24}
+                      color={treino.configurado ? '#FFFFFF' : '#999999'}
+                    />
                   </View>
+                  <View style={styles.treinoInfo}>
+                    <Text style={[
+                      styles.treinoNome,
+                      !treino.configurado && styles.treinoNomeNaoConfigurado
+                    ]}>
+                      {treino.nome}
+                    </Text>
+                    <Text style={styles.treinoStatus}>
+                      {treino.configurado
+                        ? `${treino.exercicios.length} exercício(s)`
+                        : 'Não configurado'}
+                    </Text>
+                  </View>
+                  <FontAwesome name="chevron-right" size={14} color={treino.configurado ? COLORS.success : '#CCC'} />
+                </View>
 
-                  {treino.configurado && (
-                    <View style={styles.exerciciosPreview}>
-                      {treino.exercicios.slice(0, 2).map((ex, index) => (
-                        <View key={ex.id} style={styles.exercicioPreviewItem}>
-                          <View style={[styles.exercicioPreviewBullet, { backgroundColor: ex.cor }]} />
-                          <Text style={styles.exercicioPreviewText}>{ex.nome}</Text>
-                        </View>
-                      ))}
-                      {treino.exercicios.length > 2 && (
-                        <Text style={styles.maisExerciciosText}>
-                          +{treino.exercicios.length - 2} exercícios
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Botão Continuar */}
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                (!todosConfigurados) && styles.primaryButtonDisabled
-              ]}
-              onPress={handleContinuar}
-              disabled={!todosConfigurados}
-            >
-              <View style={styles.buttonContent}>
-                <FontAwesome name="arrow-right" size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>Continuar</Text>
-              </View>
-              <Text style={styles.buttonSubtitle}>
-                {todosConfigurados
-                  ? 'Ir para o próximo passo'
-                  : 'Configure todos os treinos para continuar'}
-              </Text>
-            </TouchableOpacity>
+                {treino.configurado && (
+                  <View style={styles.exerciciosPreview}>
+                    {treino.exercicios.slice(0, 2).map((ex) => (
+                      <View key={ex.id} style={styles.exercicioPreviewItem}>
+                        <View style={[styles.exercicioPreviewBullet, { backgroundColor: ex.cor }]} />
+                        <Text style={styles.exercicioPreviewText} numberOfLines={1}>{ex.nome}</Text>
+                      </View>
+                    ))}
+                    {treino.exercicios.length > 2 && (
+                      <Text style={styles.maisExerciciosText}>
+                        +{treino.exercicios.length - 2} exercícios
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
+
+          {/* Botão Continuar */}
+          <TouchableOpacity
+            style={styles.primaryButtonWrapper}
+            onPress={handleContinuar}
+            disabled={!todosConfigurados}
+          >
+            <LinearGradient
+              colors={todosConfigurados ? ['#7b42d5', '#622db2', '#4b208c'] : [COLORS.disabled, COLORS.disabled]}
+              style={styles.primaryButton}
+            >
+              <Text style={[styles.primaryText, !todosConfigurados && { color: '#AAA' }]}>
+                Continuar
+              </Text>
+            </LinearGradient>
+            <Text style={styles.buttonSubtitle}>
+              {todosConfigurados
+                ? 'Ir para o próximo passo'
+                : 'Configure todos os treinos para continuar'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* MODAL - Formulário de Adicionar Exercícios */}
-      <Modal
-        visible={modalFormVisible}
-        transparent={true}
-        animationType="none"
-      >
+      <Modal visible={modalFormVisible} transparent animationType="none">
         <Animated.View style={[styles.fullScreenModal, { transform: [{ translateY: slideFormAnim }] }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={closeFormModal} style={styles.modalBackButton}>
-              <MaterialIcons name="arrow-back" size={24} color="#1E88E5" />
+              <MaterialIcons name="close" size={24} color={COLORS.primary} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {treinoSelecionado?.nome || 'Configurar Treino'}
-            </Text>
+            <Text style={styles.modalTitle}>{treinoSelecionado?.nome || 'Configurar Treino'}</Text>
             <View style={{ width: 40 }} />
           </View>
 
           <View style={styles.modalContent}>
-            {/* Campo de busca */}
             <View style={styles.searchContainer}>
-              <Feather name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
+              <Feather name="search" size={20} color="#94A3B8" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Buscar exercício por nome"
+                placeholder="Buscar exercício..."
                 placeholderTextColor="#94A3B8"
                 value={searchText}
                 onChangeText={setSearchText}
               />
             </View>
 
-            {/* Filtro de grupo muscular */}
             <View style={styles.filterContainer}>
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={() => setFilterMenuVisible(!filterMenuVisible)}
-              >
-                <MaterialIcons name="filter-list" size={20} color="#1E88E5" />
-                <Text style={styles.filterButtonText}>Grupo muscular</Text>
-                <MaterialIcons
-                  name={filterMenuVisible ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                  size={20}
-                  color="#666"
-                />
-              </TouchableOpacity>
-
-              {filterMenuVisible && (
-                <View style={styles.filterMenu}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {gruposMusculares.map((grupo) => (
-                      <TouchableOpacity
-                        key={grupo.id}
-                        style={[
-                          styles.filterChip,
-                          grupo.id === 'todos' && selectedGroups.length === 0 && styles.filterChipSelected,
-                          selectedGroups.includes(grupo.id) && styles.filterChipSelected,
-                        ]}
-                        onPress={() => toggleGrupoMuscular(grupo.id)}
-                      >
-                        <Text style={[
-                          styles.filterChipText,
-                          (grupo.id === 'todos' && selectedGroups.length === 0) && styles.filterChipTextSelected,
-                          selectedGroups.includes(grupo.id) && styles.filterChipTextSelected,
-                        ]}>
-                          {grupo.nome}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {gruposMusculares.map((grupo) => (
+                  <TouchableOpacity
+                    key={grupo.id}
+                    style={[
+                      styles.filterChip,
+                      (grupo.id === 'todos' && selectedGroups.length === 0) || selectedGroups.includes(grupo.id) ? styles.filterChipSelected : null
+                    ]}
+                    onPress={() => toggleGrupoMuscular(grupo.id)}
+                  >
+                    <Text style={[
+                      styles.filterChipText,
+                      (grupo.id === 'todos' && selectedGroups.length === 0) || selectedGroups.includes(grupo.id) ? styles.filterChipTextSelected : null
+                    ]}>
+                      {grupo.nome}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
 
-            {/* Lista de exercícios */}
             <FlatList
               data={exerciciosFiltrados}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
                 const isSelected = selectedExercises.includes(item.id);
                 const grupo = gruposMusculares.find(g => g.nome === item.grupoMuscular);
-
                 return (
                   <TouchableOpacity
-                    style={[
-                      styles.exercicioItem,
-                      isSelected && styles.exercicioItemSelected
-                    ]}
+                    style={[styles.exercicioItem, isSelected && styles.exercicioItemSelected]}
                     onPress={() => toggleExercicioSelecionado(item.id)}
                   >
                     <View style={styles.exercicioItemContent}>
-                      <View style={[styles.exercicioIcon, { backgroundColor: `${grupo?.cor}15` || '#F0F9FF' }]}>
-                        <MaterialCommunityIcons
-                          name={item.icone as any}
-                          size={20}
-                          color={grupo?.cor || '#1E88E5'}
-                        />
+                      <View style={[styles.exercicioIconBox, { backgroundColor: `${grupo?.cor}15` }]}>
+                        <MaterialCommunityIcons name={item.icone as any} size={20} color={grupo?.cor || COLORS.primary} />
                       </View>
-                      <View style={styles.exercicioInfo}>
-                        <Text style={styles.exercicioNome}>{item.nome}</Text>
-                        <Text style={styles.exercicioGrupo}>{item.grupoMuscular}</Text>
+                      <View>
+                        <Text style={styles.exercicioNomeText}>{item.nome}</Text>
+                        <Text style={styles.exercicioGrupoText}>{item.grupoMuscular}</Text>
                       </View>
                     </View>
-
-                    <View style={[
-                      styles.exercicioCheckbox,
-                      isSelected && styles.exercicioCheckboxSelected
-                    ]}>
-                      {isSelected && (
-                        <Feather name="check" size={16} color="#FFFFFF" />
-                      )}
+                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                      {isSelected && <Feather name="check" size={14} color="#FFF" />}
                     </View>
                   </TouchableOpacity>
                 );
               }}
-              contentContainerStyle={styles.exerciciosList}
-              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 100 }}
             />
 
-            {/* Botão inferior dinâmico */}
             <View style={styles.bottomButtonContainer}>
               <TouchableOpacity
-                style={[
-                  styles.bottomButton,
-                  selectedExercises.length === 0 && styles.bottomButtonDisabled
-                ]}
                 onPress={handleAdicionarExercicios}
                 disabled={selectedExercises.length === 0}
+                style={styles.bottomPressable}
               >
                 <LinearGradient
-                  colors={selectedExercises.length > 0 ? ['#1E88E5', '#8E44AD'] : ['#CCCCCC', '#CCCCCC']}
+                  colors={selectedExercises.length > 0 ? ['#7b42d5', '#622db2'] : ['#CCC', '#BBB']}
                   style={styles.bottomButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
                 >
                   <Text style={styles.bottomButtonText}>
-                    {selectedExercises.length === 0
-                      ? 'Selecionar exercícios'
-                      : `Adicionar ${selectedExercises.length} exercício(s)`}
+                    {selectedExercises.length === 0 ? 'Selecionar' : `Adicionar ${selectedExercises.length}`}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -617,621 +538,152 @@ export default function ConfiguracaoTreinosScreen() {
         </Animated.View>
       </Modal>
 
-      {/* MODAL - Edição do Treino */}
-      <Modal
-        visible={modalEdicaoVisible}
-        transparent={true}
-        animationType="none"
-      >
+      {/* MODAL - Edição do Treino (O roxo agora predomina aqui) */}
+      <Modal visible={modalEdicaoVisible} transparent animationType="none">
         <Animated.View style={[styles.fullScreenModal, { transform: [{ translateY: slideEdicaoAnim }] }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={closeEdicaoModal} style={styles.modalBackButton}>
-              <MaterialIcons name="arrow-back" size={24} color="#1E88E5" />
+              <MaterialIcons name="arrow-back" size={24} color={COLORS.primary} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {treinoSelecionado?.nome || 'Editar Treino'}
-            </Text>
-            <View style={{ width: 40 }} />
+            <Text style={styles.modalTitle}>{treinoSelecionado?.nome}</Text>
+            <TouchableOpacity onPress={() => { closeEdicaoModal(); openFormModal(treinoSelecionado!); }}>
+              <Feather name="plus" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.modalContent}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Lista de exercícios configurados */}
-              {treinoSelecionado?.exercicios.map((exercicio, index) => (
-                <View key={exercicio.id} style={styles.exercicioConfiguradoCard}>
-                  <View style={styles.exercicioConfiguradoHeader}>
-                    <View style={styles.exercicioConfiguradoInfo}>
-                      <View style={[styles.exercicioConfiguradoIcon, { backgroundColor: `${exercicio.cor}15` }]}>
-                        <MaterialCommunityIcons
-                          name={exercicio.icone as any}
-                          size={20}
-                          color={exercicio.cor}
-                        />
-                      </View>
-                      <View>
-                        <Text style={styles.exercicioConfiguradoNome}>{exercicio.nome}</Text>
-                        <Text style={styles.exercicioConfiguradoGrupo}>{exercicio.grupoMuscular}</Text>
-                      </View>
+          <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 40 }}>
+            {treinoSelecionado?.exercicios.map((exercicio) => (
+              <View key={exercicio.id} style={styles.exercicioConfiguradoCard}>
+                <View style={styles.exHeader}>
+                  <View style={styles.exInfo}>
+                    <View style={[styles.exIcon, { backgroundColor: `${COLORS.primary}15` }]}>
+                      <MaterialCommunityIcons name={exercicio.icone as any} size={20} color={COLORS.primary} />
                     </View>
+                    <View>
+                      <Text style={styles.exNome}>{exercicio.nome}</Text>
+                      <Text style={styles.exGrupo}>{exercicio.grupoMuscular}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={() => handleRemoveExercicio(treinoSelecionado.id, exercicio.id)}>
+                    <MaterialIcons name="delete-outline" size={22} color={COLORS.primary} />
+                  </TouchableOpacity>
+                </View>
 
-                    <TouchableOpacity
-                      style={styles.removeExerciseButton}
-                      onPress={() => {
-                        if (treinoSelecionado) {
-                          handleRemoveExercicio(treinoSelecionado.id, exercicio.id);
-                        }
+                <View style={styles.configGrid}>
+                  <View style={styles.configItem}>
+                    <Text style={styles.configLabel}>Séries</Text>
+                    <TextInput
+                      style={styles.configInput}
+                      value={exercicio.series.toString()}
+                      keyboardType="numeric"
+                      onChangeText={(text) => {
+                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
+                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, series: parseInt(text) || 0} : ex)} : t);
+                        setTreinos(novos);
                       }}
-                    >
-                      <MaterialIcons name="close" size={20} color="#F44336" />
-                    </TouchableOpacity>
+                    />
                   </View>
-
-                  {/* Configurações do exercício */}
-                  <View style={styles.exercicioConfiguracoes}>
-                    <View style={styles.configuracaoItem}>
-                      <Text style={styles.configuracaoLabel}>Séries</Text>
-                      <TextInput
-                        style={styles.configuracaoInput}
-                        value={exercicio.series.toString()}
-                        keyboardType="number-pad"
-                        placeholder="3"
-                        placeholderTextColor="#94A3B8"
-                        onChangeText={(text) => {
-                          // Implementar atualização das séries
-                          const novosTreinos = treinos.map(t => {
-                            if (t.id === treinoSelecionado?.id) {
-                              return {
-                                ...t,
-                                exercicios: t.exercicios.map(ex => {
-                                  if (ex.id === exercicio.id) {
-                                    return { ...ex, series: parseInt(text) || 0 };
-                                  }
-                                  return ex;
-                                })
-                              };
-                            }
-                            return t;
-                          });
-                          setTreinos(novosTreinos);
-                        }}
-                      />
-                    </View>
-
-                    <View style={styles.configuracaoItem}>
-                      <Text style={styles.configuracaoLabel}>Repetições</Text>
-                      <TextInput
-                        style={styles.configuracaoInput}
-                        value={exercicio.repeticoes}
-                        placeholder="8-12"
-                        placeholderTextColor="#94A3B8"
-                        onChangeText={(text) => {
-                          // Implementar atualização das repetições
-                          const novosTreinos = treinos.map(t => {
-                            if (t.id === treinoSelecionado?.id) {
-                              return {
-                                ...t,
-                                exercicios: t.exercicios.map(ex => {
-                                  if (ex.id === exercicio.id) {
-                                    return { ...ex, repeticoes: text };
-                                  }
-                                  return ex;
-                                })
-                              };
-                            }
-                            return t;
-                          });
-                          setTreinos(novosTreinos);
-                        }}
-                      />
-                    </View>
-
-                    <View style={styles.configuracaoItem}>
-                      <Text style={styles.configuracaoLabel}>Descanso</Text>
-                      <TextInput
-                        style={styles.configuracaoInput}
-                        value={exercicio.descanso}
-                        placeholder="60s"
-                        placeholderTextColor="#94A3B8"
-                        onChangeText={(text) => {
-                          // Implementar atualização do descanso
-                          const novosTreinos = treinos.map(t => {
-                            if (t.id === treinoSelecionado?.id) {
-                              return {
-                                ...t,
-                                exercicios: t.exercicios.map(ex => {
-                                  if (ex.id === exercicio.id) {
-                                    return { ...ex, descanso: text };
-                                  }
-                                  return ex;
-                                })
-                              };
-                            }
-                            return t;
-                          });
-                          setTreinos(novosTreinos);
-                        }}
-                      />
-                    </View>
+                  <View style={styles.configItem}>
+                    <Text style={styles.configLabel}>Reps</Text>
+                    <TextInput
+                      style={styles.configInput}
+                      value={exercicio.repeticoes}
+                      onChangeText={(text) => {
+                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
+                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, repeticoes: text} : ex)} : t);
+                        setTreinos(novos);
+                      }}
+                    />
                   </View>
-
-                  {/* Handle para arrastar (reordenar) */}
-                  <View style={styles.dragHandle}>
-                    <MaterialIcons name="drag-handle" size={24} color="#CCCCCC" />
+                  <View style={styles.configItem}>
+                    <Text style={styles.configLabel}>Descanso</Text>
+                    <TextInput
+                      style={styles.configInput}
+                      value={exercicio.descanso}
+                      onChangeText={(text) => {
+                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
+                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, descanso: text} : ex)} : t);
+                        setTreinos(novos);
+                      }}
+                    />
                   </View>
                 </View>
-              ))}
-
-              {/* Botão Adicionar Exercício */}
-              <TouchableOpacity
-                style={styles.addExerciseButton}
-                onPress={() => {
-                  closeEdicaoModal();
-                  if (treinoSelecionado) {
-                    openFormModal(treinoSelecionado);
-                  }
-                }}
-              >
-                <Feather name="plus" size={20} color="#1E88E5" />
-                <Text style={styles.addExerciseButtonText}>Adicionar exercício</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+              </View>
+            ))}
+          </ScrollView>
         </Animated.View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#FFFFFF'
-  },
-  headerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    zIndex: 10
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16
-  },
-  backButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8
-  },
-  scrollView: {
-    flex: 1
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingTop: 15,
-    paddingBottom: 30,
-    paddingHorizontal: 5
-  },
-  mainContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginHorizontal: 15,
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '92%',
-    marginTop: 5
-  },
-  imageContainer: {
-    height: 170,
-    width: '100%',
-    overflow: 'hidden',
-    backgroundColor: '#F5F5F5'
-  },
-  topImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover'
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 28,
-    alignItems: 'center'
-  },
-  welcomeTitle: {
-    color: '#000000',
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 32
-  },
-  subtitle: {
-    color: '#666666',
-    fontSize: 17,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24
-  },
-  treinosContainer: {
-    width: '100%',
-    gap: 16,
-    marginBottom: 24,
-  },
-  treinoCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#E9ECEF',
-    padding: 16,
-  },
-  treinoCardConfigurado: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#F1F8E9',
-  },
-  treinoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  treinoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  treinoInfo: {
-    flex: 1,
-  },
-  treinoNome: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  treinoNomeNaoConfigurado: {
-    opacity: 0.5,
-  },
-  treinoStatus: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  exerciciosPreview: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    gap: 8,
-  },
-  exercicioPreviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  exercicioPreviewBullet: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  exercicioPreviewText: {
-    fontSize: 14,
-    color: '#333333',
-  },
-  maisExerciciosText: {
-    fontSize: 12,
-    color: '#1E88E5',
-    fontWeight: '500',
-    marginTop: 4,
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#E0E0E0',
-    marginVertical: 22,
-  },
-  primaryButton: {
-    width: '100%',
-    backgroundColor: '#1E88E5',
-    borderRadius: 18,
-    paddingVertical: 22,
-    paddingHorizontal: 26,
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6.27,
-    elevation: 10
-  },
-  primaryButtonDisabled: {
-    opacity: 0.5
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12
-  },
-  primaryText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 18
-  },
-  buttonSubtitle: {
-    color: '#F1F5F9',
-    fontSize: 14,
-    marginTop: 4
-  },
-  fullScreenModal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#FFFFFF',
-    zIndex: 50,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalBackButton: {
-    padding: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: 16,
-    color: '#000000',
-  },
-  filterContainer: {
-    marginBottom: 16,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  filterButtonText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333333',
-  },
-  filterMenu: {
-    marginTop: 8,
-    paddingVertical: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginRight: 8,
-  },
-  filterChipSelected: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
-  },
-  filterChipText: {
-    fontSize: 14,
-    color: '#333333',
-  },
-  filterChipTextSelected: {
-    color: '#FFFFFF',
-  },
-  exerciciosList: {
-    paddingBottom: 100,
-  },
-  exercicioItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  exercicioItemSelected: {
-    backgroundColor: '#F0F9FF',
-    borderColor: '#1E88E5',
-  },
-  exercicioItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  exercicioIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  exercicioInfo: {
-    flex: 1,
-  },
-  exercicioNome: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    marginBottom: 2,
-  },
-  exercicioGrupo: {
-    fontSize: 13,
-    color: '#666666',
-  },
-  exercicioCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#CCCCCC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  exercicioCheckboxSelected: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
-  },
-  bottomButtonContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-  },
-  bottomButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  bottomButtonDisabled: {
-    opacity: 0.5,
-  },
-  bottomButtonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  bottomButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  exercicioConfiguradoCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  exercicioConfiguradoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  exercicioConfiguradoInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  exercicioConfiguradoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  exercicioConfiguradoNome: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
-  },
-  exercicioConfiguradoGrupo: {
-    fontSize: 13,
-    color: '#666666',
-  },
-  removeExerciseButton: {
-    padding: 4,
-  },
-  exercicioConfiguracoes: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  configuracaoItem: {
-    flex: 1,
-  },
-  configuracaoLabel: {
-    fontSize: 12,
-    color: '#666666',
-    marginBottom: 4,
-  },
-  configuracaoInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 14,
-    color: '#000000',
-  },
-  dragHandle: {
-    alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  addExerciseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: '#1E88E5',
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 30,
-  },
-  addExerciseButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  background: { flex: 1, backgroundColor: '#FFFFFF' },
+  visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
+  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
+  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerContainer: { paddingHorizontal: 25, paddingTop: 20, zIndex: 10 },
+  backButton: { flexDirection: 'row', alignItems: 'center' },
+  backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 2 },
+  backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: '700', marginLeft: 10 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 25, paddingBottom: 40 },
+  logoContainer: { alignItems: 'center', marginVertical: 30 },
+  topImage: { width: width * 0.4, height: 60 },
+  content: { flex: 1 },
+  welcomeTitle: { color: COLORS.textMain, fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 10 },
+  subtitle: { color: '#666', fontSize: 16, textAlign: 'center', marginBottom: 30, lineHeight: 22 },
+  treinosContainer: { gap: 15, marginBottom: 40 },
+  treinoCard: { backgroundColor: '#FFF', borderRadius: 20, padding: 18, borderWidth: 1.5, borderColor: '#F0F0F0', elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
+  treinoCardConfigurado: { borderColor: COLORS.success + '40', backgroundColor: '#F9FFF9' },
+  treinoHeader: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  treinoIcon: { width: 50, height: 50, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  treinoInfo: { flex: 1 },
+  treinoNome: { fontSize: 18, fontWeight: '800', color: COLORS.textMain },
+  treinoNomeNaoConfigurado: { color: '#AAA' },
+  treinoStatus: { fontSize: 13, color: '#888', marginTop: 2 },
+  exerciciosPreview: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#F0F0F0', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  exercicioPreviewItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  exercicioPreviewBullet: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  exercicioPreviewText: { fontSize: 11, color: '#666', fontWeight: '600', maxWidth: 100 },
+  maisExerciciosText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
+  primaryButtonWrapper: { width: '100%', alignItems: 'center' },
+  primaryButton: { width: '100%', paddingVertical: 18, borderRadius: 20, alignItems: 'center', elevation: 4 },
+  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  buttonSubtitle: { fontSize: 12, color: '#999', marginTop: 10, textAlign: 'center' },
+  fullScreenModal: { flex: 1, backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, elevation: 20 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 25, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  modalBackButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textMain },
+  modalContent: { flex: 1, padding: 20 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 15, paddingHorizontal: 15, height: 55, marginBottom: 20 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, fontWeight: '600' },
+  filterContainer: { marginBottom: 20 },
+  filterChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 25, backgroundColor: '#F0F0F0', marginRight: 10, borderWidth: 1, borderColor: '#E0E0E0' },
+  filterChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChipText: { fontSize: 13, fontWeight: '700', color: '#666' },
+  filterChipTextSelected: { color: '#FFF' },
+  exercicioItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, backgroundColor: '#FFF', borderRadius: 18, marginBottom: 12, borderWidth: 1, borderColor: '#F0F0F0' },
+  exercicioItemSelected: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}05` },
+  exercicioItemContent: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  exercicioIconBox: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  exercicioNomeText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
+  exercicioGrupoText: { fontSize: 12, color: '#888' },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#DDD', justifyContent: 'center', alignItems: 'center' },
+  checkboxSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  bottomButtonContainer: { position: 'absolute', bottom: 30, left: 20, right: 20 },
+  bottomPressable: { borderRadius: 20, overflow: 'hidden', elevation: 8 },
+  bottomButtonGradient: { paddingVertical: 18, alignItems: 'center' },
+  bottomButtonText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  exercicioConfiguradoCard: { backgroundColor: '#FFF', borderRadius: 22, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: '#F0F0F0', elevation: 2 },
+  exHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  exInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  exIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  exNome: { fontSize: 16, fontWeight: '800', color: COLORS.textMain },
+  exGrupo: { fontSize: 12, color: '#999' },
+  configGrid: { flexDirection: 'row', gap: 10 },
+  configItem: { flex: 1, backgroundColor: '#F8F9FA', borderRadius: 12, padding: 10 },
+  configLabel: { fontSize: 10, fontWeight: '700', color: '#AAA', marginBottom: 5, textTransform: 'uppercase' },
+  configInput: { fontSize: 15, fontWeight: '700', color: COLORS.primary, padding: 0 }
 });
