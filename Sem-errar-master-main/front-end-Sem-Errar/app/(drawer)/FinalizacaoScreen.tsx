@@ -1,8 +1,24 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 // ============ INTERFACES E TIPOS ============
 interface ObjetivoCompleto {
@@ -12,43 +28,28 @@ interface ObjetivoCompleto {
 }
 
 interface UserData {
-  // Objetivo
   objetivo: string;
   objetivoCompleto: ObjetivoCompleto | null;
-
-  // Dados pessoais
   sexo: string;
   idade: number;
   faixaIdade: string | null;
-
-  // Altura
   alturaUnidade: string | null;
   altura: number | null;
   alturaFt: number | null;
   alturaIn: number | null;
   alturaCm: number;
-
-  // Peso
   pesoUnidade: string | null;
   pesoKg: number | null;
   pesoLb: number | null;
   pesoEmKg: number;
-
-  // Treino
   frequenciaTreino: string;
   nivelAtividade: number | null;
   frequenciaTreinoDescricao: string | null;
   treinaAtualmente: boolean;
-
-  // Água
   querLembretesAgua: boolean;
   coposAguaDia: number;
-
-  // Cardio
   frequenciaCardio: string | null;
   frequenciaCardioDescricao: string | null;
-
-  // Medidas BF
   pescocoCm: number;
   cinturaCm: number;
   quadrilCm: number | null;
@@ -59,6 +60,7 @@ interface Classificacao {
   cor: string;
   descricao: string;
   emoji?: string;
+  gradiente?: [string, string];
 }
 
 interface CaloriasObjetivo {
@@ -68,6 +70,7 @@ interface CaloriasObjetivo {
   descricao: string;
   diferenca: string;
   cor: string;
+  gradiente: [string, string];
 }
 
 interface Macronutriente {
@@ -76,64 +79,45 @@ interface Macronutriente {
   descricao: string;
   recomendacao?: string;
   gPorKg: string;
+  icon: string;
+  cor: string;
 }
 
 interface Metricas {
-  // Dados básicos
   objetivo: string;
   sexo: string;
   idade: number;
   alturaCm: number;
   pesoEmKg: number;
-
-  // IMC
   imc: number;
   imcFormatado: string;
   classificacaoIMC: Classificacao;
   pesoIdealMin: number;
   pesoIdealMax: number;
-
-  // Composição corporal
   percentualGordura: number;
   percentualGorduraFormatado: string;
   classificacaoBF: Classificacao;
   massaGordaKg: number;
   massaMagraKg: number;
-
-  // Metabolismo
   tmb: number;
   tmbFormatado: string;
   tdee: number;
   tdeeFormatado: string;
   nivelAtividade: number;
   nivelAtividadeDescricao: string;
-
-  // Calorias
   calorias: CaloriasObjetivo;
-
-  // Macronutrientes
   proteina: Macronutriente;
   carboidratos: Macronutriente;
   gorduras: Macronutriente;
-
-  // Hidratação
   aguaRecomendadaLitros: number;
   aguaRecomendadaFormatada: string;
   coposAguaRecomendados: number;
   querLembretesAgua: boolean;
-
-  // Treino
   frequenciaTreino: string;
   treinaAtualmente: boolean;
-
-  // Meta
   tempoMeta: string;
-
-  // Cardio
   frequenciaCardio: string | null;
   frequenciaCardioDescricao: string | null;
-
-  // Datas
   dataCalculo: string;
 }
 
@@ -142,53 +126,46 @@ export default function FinalizacaoScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [metricas, setMetricas] = useState<Metricas | null>(null);
+  const [expandedSections, setExpandedSections] = useState({
+    perfil: true,
+    imc: true,
+    pesoIdeal: false,
+    composicao: true,
+    metabolismo: true,
+    macros: false,
+    hidratacao: false,
+    treino: false,
+    dicas: true,
+  });
 
   useEffect(() => {
     carregarTodosDadosECalcular();
   }, []);
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const carregarTodosDadosECalcular = async () => {
     setIsLoading(true);
     try {
       console.log('📱 Iniciando carregamento de dados do AsyncStorage...');
-
-      // 1. CARREGAR TODOS OS DADOS DO ASYNCSTORAGE
       const dados = await carregarDadosDoStorage();
-
-      console.log('✅ Dados carregados:', {
-        objetivo: dados.objetivo,
-        sexo: dados.sexo,
-        idade: dados.idade,
-        alturaCm: dados.alturaCm,
-        pesoEmKg: dados.pesoEmKg,
-        frequenciaTreino: dados.frequenciaTreino,
-        temMedidasBF: !!(dados.pescocoCm && dados.cinturaCm)
-      });
-
-      // 2. FAZER TODOS OS CÁLCULOS
       const resultados = calcularTodasMetricas(dados);
-
       setUserData(dados);
       setMetricas(resultados);
 
-      // 3. SALVAR RESULTADOS NO STORAGE PARA USO FUTURO
       await AsyncStorage.setItem('@metricasCompletas', JSON.stringify(resultados));
       await AsyncStorage.setItem('@userDataCompleto', JSON.stringify(dados));
 
-      console.log('🎯 Cálculos concluídos:', {
-        imc: resultados.imc?.toFixed(1),
-        bf: resultados.percentualGordura?.toFixed(1),
-        tdee: resultados.tdee?.toFixed(0),
-        objetivo: resultados.objetivo
-      });
-
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('❌ Erro ao carregar dados e calcular:', error);
-      Alert.alert(
-        'Erro',
-        'Não foi possível carregar seus dados. Tente novamente.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      console.error('❌ Erro ao carregar dados:', error);
+      Alert.alert('Erro', 'Não foi possível carregar seus dados.');
     } finally {
       setIsLoading(false);
     }
@@ -196,33 +173,14 @@ export default function FinalizacaoScreen() {
 
   const carregarDadosDoStorage = async (): Promise<UserData> => {
     try {
-      // Buscar todas as chaves do storage
       const [
-        objetivo,
-        objetivoCompleto,
-        sexo,
-        idade,
-        faixaIdade,
-        alturaUnidade,
-        altura,
-        alturaFt,
-        alturaIn,
-        alturaEmCm,
-        pesoUnidade,
-        pesoKg,
-        pesoLb,
-        pesoEmKg,
-        frequenciaTreino,
-        nivelAtividade,
-        frequenciaTreinoDescricao,
-        querLembretesAgua,
-        coposAguaDia,
-        frequenciaCardio,
-        frequenciaCardioDescricao,
-        pescocoCm,
-        cinturaCm,
-        quadrilCm,
-        treinaAtualmente
+        objetivo, objetivoCompleto, sexo, idade, faixaIdade,
+        alturaUnidade, altura, alturaFt, alturaIn, alturaEmCm,
+        pesoUnidade, pesoKg, pesoLb, pesoEmKg,
+        frequenciaTreino, nivelAtividade, frequenciaTreinoDescricao,
+        querLembretesAgua, coposAguaDia,
+        frequenciaCardio, frequenciaCardioDescricao,
+        pescocoCm, cinturaCm, quadrilCm, treinaAtualmente
       ] = await Promise.all([
         AsyncStorage.getItem('@objetivo'),
         AsyncStorage.getItem('@objetivoCompleto'),
@@ -251,7 +209,6 @@ export default function FinalizacaoScreen() {
         AsyncStorage.getItem('@treinaAtualmente')
       ]);
 
-      // Parse do objetivo completo se existir
       let objetivoCompletoObj: ObjetivoCompleto | null = null;
       if (objetivoCompleto) {
         try {
@@ -261,8 +218,7 @@ export default function FinalizacaoScreen() {
         }
       }
 
-      // Determinar altura final em cm
-      let alturaFinalCm = 170; // valor padrão
+      let alturaFinalCm = 170;
       if (alturaEmCm) {
         alturaFinalCm = parseFloat(alturaEmCm);
       } else if (alturaUnidade === 'cm' && altura) {
@@ -271,15 +227,13 @@ export default function FinalizacaoScreen() {
         alturaFinalCm = converterParaCm(parseFloat(alturaFt), parseFloat(alturaIn || '0'));
       }
 
-      // Determinar peso final em kg
-      let pesoFinalKg = 70; // valor padrão
+      let pesoFinalKg = 70;
       if (pesoEmKg) {
         pesoFinalKg = parseFloat(pesoEmKg);
       } else if (pesoUnidade === 'kg' && pesoKg) {
         pesoFinalKg = parseFloat(pesoKg);
       }
 
-      // Valores padrão para desenvolvimento/teste
       const idadeNum = idade ? parseInt(idade) : 32;
       const pescoco = pescocoCm ? parseFloat(pescocoCm) : 42;
       const cintura = cinturaCm ? parseFloat(cinturaCm) : 109;
@@ -290,43 +244,28 @@ export default function FinalizacaoScreen() {
       const coposAgua = coposAguaDia ? parseInt(coposAguaDia) : 10;
 
       return {
-        // Objetivo
         objetivo: objetivo || 'manter',
         objetivoCompleto: objetivoCompletoObj,
-
-        // Dados pessoais
         sexo: sexo || 'masculino',
         idade: idadeNum,
         faixaIdade: faixaIdade || null,
-
-        // Altura
         alturaUnidade: alturaUnidade || null,
         altura: altura ? parseFloat(altura) : null,
         alturaFt: alturaFt ? parseInt(alturaFt) : null,
         alturaIn: alturaIn ? parseInt(alturaIn) : null,
         alturaCm: alturaFinalCm,
-
-        // Peso
         pesoUnidade: pesoUnidade || null,
         pesoKg: pesoKg ? parseFloat(pesoKg) : null,
         pesoLb: pesoLb ? parseFloat(pesoLb) : null,
         pesoEmKg: pesoFinalKg,
-
-        // Treino
         frequenciaTreino: frequencia,
         nivelAtividade: atividade,
         frequenciaTreinoDescricao: frequenciaTreinoDescricao || null,
         treinaAtualmente: treinaAtualmente === 'sim',
-
-        // Água
         querLembretesAgua: querAgua === 'sim',
         coposAguaDia: coposAgua,
-
-        // Cardio
         frequenciaCardio: frequenciaCardio || null,
         frequenciaCardioDescricao: frequenciaCardioDescricao || null,
-
-        // Medidas BF
         pescocoCm: pescoco,
         cinturaCm: cintura,
         quadrilCm: quadril
@@ -338,7 +277,6 @@ export default function FinalizacaoScreen() {
   };
 
   const calcularTodasMetricas = (dados: UserData): Metricas => {
-    // Extrair dados com valores padrão
     const {
       objetivo = 'manter',
       sexo = 'masculino',
@@ -350,57 +288,54 @@ export default function FinalizacaoScreen() {
       quadrilCm = null,
       frequenciaTreino = '3-4',
       nivelAtividade = null,
-      treinaAtualmente = false,
       querLembretesAgua = true,
-      frequenciaCardio = null,
-      frequenciaCardioDescricao = null
     } = dados;
 
-    // 1. Cálculo do IMC
     const alturaMetros = alturaCm / 100;
     const imc = pesoEmKg / (alturaMetros * alturaMetros);
 
-    // Classificação do IMC
     const getClassificacaoIMC = (imc: number): Classificacao => {
       if (imc < 18.5) return {
-        classificacao: 'Baixo peso',
+        classificacao: 'Baixo Peso',
         cor: '#2196F3',
         descricao: 'Abaixo do peso ideal',
-        emoji: '⚠️'
+        emoji: '⚡',
+        gradiente: ['#2196F3', '#1976D2']
       };
       if (imc < 25) return {
-        classificacao: 'Peso normal',
+        classificacao: 'Peso Ideal',
         cor: '#4CAF50',
         descricao: 'Peso saudável',
-        emoji: '✅'
+        emoji: '💚',
+        gradiente: ['#4CAF50', '#388E3C']
       };
       if (imc < 30) return {
         classificacao: 'Sobrepeso',
         cor: '#FF9800',
         descricao: 'Acima do peso ideal',
-        emoji: '⚠️'
+        emoji: '⚠️',
+        gradiente: ['#FF9800', '#F57C00']
       };
       if (imc < 35) return {
-        classificacao: 'Obesidade Grau I',
+        classificacao: 'Obesidade I',
         cor: '#FF5722',
         descricao: 'Obesidade moderada',
-        emoji: '⚠️⚠️'
+        emoji: '🔴',
+        gradiente: ['#FF5722', '#E64A19']
       };
       return {
-        classificacao: 'Obesidade',
+        classificacao: 'Obesidade II+',
         cor: '#D32F2F',
         descricao: 'Obesidade',
-        emoji: '⚠️⚠️⚠️'
+        emoji: '⛔',
+        gradiente: ['#D32F2F', '#B71C1C']
       };
     };
 
     const classificacaoIMC = getClassificacaoIMC(imc);
-
-    // 2. Peso ideal
     const pesoMinimo = 18.5 * (alturaMetros * alturaMetros);
     const pesoMaximo = 24.9 * (alturaMetros * alturaMetros);
 
-    // 3. Percentual de Gordura - MÉTODO DA MARINHA AMERICANA
     const calcularPercentualGordura = (): number => {
       if (pescocoCm > 0 && cinturaCm > 0) {
         const alturaInches = alturaCm * 0.393701;
@@ -422,8 +357,6 @@ export default function FinalizacaoScreen() {
           }
         }
       }
-
-      // Fallback: fórmula de Deurenberg
       const sexoValor = sexo === 'feminino' ? 1 : 0;
       return Math.max(5, Math.min((1.20 * imc) + (0.23 * idade) - (10.8 * sexoValor) - 5.4, 50));
     };
@@ -432,26 +365,84 @@ export default function FinalizacaoScreen() {
     const massaGordaKg = (percentualGordura / 100) * pesoEmKg;
     const massaMagraKg = pesoEmKg - massaGordaKg;
 
-    // Classificação do BF
     const getClassificacaoBF = (bf: number, isMale: boolean): Classificacao => {
       if (isMale) {
-        if (bf < 6) return { classificacao: 'Essencial', cor: '#2196F3', descricao: 'Muito baixo', emoji: '🏃' };
-        if (bf < 14) return { classificacao: 'Atleta', cor: '#4CAF50', descricao: 'Excelente', emoji: '💪' };
-        if (bf < 18) return { classificacao: 'Fitness', cor: '#8BC34A', descricao: 'Bom', emoji: '👍' };
-        if (bf < 25) return { classificacao: 'Aceitável', cor: '#FFC107', descricao: 'Médio', emoji: '👌' };
-        return { classificacao: 'Obeso', cor: '#FF5722', descricao: 'Alto', emoji: '⚠️' };
+        if (bf < 6) return {
+          classificacao: 'Essencial',
+          cor: '#2196F3',
+          descricao: 'Muito baixo',
+          emoji: '💪',
+          gradiente: ['#2196F3', '#1976D2']
+        };
+        if (bf < 14) return {
+          classificacao: 'Atleta',
+          cor: '#4CAF50',
+          descricao: 'Excelente',
+          emoji: '🏆',
+          gradiente: ['#4CAF50', '#388E3C']
+        };
+        if (bf < 18) return {
+          classificacao: 'Fitness',
+          cor: '#8BC34A',
+          descricao: 'Bom',
+          emoji: '👍',
+          gradiente: ['#8BC34A', '#689F38']
+        };
+        if (bf < 25) return {
+          classificacao: 'Aceitável',
+          cor: '#FFC107',
+          descricao: 'Médio',
+          emoji: '👌',
+          gradiente: ['#FFC107', '#FFA000']
+        };
+        return {
+          classificacao: 'Elevado',
+          cor: '#FF5722',
+          descricao: 'Alto',
+          emoji: '⚠️',
+          gradiente: ['#FF5722', '#E64A19']
+        };
       } else {
-        if (bf < 14) return { classificacao: 'Essencial', cor: '#2196F3', descricao: 'Muito baixo', emoji: '🏃' };
-        if (bf < 21) return { classificacao: 'Atleta', cor: '#4CAF50', descricao: 'Excelente', emoji: '💪' };
-        if (bf < 25) return { classificacao: 'Fitness', cor: '#8BC34A', descricao: 'Bom', emoji: '👍' };
-        if (bf < 32) return { classificacao: 'Aceitável', cor: '#FFC107', descricao: 'Médio', emoji: '👌' };
-        return { classificacao: 'Obeso', cor: '#FF5722', descricao: 'Alto', emoji: '⚠️' };
+        if (bf < 14) return {
+          classificacao: 'Essencial',
+          cor: '#2196F3',
+          descricao: 'Muito baixo',
+          emoji: '💪',
+          gradiente: ['#2196F3', '#1976D2']
+        };
+        if (bf < 21) return {
+          classificacao: 'Atleta',
+          cor: '#4CAF50',
+          descricao: 'Excelente',
+          emoji: '🏆',
+          gradiente: ['#4CAF50', '#388E3C']
+        };
+        if (bf < 25) return {
+          classificacao: 'Fitness',
+          cor: '#8BC34A',
+          descricao: 'Bom',
+          emoji: '👍',
+          gradiente: ['#8BC34A', '#689F38']
+        };
+        if (bf < 32) return {
+          classificacao: 'Aceitável',
+          cor: '#FFC107',
+          descricao: 'Médio',
+          emoji: '👌',
+          gradiente: ['#FFC107', '#FFA000']
+        };
+        return {
+          classificacao: 'Elevado',
+          cor: '#FF5722',
+          descricao: 'Alto',
+          emoji: '⚠️',
+          gradiente: ['#FF5722', '#E64A19']
+        };
       }
     };
 
     const classificacaoBF = getClassificacaoBF(percentualGordura, sexo === 'masculino');
 
-    // 4. TMB - Harris-Benedict
     const calcularTMB = (): number => {
       if (sexo === 'feminino') {
         return 447.593 + (9.247 * pesoEmKg) + (3.098 * alturaCm) - (4.330 * idade);
@@ -462,7 +453,6 @@ export default function FinalizacaoScreen() {
 
     const tmb = calcularTMB();
 
-    // 5. Nível de atividade
     let atividadeNum = nivelAtividade || 1.2;
     if (!nivelAtividade) {
       switch (frequenciaTreino) {
@@ -474,10 +464,8 @@ export default function FinalizacaoScreen() {
       }
     }
 
-    // 6. TDEE
     const tdee = tmb * atividadeNum;
 
-    // 7. Calorias por objetivo
     const getCaloriasObjetivo = (): CaloriasObjetivo => {
       const manutencao = tdee;
       switch (objetivo) {
@@ -485,20 +473,22 @@ export default function FinalizacaoScreen() {
           return {
             manutencao,
             objetivo: manutencao * 0.85,
-            meta: 'Déficit calórico',
+            meta: 'Déficit Calórico',
             descricao: 'Para emagrecimento saudável',
             diferenca: '-15%',
-            cor: '#FF5722'
+            cor: '#FF5722',
+            gradiente: ['#FF5722', '#E64A19']
           };
         case 'ganhar_massa':
         case 'ganho':
           return {
             manutencao,
             objetivo: manutencao * 1.15,
-            meta: 'Superávit calórico',
+            meta: 'Superávit Calórico',
             descricao: 'Para ganho muscular',
             diferenca: '+15%',
-            cor: '#4CAF50'
+            cor: '#4CAF50',
+            gradiente: ['#4CAF50', '#388E3C']
           };
         default:
           return {
@@ -507,64 +497,69 @@ export default function FinalizacaoScreen() {
             meta: 'Manutenção',
             descricao: 'Para manter o peso',
             diferenca: '0%',
-            cor: '#666'
+            cor: '#666666',
+            gradiente: ['#666666', '#444444']
           };
       }
     };
 
     const calorias = getCaloriasObjetivo();
 
-    // 8. Proteína
     const getProteinaRecomendada = (): Macronutriente => {
       if (objetivo === 'ganhar_massa' || objetivo === 'ganho') {
         return {
           min: pesoEmKg * 1.8,
           max: pesoEmKg * 2.2,
-          descricao: 'Para hipertrofia muscular',
+          descricao: 'Hipertrofia',
           recomendacao: 'Alto consumo proteico',
-          gPorKg: '1.8-2.2g/kg'
+          gPorKg: '1.8-2.2g/kg',
+          icon: 'battery-3',
+          cor: '#4CAF50'
         };
       } else if (objetivo === 'emagrecer') {
         return {
           min: pesoEmKg * 1.6,
           max: pesoEmKg * 2.0,
-          descricao: 'Para preservar massa muscular',
-          recomendacao: 'Médio-alto consumo proteico',
-          gPorKg: '1.6-2.0g/kg'
+          descricao: 'Preservação muscular',
+          recomendacao: 'Médio-alto consumo',
+          gPorKg: '1.6-2.0g/kg',
+          icon: 'battery-2',
+          cor: '#FF9800'
         };
       } else {
         return {
           min: pesoEmKg * 1.2,
           max: pesoEmKg * 1.6,
-          descricao: 'Para manutenção muscular',
+          descricao: 'Manutenção',
           recomendacao: 'Consumo moderado',
-          gPorKg: '1.2-1.6g/kg'
+          gPorKg: '1.2-1.6g/kg',
+          icon: 'battery-1',
+          cor: '#2196F3'
         };
       }
     };
 
     const proteina = getProteinaRecomendada();
-
-    // 9. Carboidratos e Gorduras
     const carboidratos: Macronutriente = {
       min: pesoEmKg * 3,
       max: pesoEmKg * 5,
       descricao: 'Fonte primária de energia',
-      gPorKg: '3-5g/kg'
+      gPorKg: '3-5g/kg',
+      icon: 'flash',
+      cor: '#FF9800'
     };
-
     const gorduras: Macronutriente = {
       min: pesoEmKg * 0.8,
       max: pesoEmKg * 1.2,
       descricao: 'Essencial para hormônios',
-      gPorKg: '0.8-1.2g/kg'
+      gPorKg: '0.8-1.2g/kg',
+      icon: 'tint',
+      cor: '#2196F3'
     };
 
-    // 10. Água recomendada
     const aguaRecomendadaLitros = Math.max(2.0, Math.min(pesoEmKg * 0.035, 4.0));
     const coposAguaRecomendados = Math.round(aguaRecomendadaLitros * 4);
 
-    // 11. Tempo para meta
     const calcularTempoMeta = (): string => {
       const pesoAtual = pesoEmKg;
       let pesoMeta;
@@ -590,7 +585,6 @@ export default function FinalizacaoScreen() {
 
     const tempoMeta = calcularTempoMeta();
 
-    // 12. Nível de atividade descrição
     const getNivelAtividadeDescricao = (nivel: number): string => {
       if (nivel <= 1.2) return 'Sedentário';
       if (nivel <= 1.375) return 'Levemente ativo';
@@ -600,61 +594,40 @@ export default function FinalizacaoScreen() {
     };
 
     return {
-      // Dados básicos
       objetivo,
       sexo,
       idade,
       alturaCm,
       pesoEmKg,
-
-      // IMC
       imc,
       imcFormatado: imc.toFixed(1),
       classificacaoIMC,
       pesoIdealMin: pesoMinimo,
       pesoIdealMax: pesoMaximo,
-
-      // Composição corporal
       percentualGordura,
       percentualGorduraFormatado: percentualGordura.toFixed(1),
       classificacaoBF,
       massaGordaKg,
       massaMagraKg,
-
-      // Metabolismo
       tmb,
       tmbFormatado: tmb.toFixed(0),
       tdee,
       tdeeFormatado: tdee.toFixed(0),
       nivelAtividade: atividadeNum,
       nivelAtividadeDescricao: getNivelAtividadeDescricao(atividadeNum),
-
-      // Calorias
       calorias,
-
-      // Macronutrientes
       proteina,
       carboidratos,
       gorduras,
-
-      // Hidratação
       aguaRecomendadaLitros,
       aguaRecomendadaFormatada: aguaRecomendadaLitros.toFixed(1),
       coposAguaRecomendados,
       querLembretesAgua,
-
-      // Treino
       frequenciaTreino,
-      treinaAtualmente,
-
-      // Meta
+      treinaAtualmente: dados.treinaAtualmente,
       tempoMeta,
-
-      // Cardio
-      frequenciaCardio,
-      frequenciaCardioDescricao,
-
-      // Datas
+      frequenciaCardio: dados.frequenciaCardio,
+      frequenciaCardioDescricao: dados.frequenciaCardioDescricao,
       dataCalculo: new Date().toISOString()
     };
   };
@@ -664,495 +637,674 @@ export default function FinalizacaoScreen() {
   };
 
   const handleComecar = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      // Salvar que o usuário completou o onboarding
       await AsyncStorage.setItem('@onboardingCompleto', 'true');
       await AsyncStorage.setItem('@ultimaAnalise', JSON.stringify({
         data: new Date().toISOString(),
         metricas: metricas
       }));
-
-      console.log('🚀 Onboarding concluído!');
-      router.replace('/(drawer)');
+      // ALTERADO: Redirecionar para CadastroScreen em vez de (drawer)
+      router.replace('/CadastroScreen');
     } catch (error) {
       console.error('Erro ao finalizar onboarding:', error);
-      Alert.alert('Erro', 'Não foi possível finalizar. Tente novamente.');
+      Alert.alert('Erro', 'Não foi possível finalizar.');
     }
   };
 
   const handleEditar = () => {
-    router.back();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/ObjetivoScreen');
   };
 
   const handleCompartilhar = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      // Simular compartilhamento
-      Alert.alert(
-        'Compartilhar Análise',
-        'Link copiado para a área de transferência!',
-        [{ text: 'OK' }]
-      );
+      const resultado = await Share.share({
+        message: `🎯 Minha análise Fitness Analytics:\n\n` +
+          `📊 IMC: ${metricas?.imcFormatado} (${metricas?.classificacaoIMC.classificacao})\n` +
+          `🔥 BF: ${metricas?.percentualGorduraFormatado}% (${metricas?.classificacaoBF.classificacao})\n` +
+          `⚡ TDEE: ${metricas?.tdeeFormatado} kcal/dia\n` +
+          `💪 Meta: ${metricas?.calorias.meta}`,
+        title: 'Minha Análise Fitness'
+      });
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
     }
   };
 
+  // Função utilitária para garantir cores válidas no gradiente
+  const getGradientColors = (color1?: string, color2?: string): [string, string] => {
+    const c1 = color1 || '#CCCCCC';
+    const c2 = color2 || c1;
+    return [c1, c2];
+  };
+
+  // Função para cores com opacidade
+  const getGradientColorsWithOpacity = (color1?: string, color2?: string, opacity: string = '20'): [string, string] => {
+    const c1 = color1 || '#CCCCCC';
+    const c2 = color2 || c1;
+    return [`${c1}${opacity}`, `${c2}10`];
+  };
+
   if (isLoading) {
     return (
-      <View style={[styles.background, { justifyContent: 'center', alignItems: 'center' }]}>
+      <LinearGradient
+        colors={getGradientColors('#1E88E5', '#1565C0')}
+        style={styles.loadingGradient}
+      >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1E88E5" />
-          <Text style={styles.loadingText}>Carregando seus dados...</Text>
-          <Text style={styles.loadingSubtext}>Estamos analisando suas informações</Text>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="large" color="#1E88E5" />
+            <Text style={styles.loadingTitle}>Preparando sua análise</Text>
+            <Text style={styles.loadingSubtitle}>Estamos calculando todas as métricas...</Text>
+          </View>
         </View>
-      </View>
+      </LinearGradient>
     );
   }
 
   if (!metricas) {
     return (
-      <View style={[styles.background, { justifyContent: 'center', alignItems: 'center' }]}>
-        <View style={styles.errorContainer}>
+      <View style={styles.errorContainer}>
+        <View style={styles.errorCard}>
           <FontAwesome name="exclamation-triangle" size={60} color="#FF9800" />
           <Text style={styles.errorTitle}>Ops!</Text>
           <Text style={styles.errorText}>Não foi possível carregar seus dados.</Text>
           <Pressable style={styles.errorButton} onPress={carregarTodosDadosECalcular}>
-            <Text style={styles.errorButtonText}>Tentar Novamente</Text>
-          </Pressable>
-          <Pressable style={styles.errorSecondaryButton} onPress={() => router.back()}>
-            <Text style={styles.errorSecondaryButtonText}>Voltar</Text>
+            <LinearGradient
+              colors={getGradientColors('#1E88E5', '#1565C0')}
+              style={styles.errorButtonGradient}
+            >
+              <Text style={styles.errorButtonText}>Tentar Novamente</Text>
+            </LinearGradient>
           </Pressable>
         </View>
       </View>
     );
   }
 
-  // Componentes de UI
-  const MetricCard = ({ title, value, unit, subtitle, color = '#1E88E5', emoji }: any) => (
-    <View style={[styles.metricCard, { borderLeftColor: color }]}>
-      <View style={styles.metricHeader}>
-        {emoji && <Text style={styles.metricEmoji}>{emoji}</Text>}
-        <Text style={styles.metricTitle}>{title}</Text>
+  const SectionHeader = ({
+    title,
+    icon,
+    color,
+    section,
+    badge
+  }: {
+    title: string;
+    icon: string;
+    color: string;
+    section: keyof typeof expandedSections;
+    badge?: string;
+  }) => (
+    <Pressable
+      style={styles.sectionHeader}
+      onPress={() => toggleSection(section)}
+    >
+      <View style={styles.sectionHeaderLeft}>
+        <View style={[styles.sectionIcon, { backgroundColor: color + '20' }]}>
+          <FontAwesome name={icon as any} size={18} color={color} />
+        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {badge && (
+          <View style={[styles.sectionBadge, { backgroundColor: color + '20' }]}>
+            <Text style={[styles.sectionBadgeText, { color }]}>{badge}</Text>
+          </View>
+        )}
       </View>
-      <View style={styles.metricValueContainer}>
-        <Text style={[styles.metricValue, { color }]}>{value}</Text>
-        {unit && <Text style={styles.metricUnit}>{unit}</Text>}
-      </View>
-      {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
-    </View>
+      <FontAwesome
+        name={expandedSections[section] ? 'chevron-up' : 'chevron-down'}
+        size={16}
+        color="#999"
+      />
+    </Pressable>
   );
 
-  const ProgressBar = ({ value, min, max, color, showValue = true, label }: any) => {
+  const MetricCard = ({ title, value, unit, subtitle, color, emoji, gradient }: any) => {
+    const safeColor = color || '#CCCCCC';
+    const gradientColors = gradient && gradient.length === 2
+      ? getGradientColorsWithOpacity(gradient[0], gradient[1], '20')
+      : getGradientColorsWithOpacity(safeColor, safeColor, '20');
+
+    return (
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.metricCard, { borderColor: safeColor + '30' }]}
+      >
+        <View style={styles.metricHeader}>
+          {emoji && <Text style={styles.metricEmoji}>{emoji}</Text>}
+          <Text style={[styles.metricTitle, { color: safeColor }]}>{title}</Text>
+        </View>
+        <View style={styles.metricValueContainer}>
+          <Text style={[styles.metricValue, { color: safeColor }]}>{value}</Text>
+          {unit && <Text style={styles.metricUnit}>{unit}</Text>}
+        </View>
+        {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
+      </LinearGradient>
+    );
+  };
+
+  const ProgressBar = ({ value, min, max, color, label, showValue = true }: any) => {
     const percentage = ((value - min) / (max - min)) * 100;
     const clampedPercentage = Math.max(0, Math.min(100, percentage));
 
     return (
-      <View style={styles.progressBarContainer}>
+      <View style={styles.progressContainer}>
         {label && <Text style={styles.progressLabel}>{label}</Text>}
         <View style={styles.progressBarBackground}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${clampedPercentage}%`, backgroundColor: color }
-            ]}
-          />
+          <View style={[styles.progressBarFill, { width: `${clampedPercentage}%`, backgroundColor: color || '#CCCCCC' }]} />
         </View>
-        {showValue && <Text style={styles.progressBarText}>{value.toFixed(1)}</Text>}
+        {showValue && <Text style={[styles.progressValue, { color: color || '#CCCCCC' }]}>{value.toFixed(1)}</Text>}
       </View>
     );
   };
 
-  const TipCard = ({ icon, title, text, color = '#1E88E5' }: any) => (
-    <View style={[styles.tipCard, { borderColor: color + '20', backgroundColor: color + '10' }]}>
-      <View style={styles.tipHeader}>
-        <FontAwesome name={icon} size={20} color={color} />
-        <Text style={[styles.tipTitle, { color }]}>{title}</Text>
-      </View>
-      <Text style={styles.tipText}>{text}</Text>
-    </View>
-  );
+  const TipCard = ({ icon, title, text, color }: any) => {
+    const safeColor = color || '#CCCCCC';
+    return (
+      <LinearGradient
+        colors={getGradientColorsWithOpacity(safeColor, safeColor, '10')}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.tipCard, { borderColor: safeColor + '20' }]}
+      >
+        <View style={[styles.tipIconContainer, { backgroundColor: safeColor + '20' }]}>
+          <FontAwesome name={icon} size={20} color={safeColor} />
+        </View>
+        <View style={styles.tipContent}>
+          <Text style={[styles.tipTitle, { color: safeColor }]}>{title}</Text>
+          <Text style={styles.tipText}>{text}</Text>
+        </View>
+      </LinearGradient>
+    );
+  };
 
   return (
     <View style={styles.background}>
+      <LinearGradient
+        colors={getGradientColors('#1E88E5', '#1565C0')}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          <Pressable style={styles.headerBackButton} onPress={handleEditar}>
+            <FontAwesome name="arrow-left" size={18} color="#FFF" />
+            <Text style={styles.headerBackText}>Editar</Text>
+          </Pressable>
+          <Text style={styles.headerTitle}>Análise Completa</Text>
+          <Pressable style={styles.headerShareButton} onPress={handleCompartilhar}>
+            <FontAwesome name="share-alt" size={18} color="#FFF" />
+          </Pressable>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.mainContainer}>
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <Pressable style={styles.backButton} onPress={handleEditar}>
-              <FontAwesome name="arrow-left" size={18} color="#666" />
-              <Text style={styles.backButtonText}>Editar</Text>
-            </Pressable>
-            <Text style={styles.headerTitle}>Análise Completa</Text>
-            <Pressable style={styles.shareButton} onPress={handleCompartilhar}>
-              <FontAwesome name="share-alt" size={18} color="#1E88E5" />
-            </Pressable>
-          </View>
+        <View style={styles.mainCard}>
+          {/* Avatar e Título */}
+          <View style={styles.heroSection}>
+            <LinearGradient
+              colors={getGradientColors('#1E88E5', '#1565C0')}
+              style={styles.heroIconContainer}
+            >
+              <FontAwesome name="trophy" size={40} color="#FFF" />
+            </LinearGradient>
 
-          <View style={styles.content}>
-            {/* Ícone e Título */}
-            <View style={styles.iconContainer}>
-              <FontAwesome name="trophy" size={60} color="#1E88E5" />
-            </View>
-
-            <Text style={styles.welcomeTitle}>
-              🎯 Sua Análise {metricas.objetivo === 'emagrecer' ? 'de Emagrecimento' :
-                metricas.objetivo === 'ganhar_massa' ? 'de Ganho Muscular' : 'de Manutenção'}
+            <Text style={styles.heroTitle}>
+              {metricas.objetivo === 'emagrecer' ? '🎯 Plano de Emagrecimento' :
+                metricas.objetivo === 'ganhar_massa' ? '💪 Plano de Ganho Muscular' :
+                  '⚖️ Plano de Manutenção'}
             </Text>
 
-            <Text style={styles.subtitle}>
-              Baseado nas suas informações, preparamos um plano personalizado para você
-            </Text>
-
-            {/* BADGE DE TEMPO ESTIMADO */}
-            <View style={styles.timeBadge}>
-              <FontAwesome name="clock-o" size={16} color="#FF9800" />
-              <Text style={styles.timeBadgeText}>
-                Tempo estimado para atingir sua meta: {metricas.tempoMeta}
+            <View style={styles.heroBadge}>
+              <FontAwesome name="clock-o" size={14} color="#FF9800" />
+              <Text style={styles.heroBadgeText}>
+                Meta em: {metricas.tempoMeta}
               </Text>
             </View>
+          </View>
 
-            {/* SEÇÃO 1: RESUMO DO PERFIL */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="user-circle" size={20} color="#1E88E5" />
-                <Text style={styles.sectionTitle}>Seu Perfil</Text>
-              </View>
+          {/* Perfil */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Perfil"
+              icon="user-circle"
+              color="#1E88E5"
+              section="perfil"
+            />
 
-              <View style={styles.profileCard}>
-                <View style={styles.profileGrid}>
-                  <View style={styles.profileItem}>
-                    <FontAwesome name={metricas.sexo === 'feminino' ? "venus" : "mars"} size={22} color="#1E88E5" />
-                    <Text style={styles.profileItemLabel}>Sexo</Text>
-                    <Text style={styles.profileItemValue}>{metricas.sexo === 'feminino' ? 'Feminino' : 'Masculino'}</Text>
+            {expandedSections.perfil && (
+              <View style={styles.profileGrid}>
+                <View style={styles.profileItem}>
+                  <View style={[styles.profileIcon, { backgroundColor: '#1E88E520' }]}>
+                    <FontAwesome name={metricas.sexo === 'feminino' ? "venus" : "mars"} size={20} color="#1E88E5" />
                   </View>
-                  <View style={styles.profileItem}>
-                    <FontAwesome name="birthday-cake" size={22} color="#1E88E5" />
-                    <Text style={styles.profileItemLabel}>Idade</Text>
-                    <Text style={styles.profileItemValue}>{metricas.idade} anos</Text>
-                  </View>
-                  <View style={styles.profileItem}>
-                    <FontAwesome name="arrows-v" size={22} color="#1E88E5" />
-                    <Text style={styles.profileItemLabel}>Altura</Text>
-                    <Text style={styles.profileItemValue}>{metricas.alturaCm} cm</Text>
-                  </View>
-                  <View style={styles.profileItem}>
-                    <FontAwesome name="balance-scale" size={22} color="#1E88E5" />
-                    <Text style={styles.profileItemLabel}>Peso</Text>
-                    <Text style={styles.profileItemValue}>{metricas.pesoEmKg.toFixed(1)} kg</Text>
-                  </View>
-                </View>
-
-                <View style={styles.profileObjective}>
-                  <FontAwesome name="bullseye" size={18} color="#1E88E5" />
-                  <Text style={styles.profileObjectiveText}>
-                    {metricas.objetivo === 'emagrecer' ? '🎯 Emagrecimento' :
-                      metricas.objetivo === 'ganhar_massa' ? '💪 Ganho Muscular' : '⚖️ Manutenção'}
+                  <Text style={styles.profileLabel}>Sexo</Text>
+                  <Text style={styles.profileValue}>
+                    {metricas.sexo === 'feminino' ? 'Feminino' : 'Masculino'}
                   </Text>
                 </View>
-              </View>
-            </View>
 
-            {/* SEÇÃO 2: IMC */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="heartbeat" size={20} color={metricas.classificacaoIMC.cor} />
-                <Text style={styles.sectionTitle}>Índice de Massa Corporal (IMC)</Text>
-              </View>
+                <View style={styles.profileItem}>
+                  <View style={[styles.profileIcon, { backgroundColor: '#1E88E520' }]}>
+                    <FontAwesome name="birthday-cake" size={20} color="#1E88E5" />
+                  </View>
+                  <Text style={styles.profileLabel}>Idade</Text>
+                  <Text style={styles.profileValue}>{metricas.idade} anos</Text>
+                </View>
 
-              <MetricCard
-                title="Seu IMC"
-                value={metricas.imcFormatado}
-                subtitle={`${metricas.classificacaoIMC.classificacao} ${metricas.classificacaoIMC.emoji || ''}`}
-                color={metricas.classificacaoIMC.cor}
-                emoji={metricas.classificacaoIMC.emoji}
+                <View style={styles.profileItem}>
+                  <View style={[styles.profileIcon, { backgroundColor: '#1E88E520' }]}>
+                    <FontAwesome name="arrows-v" size={20} color="#1E88E5" />
+                  </View>
+                  <Text style={styles.profileLabel}>Altura</Text>
+                  <Text style={styles.profileValue}>{metricas.alturaCm} cm</Text>
+                </View>
+
+                <View style={styles.profileItem}>
+                  <View style={[styles.profileIcon, { backgroundColor: '#1E88E520' }]}>
+                    <FontAwesome name="balance-scale" size={20} color="#1E88E5" />
+                  </View>
+                  <Text style={styles.profileLabel}>Peso</Text>
+                  <Text style={styles.profileValue}>{metricas.pesoEmKg.toFixed(1)} kg</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* IMC */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Índice de Massa Corporal"
+              icon="heartbeat"
+              color={metricas.classificacaoIMC.cor}
+              section="imc"
+              badge={metricas.classificacaoIMC.classificacao}
+            />
+
+            {expandedSections.imc && (
+              <>
+                <MetricCard
+                  title="Seu IMC"
+                  value={metricas.imcFormatado}
+                  subtitle={metricas.classificacaoIMC.descricao}
+                  color={metricas.classificacaoIMC.cor}
+                  emoji={metricas.classificacaoIMC.emoji}
+                  gradient={metricas.classificacaoIMC.gradiente}
+                />
+
+                <View style={styles.imcScale}>
+                  <ProgressBar
+                    value={metricas.imc}
+                    min={15}
+                    max={40}
+                    color={metricas.classificacaoIMC.cor}
+                    showValue={false}
+                  />
+
+                  <View style={styles.imcLabels}>
+                    <Text style={styles.imcLabel}>15</Text>
+                    <Text style={styles.imcLabel}>18.5</Text>
+                    <Text style={styles.imcLabel}>25</Text>
+                    <Text style={styles.imcLabel}>30</Text>
+                    <Text style={styles.imcLabel}>35</Text>
+                    <Text style={styles.imcLabel}>40</Text>
+                  </View>
+
+                  <View style={styles.imcCategories}>
+                    <Text style={[styles.imcCategory, { color: '#2196F3' }]}>Baixo</Text>
+                    <Text style={[styles.imcCategory, { color: '#4CAF50' }]}>Normal</Text>
+                    <Text style={[styles.imcCategory, { color: '#FF9800' }]}>Sobrepeso</Text>
+                    <Text style={[styles.imcCategory, { color: '#F44336' }]}>Obesidade</Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Peso Ideal */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Peso Ideal"
+              icon="flag"
+              color="#4CAF50"
+              section="pesoIdeal"
+            />
+
+            {expandedSections.pesoIdeal && (
+              <>
+                <View style={styles.pesoIdealGrid}>
+                  <View style={styles.pesoIdealCard}>
+                    <Text style={styles.pesoIdealLabel}>Mínimo</Text>
+                    <Text style={styles.pesoIdealValue}>{metricas.pesoIdealMin.toFixed(1)}</Text>
+                    <Text style={styles.pesoIdealUnit}>kg</Text>
+                    <Text style={styles.pesoIdealSub}>IMC 18.5</Text>
+                  </View>
+
+                  <View style={styles.pesoIdealCard}>
+                    <Text style={styles.pesoIdealLabel}>Ideal</Text>
+                    <Text style={styles.pesoIdealValue}>
+                      {((metricas.pesoIdealMin + metricas.pesoIdealMax) / 2).toFixed(1)}
+                    </Text>
+                    <Text style={styles.pesoIdealUnit}>kg</Text>
+                    <Text style={styles.pesoIdealSub}>Médio</Text>
+                  </View>
+
+                  <View style={styles.pesoIdealCard}>
+                    <Text style={styles.pesoIdealLabel}>Máximo</Text>
+                    <Text style={styles.pesoIdealValue}>{metricas.pesoIdealMax.toFixed(1)}</Text>
+                    <Text style={styles.pesoIdealUnit}>kg</Text>
+                    <Text style={styles.pesoIdealSub}>IMC 24.9</Text>
+                  </View>
+                </View>
+
+                <LinearGradient
+                  colors={
+                    metricas.pesoEmKg > metricas.pesoIdealMax ?
+                      getGradientColorsWithOpacity('#FF5722', '#FF5722', '20') :
+                      metricas.pesoEmKg < metricas.pesoIdealMin ?
+                        getGradientColorsWithOpacity('#2196F3', '#2196F3', '20') :
+                        getGradientColorsWithOpacity('#4CAF50', '#4CAF50', '20')
+                  }
+                  style={styles.pesoAtualCard}
+                >
+                  <Text style={styles.pesoAtualLabel}>Seu peso atual</Text>
+                  <Text style={styles.pesoAtualValue}>{metricas.pesoEmKg.toFixed(1)} kg</Text>
+
+                  <View style={styles.pesoDiferenca}>
+                    <FontAwesome
+                      name={metricas.pesoEmKg > metricas.pesoIdealMax ? "arrow-up" :
+                        metricas.pesoEmKg < metricas.pesoIdealMin ? "arrow-down" : "check"}
+                      size={16}
+                      color={metricas.pesoEmKg > metricas.pesoIdealMax ? "#FF5722" :
+                        metricas.pesoEmKg < metricas.pesoIdealMin ? "#2196F3" : "#4CAF50"}
+                    />
+                    <Text style={[styles.pesoDiferencaText, {
+                      color: metricas.pesoEmKg > metricas.pesoIdealMax ? "#FF5722" :
+                        metricas.pesoEmKg < metricas.pesoIdealMin ? "#2196F3" : "#4CAF50"
+                    }]}>
+                      {metricas.pesoEmKg > metricas.pesoIdealMax ?
+                        `${(metricas.pesoEmKg - metricas.pesoIdealMax).toFixed(1)}kg acima` :
+                        metricas.pesoEmKg < metricas.pesoIdealMin ?
+                          `${(metricas.pesoIdealMin - metricas.pesoEmKg).toFixed(1)}kg abaixo` :
+                          'Peso ideal!'}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </>
+            )}
+          </View>
+
+          {/* Composição Corporal */}
+          {metricas.percentualGordura > 0 && (
+            <View style={styles.section}>
+              <SectionHeader
+                title="Composição Corporal"
+                icon="pie-chart"
+                color={metricas.classificacaoBF.cor}
+                section="composicao"
+                badge={`${metricas.percentualGorduraFormatado}%`}
               />
 
-              <View style={styles.infoCard}>
-                <Text style={styles.infoCardText}>
-                  {metricas.classificacaoIMC.descricao}. IMC ideal: 18.5 - 24.9
-                </Text>
-              </View>
-
-              <View style={styles.imcScaleContainer}>
-                <Text style={styles.scaleTitle}>Sua posição na escala de IMC:</Text>
-                <ProgressBar
-                  value={metricas.imc}
-                  min={15}
-                  max={40}
-                  color={metricas.classificacaoIMC.cor}
-                  showValue={false}
-                />
-                <View style={styles.imcScaleLabels}>
-                  <Text style={styles.scaleLabel}>15</Text>
-                  <Text style={styles.scaleLabel}>18.5</Text>
-                  <Text style={styles.scaleLabel}>25</Text>
-                  <Text style={styles.scaleLabel}>30</Text>
-                  <Text style={styles.scaleLabel}>35</Text>
-                  <Text style={styles.scaleLabel}>40</Text>
-                </View>
-                <View style={styles.imcScaleTexts}>
-                  <Text style={[styles.scaleText, { color: '#2196F3' }]}>Baixo</Text>
-                  <Text style={[styles.scaleText, { color: '#4CAF50' }]}>Normal</Text>
-                  <Text style={[styles.scaleText, { color: '#FF9800' }]}>Sobrepeso</Text>
-                  <Text style={[styles.scaleText, { color: '#F44336' }]}>Obesidade</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* SEÇÃO 3: PESO IDEAL */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="flag" size={20} color="#4CAF50" />
-                <Text style={styles.sectionTitle}>Peso Ideal</Text>
-              </View>
-
-              <View style={styles.doubleMetricContainer}>
-                <View style={[styles.miniMetricCard, { borderColor: '#4CAF50' }]}>
-                  <Text style={styles.miniMetricLabel}>Mínimo</Text>
-                  <Text style={styles.miniMetricValue}>{metricas.pesoIdealMin.toFixed(1)}</Text>
-                  <Text style={styles.miniMetricUnit}>kg</Text>
-                  <Text style={styles.miniMetricSubtitle}>IMC 18.5</Text>
-                </View>
-                <View style={[styles.miniMetricCard, { borderColor: '#4CAF50' }]}>
-                  <Text style={styles.miniMetricLabel}>Ideal</Text>
-                  <Text style={styles.miniMetricValue}>{((metricas.pesoIdealMin + metricas.pesoIdealMax) / 2).toFixed(1)}</Text>
-                  <Text style={styles.miniMetricUnit}>kg</Text>
-                  <Text style={styles.miniMetricSubtitle}>Médio</Text>
-                </View>
-                <View style={[styles.miniMetricCard, { borderColor: '#4CAF50' }]}>
-                  <Text style={styles.miniMetricLabel}>Máximo</Text>
-                  <Text style={styles.miniMetricValue}>{metricas.pesoIdealMax.toFixed(1)}</Text>
-                  <Text style={styles.miniMetricUnit}>kg</Text>
-                  <Text style={styles.miniMetricSubtitle}>IMC 24.9</Text>
-                </View>
-              </View>
-
-              <View style={styles.pesoAtualIndicator}>
-                <Text style={styles.pesoAtualLabel}>Seu peso atual:</Text>
-                <Text style={styles.pesoAtualValue}>{metricas.pesoEmKg.toFixed(1)} kg</Text>
-                <View style={styles.pesoDiferenca}>
-                  <FontAwesome
-                    name={metricas.pesoEmKg > metricas.pesoIdealMax ? "arrow-up" :
-                      metricas.pesoEmKg < metricas.pesoIdealMin ? "arrow-down" : "check"}
-                    size={14}
-                    color={metricas.pesoEmKg > metricas.pesoIdealMax ? "#FF5722" :
-                      metricas.pesoEmKg < metricas.pesoIdealMin ? "#2196F3" : "#4CAF50"}
+              {expandedSections.composicao && (
+                <>
+                  <MetricCard
+                    title="Gordura Corporal"
+                    value={metricas.percentualGorduraFormatado}
+                    unit="%"
+                    subtitle={metricas.classificacaoBF.classificacao}
+                    color={metricas.classificacaoBF.cor}
+                    emoji={metricas.classificacaoBF.emoji}
+                    gradient={metricas.classificacaoBF.gradiente}
                   />
-                  <Text style={[styles.pesoDiferencaText, {
-                    color: metricas.pesoEmKg > metricas.pesoIdealMax ? "#FF5722" :
-                      metricas.pesoEmKg < metricas.pesoIdealMin ? "#2196F3" : "#4CAF50"
-                  }]}>
-                    {metricas.pesoEmKg > metricas.pesoIdealMax ?
-                      `${(metricas.pesoEmKg - metricas.pesoIdealMax).toFixed(1)}kg acima do ideal` :
-                      metricas.pesoEmKg < metricas.pesoIdealMin ?
-                        `${(metricas.pesoIdealMin - metricas.pesoEmKg).toFixed(1)}kg abaixo do ideal` :
-                        'Peso dentro do ideal!'}
-                  </Text>
-                </View>
-              </View>
-            </View>
 
-            {/* SEÇÃO 4: COMPOSIÇÃO CORPORAL */}
-            {metricas.percentualGordura > 0 && (
-              <View style={styles.sectionContainer}>
-                <View style={styles.sectionHeader}>
-                  <FontAwesome name="pie-chart" size={20} color={metricas.classificacaoBF.cor} />
-                  <Text style={styles.sectionTitle}>Composição Corporal</Text>
-                </View>
-
-                <MetricCard
-                  title="Percentual de Gordura"
-                  value={metricas.percentualGorduraFormatado}
-                  unit="%"
-                  subtitle={`${metricas.classificacaoBF.classificacao} ${metricas.classificacaoBF.emoji || ''}`}
-                  color={metricas.classificacaoBF.cor}
-                  emoji={metricas.classificacaoBF.emoji}
-                />
-
-                <View style={styles.bodyCompositionContainer}>
-                  <View style={styles.bodyCompositionItem}>
-                    <View style={[styles.bodyCompositionBar, { width: `${(metricas.massaMagraKg / metricas.pesoEmKg) * 100}%`, backgroundColor: '#2196F3' }]} />
-                    <View style={styles.bodyCompositionInfo}>
-                      <Text style={styles.bodyCompositionLabel}>Massa Magra</Text>
-                      <Text style={styles.bodyCompositionValue}>{metricas.massaMagraKg.toFixed(1)} kg</Text>
-                      <Text style={styles.bodyCompositionPercentage}>
+                  <View style={styles.composicaoBars}>
+                    <View style={styles.composicaoItem}>
+                      <View style={styles.composicaoLabelContainer}>
+                        <Text style={styles.composicaoLabel}>Massa Magra</Text>
+                        <Text style={styles.composicaoValue}>{metricas.massaMagraKg.toFixed(1)} kg</Text>
+                      </View>
+                      <View style={styles.composicaoBarBg}>
+                        <View
+                          style={[
+                            styles.composicaoBarFill,
+                            {
+                              width: `${(metricas.massaMagraKg / metricas.pesoEmKg) * 100}%`,
+                              backgroundColor: '#2196F3'
+                            }
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.composicaoPercentage}>
                         {((metricas.massaMagraKg / metricas.pesoEmKg) * 100).toFixed(1)}%
                       </Text>
                     </View>
-                  </View>
-                  <View style={styles.bodyCompositionItem}>
-                    <View style={[styles.bodyCompositionBar, { width: `${(metricas.massaGordaKg / metricas.pesoEmKg) * 100}%`, backgroundColor: '#FF9800' }]} />
-                    <View style={styles.bodyCompositionInfo}>
-                      <Text style={styles.bodyCompositionLabel}>Massa Gorda</Text>
-                      <Text style={styles.bodyCompositionValue}>{metricas.massaGordaKg.toFixed(1)} kg</Text>
-                      <Text style={styles.bodyCompositionPercentage}>
+
+                    <View style={styles.composicaoItem}>
+                      <View style={styles.composicaoLabelContainer}>
+                        <Text style={styles.composicaoLabel}>Massa Gorda</Text>
+                        <Text style={styles.composicaoValue}>{metricas.massaGordaKg.toFixed(1)} kg</Text>
+                      </View>
+                      <View style={styles.composicaoBarBg}>
+                        <View
+                          style={[
+                            styles.composicaoBarFill,
+                            {
+                              width: `${(metricas.massaGordaKg / metricas.pesoEmKg) * 100}%`,
+                              backgroundColor: '#FF9800'
+                            }
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.composicaoPercentage}>
                         {metricas.percentualGordura.toFixed(1)}%
                       </Text>
                     </View>
                   </View>
-                </View>
 
-                <View style={styles.bfScaleContainer}>
-                  <Text style={styles.bfScaleTitle}>Classificação:</Text>
                   <View style={styles.bfScale}>
-                    <View style={[styles.bfScaleSegment, { backgroundColor: '#2196F3' }]} />
-                    <View style={[styles.bfScaleSegment, { backgroundColor: '#4CAF50' }]} />
-                    <View style={[styles.bfScaleSegment, { backgroundColor: '#8BC34A' }]} />
-                    <View style={[styles.bfScaleSegment, { backgroundColor: '#FFC107' }]} />
-                    <View style={[styles.bfScaleSegment, { backgroundColor: '#FF9800' }]} />
+                    <Text style={styles.bfScaleTitle}>Classificação:</Text>
+                    <View style={styles.bfScaleBars}>
+                      <View style={[styles.bfScaleBar, { backgroundColor: '#2196F3' }]} />
+                      <View style={[styles.bfScaleBar, { backgroundColor: '#4CAF50' }]} />
+                      <View style={[styles.bfScaleBar, { backgroundColor: '#8BC34A' }]} />
+                      <View style={[styles.bfScaleBar, { backgroundColor: '#FFC107' }]} />
+                      <View style={[styles.bfScaleBar, { backgroundColor: '#FF9800' }]} />
+                    </View>
+                    <View style={styles.bfScaleLabels}>
+                      <Text style={styles.bfScaleLabel}>Essencial</Text>
+                      <Text style={styles.bfScaleLabel}>Atleta</Text>
+                      <Text style={styles.bfScaleLabel}>Fitness</Text>
+                      <Text style={styles.bfScaleLabel}>Aceitável</Text>
+                      <Text style={styles.bfScaleLabel}>Elevado</Text>
+                    </View>
                   </View>
-                  <View style={styles.bfScaleLabels}>
-                    <Text style={styles.bfScaleLabel}>Essencial</Text>
-                    <Text style={styles.bfScaleLabel}>Atleta</Text>
-                    <Text style={styles.bfScaleLabel}>Fitness</Text>
-                    <Text style={styles.bfScaleLabel}>Aceitável</Text>
-                    <Text style={styles.bfScaleLabel}>Obeso</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* SEÇÃO 5: METABOLISMO */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="fire" size={20} color="#FF9800" />
-                <Text style={styles.sectionTitle}>Metabolismo</Text>
-              </View>
-
-              <View style={styles.doubleMetricContainer}>
-                <View style={styles.metabolismCard}>
-                  <FontAwesome name="bed" size={24} color="#9C27B0" />
-                  <Text style={styles.metabolismLabel}>TMB</Text>
-                  <Text style={styles.metabolismValue}>{metricas.tmbFormatado}</Text>
-                  <Text style={styles.metabolismUnit}>kcal/dia</Text>
-                  <Text style={styles.metabolismSubtitle}>Em repouso</Text>
-                </View>
-                <View style={styles.metabolismCard}>
-                  <FontAwesome name="bicycle" size={24} color="#E91E63" />
-                  <Text style={styles.metabolismLabel}>TDEE</Text>
-                  <Text style={styles.metabolismValue}>{metricas.tdeeFormatado}</Text>
-                  <Text style={styles.metabolismUnit}>kcal/dia</Text>
-                  <Text style={styles.metabolismSubtitle}>{metricas.nivelAtividadeDescricao}</Text>
-                </View>
-              </View>
-
-              <View style={styles.caloriesCard}>
-                <View style={styles.caloriesHeader}>
-                  <FontAwesome name="cutlery" size={20} color={metricas.calorias.cor} />
-                  <Text style={styles.caloriesTitle}>{metricas.calorias.meta}</Text>
-                </View>
-                <Text style={styles.caloriesValue}>{metricas.calorias.objetivo.toFixed(0)}</Text>
-                <Text style={styles.caloriesUnit}>kcal/dia</Text>
-                <Text style={styles.caloriesDesc}>{metricas.calorias.descricao}</Text>
-
-                <View style={styles.caloriesComparison}>
-                  <View style={styles.calorieCompareItem}>
-                    <Text style={styles.calorieCompareLabel}>Manutenção</Text>
-                    <Text style={styles.calorieCompareValue}>{metricas.calorias.manutencao.toFixed(0)}</Text>
-                  </View>
-                  <FontAwesome name="arrow-right" size={14} color="#999" />
-                  <View style={styles.calorieCompareItem}>
-                    <Text style={styles.calorieCompareLabel}>Sua meta</Text>
-                    <Text style={[styles.calorieCompareValue, { color: metricas.calorias.cor }]}>
-                      {metricas.calorias.objetivo.toFixed(0)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* SEÇÃO 6: MACROS */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="pie-chart" size={20} color="#4CAF50" />
-                <Text style={styles.sectionTitle}>Nutrição Diária Recomendada</Text>
-              </View>
-
-              <View style={styles.macrosGrid}>
-                <View style={[styles.macroCard, { borderColor: '#4CAF50' }]}>
-                  <FontAwesome name="battery-3" size={28} color="#4CAF50" />
-                  <Text style={styles.macroLabel}>Proteína</Text>
-                  <Text style={styles.macroValue}>
-                    {metricas.proteina.min.toFixed(0)}-{metricas.proteina.max.toFixed(0)}g
-                  </Text>
-                  <Text style={styles.macroSubtitle}>{metricas.proteina.gPorKg}</Text>
-                </View>
-                <View style={[styles.macroCard, { borderColor: '#FF9800' }]}>
-                  <FontAwesome name="flash" size={28} color="#FF9800" />
-                  <Text style={styles.macroLabel}>Carbo</Text>
-                  <Text style={styles.macroValue}>
-                    {metricas.carboidratos.min.toFixed(0)}-{metricas.carboidratos.max.toFixed(0)}g
-                  </Text>
-                  <Text style={styles.macroSubtitle}>{metricas.carboidratos.gPorKg}</Text>
-                </View>
-                <View style={[styles.macroCard, { borderColor: '#2196F3' }]}>
-                  <FontAwesome name="tint" size={28} color="#2196F3" />
-                  <Text style={styles.macroLabel}>Gorduras</Text>
-                  <Text style={styles.macroValue}>
-                    {metricas.gorduras.min.toFixed(0)}-{metricas.gorduras.max.toFixed(0)}g
-                  </Text>
-                  <Text style={styles.macroSubtitle}>{metricas.gorduras.gPorKg}</Text>
-                </View>
-              </View>
-
-              {metricas.proteina.recomendacao && (
-                <View style={styles.macroTip}>
-                  <FontAwesome name="info-circle" size={16} color="#666" />
-                  <Text style={styles.macroTipText}>
-                    {metricas.proteina.recomendacao}. {metricas.proteina.descricao}.
-                  </Text>
-                </View>
+                </>
               )}
             </View>
+          )}
 
-            {/* SEÇÃO 7: HIDRATAÇÃO */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="tint" size={20} color="#2196F3" />
-                <Text style={styles.sectionTitle}>Hidratação</Text>
-              </View>
+          {/* Metabolismo */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Metabolismo"
+              icon="fire"
+              color="#FF9800"
+              section="metabolismo"
+            />
 
-              <View style={styles.waterCard}>
-                <View style={styles.waterIconContainer}>
-                  <FontAwesome name="tint" size={40} color="#2196F3" />
+            {expandedSections.metabolismo && (
+              <>
+                <View style={styles.metabolismoGrid}>
+                  <LinearGradient colors={getGradientColorsWithOpacity('#9C27B0', '#9C27B0', '20')} style={styles.metabolismoCard}>
+                    <FontAwesome name="bed" size={24} color="#9C27B0" />
+                    <Text style={styles.metabolismoLabel}>TMB</Text>
+                    <Text style={styles.metabolismoValue}>{metricas.tmbFormatado}</Text>
+                    <Text style={styles.metabolismoUnit}>kcal/dia</Text>
+                    <Text style={styles.metabolismoSub}>Em repouso</Text>
+                  </LinearGradient>
+
+                  <LinearGradient colors={getGradientColorsWithOpacity('#E91E63', '#E91E63', '20')} style={styles.metabolismoCard}>
+                    <FontAwesome name="bicycle" size={24} color="#E91E63" />
+                    <Text style={styles.metabolismoLabel}>TDEE</Text>
+                    <Text style={styles.metabolismoValue}>{metricas.tdeeFormatado}</Text>
+                    <Text style={styles.metabolismoUnit}>kcal/dia</Text>
+                    <Text style={styles.metabolismoSub}>{metricas.nivelAtividadeDescricao}</Text>
+                  </LinearGradient>
                 </View>
-                <View style={styles.waterInfo}>
-                  <Text style={styles.waterValue}>{metricas.aguaRecomendadaFormatada}L</Text>
-                  <Text style={styles.waterLabel}>de água por dia</Text>
-                  <Text style={styles.waterSubtitle}>
-                    ≈ {metricas.coposAguaRecomendados} copos de 250ml
+
+                <LinearGradient
+                  colors={getGradientColorsWithOpacity(
+                    metricas.calorias.gradiente?.[0] || metricas.calorias.cor,
+                    metricas.calorias.gradiente?.[1] || metricas.calorias.cor,
+                    '20'
+                  )}
+                  style={styles.caloriasCard}
+                >
+                  <View style={styles.caloriasHeader}>
+                    <FontAwesome name="cutlery" size={20} color={metricas.calorias.cor} />
+                    <Text style={[styles.caloriasMeta, { color: metricas.calorias.cor }]}>
+                      {metricas.calorias.meta}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.caloriasValue}>{metricas.calorias.objetivo.toFixed(0)}</Text>
+                  <Text style={styles.caloriasUnit}>kcal/dia</Text>
+
+                  <View style={styles.caloriasComparison}>
+                    <View style={styles.caloriasCompareItem}>
+                      <Text style={styles.caloriasCompareLabel}>Manutenção</Text>
+                      <Text style={styles.caloriasCompareValue}>
+                        {metricas.calorias.manutencao.toFixed(0)}
+                      </Text>
+                    </View>
+                    <FontAwesome name="arrow-right" size={14} color="#999" />
+                    <View style={styles.caloriasCompareItem}>
+                      <Text style={styles.caloriasCompareLabel}>Sua meta</Text>
+                      <Text style={[styles.caloriasCompareValue, { color: metricas.calorias.cor }]}>
+                        {metricas.calorias.objetivo.toFixed(0)}
+                      </Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </>
+            )}
+          </View>
+
+          {/* Macronutrientes */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Macronutrientes"
+              icon="pie-chart"
+              color="#4CAF50"
+              section="macros"
+            />
+
+            {expandedSections.macros && (
+              <>
+                <View style={styles.macrosGrid}>
+                  <LinearGradient
+                    colors={getGradientColorsWithOpacity(metricas.proteina.cor, metricas.proteina.cor, '20')}
+                    style={[styles.macroCard, { borderColor: metricas.proteina.cor + '30' }]}
+                  >
+                    <FontAwesome name={metricas.proteina.icon as any} size={28} color={metricas.proteina.cor} />
+                    <Text style={styles.macroLabel}>Proteína</Text>
+                    <Text style={styles.macroValue}>
+                      {metricas.proteina.min.toFixed(0)}-{metricas.proteina.max.toFixed(0)}g
+                    </Text>
+                    <Text style={styles.macroSub}>{metricas.proteina.gPorKg}</Text>
+                  </LinearGradient>
+
+                  <LinearGradient
+                    colors={getGradientColorsWithOpacity(metricas.carboidratos.cor, metricas.carboidratos.cor, '20')}
+                    style={[styles.macroCard, { borderColor: metricas.carboidratos.cor + '30' }]}
+                  >
+                    <FontAwesome name={metricas.carboidratos.icon as any} size={28} color={metricas.carboidratos.cor} />
+                    <Text style={styles.macroLabel}>Carboidratos</Text>
+                    <Text style={styles.macroValue}>
+                      {metricas.carboidratos.min.toFixed(0)}-{metricas.carboidratos.max.toFixed(0)}g
+                    </Text>
+                    <Text style={styles.macroSub}>{metricas.carboidratos.gPorKg}</Text>
+                  </LinearGradient>
+
+                  <LinearGradient
+                    colors={getGradientColorsWithOpacity(metricas.gorduras.cor, metricas.gorduras.cor, '20')}
+                    style={[styles.macroCard, { borderColor: metricas.gorduras.cor + '30' }]}
+                  >
+                    <FontAwesome name={metricas.gorduras.icon as any} size={28} color={metricas.gorduras.cor} />
+                    <Text style={styles.macroLabel}>Gorduras</Text>
+                    <Text style={styles.macroValue}>
+                      {metricas.gorduras.min.toFixed(0)}-{metricas.gorduras.max.toFixed(0)}g
+                    </Text>
+                    <Text style={styles.macroSub}>{metricas.gorduras.gPorKg}</Text>
+                  </LinearGradient>
+                </View>
+
+                {metricas.proteina.recomendacao && (
+                  <View style={styles.macroTip}>
+                    <FontAwesome name="info-circle" size={16} color={metricas.proteina.cor} />
+                    <Text style={styles.macroTipText}>{metricas.proteina.recomendacao}</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+
+          {/* Hidratação */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Hidratação"
+              icon="tint"
+              color="#2196F3"
+              section="hidratacao"
+            />
+
+            {expandedSections.hidratacao && (
+              <>
+                <LinearGradient colors={getGradientColorsWithOpacity('#2196F3', '#2196F3', '20')} style={styles.waterCard}>
+                  <View style={styles.waterIconContainer}>
+                    <FontAwesome name="tint" size={40} color="#2196F3" />
+                  </View>
+                  <View style={styles.waterInfo}>
+                    <Text style={styles.waterValue}>{metricas.aguaRecomendadaFormatada}L</Text>
+                    <Text style={styles.waterLabel}>por dia</Text>
+                    <Text style={styles.waterSub}>
+                      ≈ {metricas.coposAguaRecomendados} copos de 250ml
+                    </Text>
+                  </View>
+                </LinearGradient>
+
+                <View style={styles.waterStatus}>
+                  <FontAwesome
+                    name={metricas.querLembretesAgua ? "bell" : "bell-slash"}
+                    size={16}
+                    color={metricas.querLembretesAgua ? "#4CAF50" : "#999"}
+                  />
+                  <Text style={styles.waterStatusText}>
+                    {metricas.querLembretesAgua ? "Lembretes ativados" : "Lembretes desativados"}
                   </Text>
                 </View>
-              </View>
+              </>
+            )}
+          </View>
 
-              <View style={styles.waterStatus}>
-                <FontAwesome
-                  name={metricas.querLembretesAgua ? "bell" : "bell-slash"}
-                  size={16}
-                  color={metricas.querLembretesAgua ? "#4CAF50" : "#999"}
-                />
-                <Text style={styles.waterStatusText}>
-                  {metricas.querLembretesAgua
-                    ? "🔔 Lembretes de água ativados"
-                    : "🔕 Lembretes de água desativados"}
-                </Text>
-              </View>
-            </View>
+          {/* Recomendação de Treino */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Treino"
+              icon="heart"
+              color="#E91E63"
+              section="treino"
+            />
 
-            {/* SEÇÃO 8: TREINO */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="heart" size={20} color="#E91E63" />
-                <Text style={styles.sectionTitle}>Recomendação de Treino</Text>
-              </View>
-
-              <View style={styles.trainingCard}>
+            {expandedSections.treino && (
+              <LinearGradient colors={getGradientColorsWithOpacity('#E91E63', '#E91E63', '20')} style={styles.trainingCard}>
                 <View style={styles.trainingHeader}>
-                  <FontAwesome name="calendar-check-o" size={28} color="#1E88E5" />
+                  <FontAwesome name="calendar-check-o" size={28} color="#E91E63" />
                   <View style={styles.trainingHeaderText}>
                     <Text style={styles.trainingFrequency}>
                       {metricas.frequenciaTreino === '0' ? 'Iniciante' :
@@ -1160,7 +1312,7 @@ export default function FinalizacaoScreen() {
                           metricas.frequenciaTreino === '3-4' ? 'Moderadamente ativo' :
                             metricas.frequenciaTreino === '5-6' ? 'Muito ativo' : 'Todos os dias'}
                     </Text>
-                    <Text style={styles.trainingSubtitle}>
+                    <Text style={styles.trainingSub}>
                       {metricas.frequenciaTreino === '0' ? '0 dias/semana' :
                         metricas.frequenciaTreino === '1-2' ? '1-2 dias/semana' :
                           metricas.frequenciaTreino === '3-4' ? '3-4 dias/semana' :
@@ -1173,106 +1325,80 @@ export default function FinalizacaoScreen() {
                   <FontAwesome name="lightbulb-o" size={18} color="#FFD700" />
                   <Text style={styles.trainingSuggestionText}>
                     {metricas.objetivo === 'emagrecer'
-                      ? 'Combine treino de força 3x/semana com cardio 2-3x/semana. Foco em déficit calórico.'
+                      ? 'Combine treino de força 3x/semana com cardio 2-3x/semana'
                       : metricas.objetivo === 'ganhar_massa'
-                        ? 'Treino de força 4-5x/semana com progressão de carga. Foco em superávit calórico.'
-                        : 'Mantenha treinos regulares 3-4x/semana combinando força e cardio.'}
+                        ? 'Treino de força 4-5x/semana com progressão de carga'
+                        : 'Mantenha treinos regulares 3-4x/semana'}
                   </Text>
                 </View>
-              </View>
-            </View>
-
-            {/* SEÇÃO 9: CARDIO */}
-            {metricas.frequenciaCardioDescricao && (
-              <View style={styles.sectionContainer}>
-                <View style={styles.sectionHeader}>
-                  <FontAwesome name="heartbeat" size={20} color="#E91E63" />
-                  <Text style={styles.sectionTitle}>Cardio</Text>
-                </View>
-
-                <View style={styles.cardioCard}>
-                  <FontAwesome name="clock-o" size={24} color="#E91E63" />
-                  <Text style={styles.cardioText}>
-                    {metricas.frequenciaCardioDescricao}
-                  </Text>
-                </View>
-              </View>
+              </LinearGradient>
             )}
+          </View>
 
-            {/* SEÇÃO 10: DICAS PERSONALIZADAS */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <FontAwesome name="star" size={20} color="#FFD700" />
-                <Text style={styles.sectionTitle}>Dicas Personalizadas</Text>
-              </View>
+          {/* Dicas Personalizadas */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Dicas"
+              icon="star"
+              color="#FFD700"
+              section="dicas"
+            />
 
+            {expandedSections.dicas && (
               <View style={styles.tipsContainer}>
                 <TipCard
                   icon="cutlery"
                   title="Alimentação"
-                  text={
-                    metricas.objetivo === 'emagrecer'
-                      ? 'Priorize proteínas magras e vegetais. Faça déficit de 500kcal/dia para perder 0.5kg/semana.'
-                      : metricas.objetivo === 'ganhar_massa'
-                        ? 'Aumente consumo de proteínas e carboidratos. Faça superávit de 300-500kcal/dia.'
-                        : 'Mantenha uma alimentação equilibrada com todos os grupos alimentares.'
-                  }
+                  text={metricas.objetivo === 'emagrecer'
+                    ? 'Priorize proteínas magras e vegetais. Déficit de 500kcal/dia.'
+                    : metricas.objetivo === 'ganhar_massa'
+                      ? 'Aumente proteínas e carboidratos. Superávit de 300-500kcal/dia.'
+                      : 'Mantenha alimentação equilibrada.'}
                   color="#4CAF50"
                 />
 
                 <TipCard
                   icon="bed"
                   title="Descanso"
-                  text="Durma 7-9 horas por noite. O sono de qualidade é essencial para recuperação muscular e regulação hormonal."
+                  text="Durma 7-9 horas por noite. Sono de qualidade é essencial."
                   color="#2196F3"
-                />
-
-                <TipCard
-                  icon="line-chart"
-                  title="Consistência"
-                  text="Resultados consistentes vêm com hábitos diários. Foque em ser 1% melhor a cada dia, não na perfeição."
-                  color="#FF9800"
                 />
 
                 <TipCard
                   icon="camera"
                   title="Acompanhamento"
-                  text="Tire fotos a cada 15 dias e meça sua circunferência abdominal. A balança não conta toda a história!"
+                  text="Tire fotos a cada 15 dias. A balança não conta toda história!"
                   color="#9C27B0"
                 />
               </View>
-            </View>
-
-            {/* DIVIDER */}
-            <View style={styles.divider} />
-
-            {/* BOTÃO PRINCIPAL */}
-            <Pressable style={styles.primaryButton} onPress={handleComecar}>
-              <View style={styles.buttonContent}>
-                <FontAwesome name="rocket" size={26} color="#FFFFFF" />
-                <Text style={styles.primaryText}>Começar Minha Jornada</Text>
-              </View>
-              <Text style={styles.buttonSubtitle}>
-                Vamos transformar sua saúde! 💪
-              </Text>
-            </Pressable>
-
-            {/* BOTÃO SECUNDÁRIO */}
-            <Pressable style={styles.secondaryButton} onPress={handleEditar}>
-              <FontAwesome name="pencil" size={20} color="#1E88E5" />
-              <Text style={styles.secondaryText}>Editar Informações</Text>
-            </Pressable>
-
-            {/* MENSAGEM FINAL */}
-            <View style={styles.finalMessage}>
-              <Text style={styles.finalMessageText}>
-                "O sucesso é a soma de pequenos esforços repetidos dia após dia."{'\n'}
-                <Text style={styles.finalMessageAuthor}>- Robert Collier</Text>
-              </Text>
-            </View>
+            )}
           </View>
+
+          {/* Mensagem Final - Agora sem os botões */}
+          <View style={styles.finalMessage}>
+            <Text style={styles.finalMessageText}>
+              "O sucesso é a soma de pequenos esforços repetidos dia após dia."
+            </Text>
+            <Text style={styles.finalMessageAuthor}>- Robert Collier</Text>
+          </View>
+
+          {/* Espaço extra no final para o botão flutuante não cobrir o conteúdo */}
+          <View style={styles.bottomSpacing} />
         </View>
       </ScrollView>
+
+      {/* Botão Flutuante "Começar Jornada" */}
+      <SafeAreaView style={styles.floatingButtonContainer}>
+        <Pressable style={styles.floatingButton} onPress={handleComecar}>
+          <LinearGradient
+            colors={getGradientColors('#1E88E5', '#1565C0')}
+            style={styles.floatingGradient}
+          >
+            <FontAwesome name="rocket" size={24} color="#FFF" />
+            <Text style={styles.floatingText}>Começar Jornada</Text>
+          </LinearGradient>
+        </Pressable>
+      </SafeAreaView>
     </View>
   );
 }
@@ -1282,248 +1408,280 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F7FA',
   },
-  scrollView: {
+  loadingGradient: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingVertical: 20,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  mainContainer: {
+  loadingCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EEF2F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    marginHorizontal: 16,
-    maxWidth: 480,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F4F8',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#F8F9FC',
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#5E6F8D',
-    fontWeight: '600',
-  },
-  shareButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#F0F9FF',
-    borderWidth: 1,
-    borderColor: '#E1F0FF',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A2C3E',
-    letterSpacing: -0.3,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    alignItems: 'center',
     padding: 40,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
-  loadingText: {
-    fontSize: 18,
+  loadingTitle: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#1A2C3E',
     marginTop: 20,
+    marginBottom: 8,
   },
-  loadingSubtext: {
+  loadingSubtitle: {
     fontSize: 14,
     color: '#6B7A8F',
-    marginTop: 8,
+    textAlign: 'center',
   },
   errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F5F7FA',
+  },
+  errorCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 40,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   errorTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#1A2C3E',
     marginTop: 16,
+    marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
     color: '#6B7A8F',
-    marginTop: 8,
     textAlign: 'center',
+    marginBottom: 24,
   },
   errorButton: {
-    backgroundColor: '#1E88E5',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    width: '100%',
     borderRadius: 30,
-    marginTop: 24,
+    overflow: 'hidden',
+  },
+  errorButtonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   errorButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  errorSecondaryButton: {
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  errorSecondaryButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  headerBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+  },
+  headerBackText: {
+    fontSize: 14,
+    color: '#FFF',
     fontWeight: '600',
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#F0F9FF',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: -0.3,
+  },
+  headerShareButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+  },
+  scrollView: {
+    flex: 1,
+    marginTop: -10,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Aumentado para dar espaço ao botão flutuante
+    paddingHorizontal: 16,
+  },
+  mainCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  heroIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: '#1E88E5',
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E88E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
-  welcomeTitle: {
-    color: '#1A2C3E',
+  heroTitle: {
     fontSize: 24,
     fontWeight: '800',
+    color: '#1A2C3E',
     textAlign: 'center',
     marginBottom: 12,
-    lineHeight: 32,
     letterSpacing: -0.5,
   },
-  subtitle: {
-    color: '#6B7A8F',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  timeBadge: {
+  heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF8E1',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 40,
-    marginBottom: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 30,
+    gap: 8,
     borderWidth: 1,
     borderColor: '#FFECB3',
-    gap: 10,
   },
-  timeBadgeText: {
+  heroBadgeText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#B76E00',
   },
-  sectionContainer: {
-    width: '100%',
-    marginBottom: 28,
+  section: {
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: '#F0F4F8',
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1A2C3E',
-    letterSpacing: -0.3,
+    flex: 1,
   },
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F4F8',
-    overflow: 'hidden',
+  sectionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  sectionBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   profileGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 16,
-    gap: 16,
+    gap: 12,
   },
   profileItem: {
     flex: 1,
-    minWidth: '40%',
-    alignItems: 'center',
-    gap: 6,
+    minWidth: '45%',
     backgroundColor: '#F8FAFD',
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 8,
   },
-  profileItemLabel: {
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileLabel: {
     fontSize: 13,
     color: '#6B7A8F',
     fontWeight: '500',
   },
-  profileItemValue: {
+  profileValue: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1A2C3E',
   },
-  profileObjective: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    backgroundColor: '#F0F9FF',
-    borderTopWidth: 1,
-    borderTopColor: '#E1F0FF',
-  },
-  profileObjectiveText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E88E5',
-  },
   metricCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 18,
+    padding: 16,
     borderRadius: 16,
-    borderLeftWidth: 5,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#F0F4F8',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 12,
   },
   metricHeader: {
     flexDirection: 'row',
@@ -1535,8 +1693,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   metricTitle: {
-    fontSize: 15,
-    color: '#6B7A8F',
+    fontSize: 14,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1547,135 +1704,107 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   metricValue: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
-    color: '#1A2C3E',
     letterSpacing: -1,
   },
   metricUnit: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7A8F',
     fontWeight: '600',
     marginLeft: 6,
   },
   metricSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7A8F',
   },
-  infoCard: {
-    backgroundColor: '#F8FAFD',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E9EDF2',
-  },
-  infoCardText: {
-    fontSize: 14,
-    color: '#5E6F8D',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  imcScaleContainer: {
+  imcScale: {
     marginTop: 8,
   },
-  scaleTitle: {
-    fontSize: 14,
-    color: '#6B7A8F',
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  progressBarContainer: {
+  progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 6,
-  },
-  progressBarBackground: {
-    flex: 1,
-    height: 12,
-    backgroundColor: '#E9EDF2',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 20,
-  },
-  progressBarText: {
-    fontSize: 13,
-    color: '#5E6F8D',
-    fontWeight: '600',
-    minWidth: 40,
-    textAlign: 'right',
+    marginBottom: 8,
   },
   progressLabel: {
     fontSize: 13,
     color: '#6B7A8F',
-    fontWeight: '600',
-    marginBottom: 6,
+    fontWeight: '500',
+    width: 60,
   },
-  imcScaleLabels: {
+  progressBarBackground: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#E9EDF2',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    minWidth: 40,
+    textAlign: 'right',
+  },
+  imcLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 2,
+    marginTop: 4,
+  },
+  imcLabel: {
+    fontSize: 10,
+    color: '#9AABC0',
+  },
+  imcCategories: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
   },
-  scaleLabel: {
-    fontSize: 11,
-    color: '#9AABC0',
-    fontWeight: '500',
-  },
-  imcScaleTexts: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-    marginTop: 6,
-  },
-  scaleText: {
-    fontSize: 11,
+  imcCategory: {
+    fontSize: 10,
     fontWeight: '600',
   },
-  doubleMetricContainer: {
+  pesoIdealGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginBottom: 16,
   },
-  miniMetricCard: {
+  pesoIdealCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFD',
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E9EDF2',
     alignItems: 'center',
   },
-  miniMetricLabel: {
-    fontSize: 13,
+  pesoIdealLabel: {
+    fontSize: 12,
     color: '#6B7A8F',
     fontWeight: '600',
     marginBottom: 6,
   },
-  miniMetricValue: {
-    fontSize: 24,
+  pesoIdealValue: {
+    fontSize: 22,
     fontWeight: '800',
     color: '#1A2C3E',
-    letterSpacing: -0.5,
   },
-  miniMetricUnit: {
-    fontSize: 13,
+  pesoIdealUnit: {
+    fontSize: 12,
     color: '#6B7A8F',
     marginTop: 2,
   },
-  miniMetricSubtitle: {
-    fontSize: 11,
+  pesoIdealSub: {
+    fontSize: 10,
     color: '#9AABC0',
     marginTop: 6,
   },
-  pesoAtualIndicator: {
-    backgroundColor: '#F8FAFD',
+  pesoAtualCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
   },
   pesoAtualLabel: {
@@ -1684,7 +1813,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   pesoAtualValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: '#1A2C3E',
     marginBottom: 8,
@@ -1698,227 +1827,205 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  bodyCompositionContainer: {
+  composicaoBars: {
+    gap: 12,
     marginTop: 16,
-    gap: 12,
   },
-  bodyCompositionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  composicaoItem: {
+    gap: 6,
   },
-  bodyCompositionBar: {
-    height: 40,
-    borderRadius: 8,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    opacity: 0.2,
-  },
-  bodyCompositionInfo: {
-    flex: 1,
+  composicaoLabelContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E9EDF2',
   },
-  bodyCompositionLabel: {
+  composicaoLabel: {
     fontSize: 14,
     color: '#6B7A8F',
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  bodyCompositionValue: {
-    fontSize: 16,
-    fontWeight: '700',
+  composicaoValue: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1A2C3E',
   },
-  bodyCompositionPercentage: {
-    fontSize: 14,
-    color: '#9AABC0',
-  },
-  bfScaleContainer: {
-    marginTop: 20,
-  },
-  bfScaleTitle: {
-    fontSize: 14,
-    color: '#6B7A8F',
-    marginBottom: 10,
-    fontWeight: '600',
-  },
-  bfScale: {
-    flexDirection: 'row',
+  composicaoBarBg: {
     height: 8,
     backgroundColor: '#E9EDF2',
     borderRadius: 4,
     overflow: 'hidden',
   },
-  bfScaleSegment: {
+  composicaoBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  composicaoPercentage: {
+    fontSize: 12,
+    color: '#9AABC0',
+    textAlign: 'right',
+  },
+  bfScale: {
+    marginTop: 20,
+  },
+  bfScaleTitle: {
+    fontSize: 14,
+    color: '#6B7A8F',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  bfScaleBars: {
+    flexDirection: 'row',
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  bfScaleBar: {
     flex: 1,
     height: '100%',
   },
   bfScaleLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 6,
   },
   bfScaleLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#9AABC0',
-    fontWeight: '500',
   },
-  metabolismCard: {
+  metabolismoGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  metabolismoCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 18,
+    padding: 16,
     borderRadius: 16,
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: '#E9EDF2',
-    alignItems: 'center',
-    gap: 8,
   },
-  metabolismLabel: {
+  metabolismoLabel: {
     fontSize: 14,
     color: '#6B7A8F',
     fontWeight: '600',
-    marginTop: 6,
   },
-  metabolismValue: {
-    fontSize: 26,
+  metabolismoValue: {
+    fontSize: 24,
     fontWeight: '800',
     color: '#1A2C3E',
-    letterSpacing: -0.5,
   },
-  metabolismUnit: {
-    fontSize: 13,
+  metabolismoUnit: {
+    fontSize: 11,
     color: '#6B7A8F',
   },
-  metabolismSubtitle: {
-    fontSize: 12,
+  metabolismoSub: {
+    fontSize: 11,
     color: '#9AABC0',
-    textAlign: 'center',
   },
-  caloriesCard: {
-    backgroundColor: '#F0F9FF',
+  caloriasCard: {
     padding: 20,
     borderRadius: 16,
-    marginTop: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E1F0FF',
   },
-  caloriesHeader: {
+  caloriasHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     marginBottom: 12,
   },
-  caloriesTitle: {
-    fontSize: 18,
+  caloriasMeta: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1A2C3E',
   },
-  caloriesValue: {
-    fontSize: 42,
+  caloriasValue: {
+    fontSize: 40,
     fontWeight: '800',
     color: '#1A2C3E',
-    letterSpacing: -1,
   },
-  caloriesUnit: {
-    fontSize: 16,
+  caloriasUnit: {
+    fontSize: 14,
     color: '#6B7A8F',
-    marginBottom: 6,
+    marginBottom: 12,
   },
-  caloriesDesc: {
-    fontSize: 15,
-    color: '#1E88E5',
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  caloriesComparison: {
+  caloriasComparison: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
-    paddingTop: 16,
+    gap: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#E1F0FF',
   },
-  calorieCompareItem: {
+  caloriasCompareItem: {
     alignItems: 'center',
   },
-  calorieCompareLabel: {
-    fontSize: 13,
+  caloriasCompareLabel: {
+    fontSize: 12,
     color: '#6B7A8F',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  calorieCompareValue: {
-    fontSize: 18,
+  caloriasCompareValue: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A2C3E',
   },
   macrosGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginBottom: 12,
   },
   macroCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 14,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E9EDF2',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    borderWidth: 1,
   },
   macroLabel: {
-    fontSize: 15,
+    fontSize: 13,
     color: '#6B7A8F',
     fontWeight: '600',
   },
   macroValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A2C3E',
     textAlign: 'center',
   },
-  macroSubtitle: {
-    fontSize: 12,
+  macroSub: {
+    fontSize: 10,
     color: '#9AABC0',
   },
   macroTip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: '#F8FAFD',
-    padding: 14,
+    padding: 12,
     borderRadius: 12,
-    marginTop: 4,
   },
   macroTipText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: '#5E6F8D',
-    lineHeight: 18,
   },
   waterCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
     padding: 20,
     borderRadius: 16,
+    gap: 16,
     borderWidth: 1,
     borderColor: '#E1F0FF',
-    gap: 20,
   },
   waterIconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#E1F0FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1927,40 +2034,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   waterValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#2196F3',
-    letterSpacing: -0.5,
   },
   waterLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#1A2C3E',
     fontWeight: '600',
-    marginTop: 2,
   },
-  waterSubtitle: {
-    fontSize: 14,
+  waterSub: {
+    fontSize: 12,
     color: '#6B7A8F',
-    marginTop: 4,
+    marginTop: 2,
   },
   waterStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFD',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E9EDF2',
   },
   waterStatusText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7A8F',
-    fontWeight: '500',
   },
   trainingCard: {
-    backgroundColor: '#FFFFFF',
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
@@ -1969,147 +2070,122 @@ const styles = StyleSheet.create({
   trainingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     marginBottom: 16,
   },
   trainingHeaderText: {
     flex: 1,
   },
   trainingFrequency: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A2C3E',
   },
-  trainingSubtitle: {
-    fontSize: 14,
+  trainingSub: {
+    fontSize: 13,
     color: '#6B7A8F',
     marginTop: 2,
   },
   trainingSuggestion: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
     backgroundColor: '#FFF8E1',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FFECB3',
   },
   trainingSuggestionText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#5D4037',
-    lineHeight: 20,
-  },
-  cardioCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    backgroundColor: '#FFF0F2',
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FFDCE0',
-  },
-  cardioText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E91E63',
+    lineHeight: 18,
   },
   tipsContainer: {
-    gap: 12,
+    gap: 10,
   },
   tipCard: {
-    padding: 16,
+    flexDirection: 'row',
+    padding: 14,
     borderRadius: 16,
     borderWidth: 1,
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
-    marginBottom: 10,
+  },
+  tipIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipContent: {
+    flex: 1,
   },
   tipTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
+    marginBottom: 4,
   },
   tipText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#5E6F8D',
-    lineHeight: 22,
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#F0F4F8',
-    marginVertical: 24,
-  },
-  primaryButton: {
-    width: '100%',
-    backgroundColor: '#1E88E5',
-    borderRadius: 30,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-    marginBottom: 16,
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 8,
-  },
-  primaryText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  buttonSubtitle: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#1E88E5',
-    borderRadius: 30,
-    paddingVertical: 16,
-    marginBottom: 24,
-  },
-  secondaryText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E88E5',
+    lineHeight: 18,
   },
   finalMessage: {
-    marginTop: 16,
-    paddingHorizontal: 20,
+    marginTop: 24,
+    alignItems: 'center',
   },
   finalMessageText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7A8F',
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 20,
   },
   finalMessageAuthor: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#9AABC0',
-    marginTop: 6,
+    marginTop: 4,
+  },
+  bottomSpacing: {
+    height: 20,
+  },
+  // Estilos do botão flutuante
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 16,
+    backgroundColor: 'transparent',
+    pointerEvents: 'box-none',
+  },
+  floatingButton: {
+    borderRadius: 30,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#1E88E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  floatingGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    gap: 12,
+  },
+  floatingText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
 });

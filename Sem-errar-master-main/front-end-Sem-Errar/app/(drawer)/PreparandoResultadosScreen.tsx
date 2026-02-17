@@ -1,13 +1,13 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Easing,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Dimensions,
+  Easing,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -25,24 +25,80 @@ const ETAPAS = [
 export default function PreparandoResultadosScreen() {
   const router = useRouter();
   const [etapaAtual, setEtapaAtual] = useState(0);
-  
+
   // Animações
   const rotacao = useRef(new Animated.Value(0)).current;
   const pulsar = useRef(new Animated.Value(1)).current;
-  const escalaBarra1 = useRef(new Animated.Value(0.3)).current;
-  const escalaBarra2 = useRef(new Animated.Value(0.6)).current;
-  const escalaBarra3 = useRef(new Animated.Value(0.9)).current;
+  
+  // Para as barras de progresso
+  const translateX1 = useRef(new Animated.Value(-70)).current;
+  const translateX2 = useRef(new Animated.Value(-40)).current;
+  const translateX3 = useRef(new Animated.Value(-10)).current;
+  
+  // Opacidades
   const opacidadeBarra1 = useRef(new Animated.Value(0.5)).current;
   const opacidadeBarra2 = useRef(new Animated.Value(0.7)).current;
   const opacidadeBarra3 = useRef(new Animated.Value(1)).current;
 
-  // Animações individuais para cada texto
-  const animacoesTexto = ETAPAS.map(() => ({
-    opacity: useRef(new Animated.Value(0)).current,
-    translateY: useRef(new Animated.Value(20)).current,
-  }));
+  // Referências para os timeouts
+  const timeoutsRef = useRef<number[]>([]);
 
-  useEffect(() => {
+  // Animações individuais para cada texto
+  const animacoesTexto = useRef(
+    ETAPAS.map(() => ({
+      opacity: new Animated.Value(0),
+      translateY: new Animated.Value(20),
+    }))
+  ).current;
+
+  // Função para limpar todos os timeouts
+  const limparTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    timeoutsRef.current = [];
+  }, []);
+
+  // Usar useFocusEffect para reiniciar as animações sempre que a tela for focada
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Tela focada - reiniciando animações');
+      
+      // Limpar timeouts anteriores
+      limparTimeouts();
+      
+      // Resetar estados
+      setEtapaAtual(0);
+      
+      // Resetar valores das animações
+      rotacao.setValue(0);
+      pulsar.setValue(1);
+      translateX1.setValue(-70);
+      translateX2.setValue(-40);
+      translateX3.setValue(-10);
+      opacidadeBarra1.setValue(0.5);
+      opacidadeBarra2.setValue(0.7);
+      opacidadeBarra3.setValue(1);
+      
+      // Resetar animações dos textos
+      animacoesTexto.forEach(anim => {
+        anim.opacity.setValue(0);
+        anim.translateY.setValue(20);
+      });
+
+      // Iniciar animações
+      iniciarAnimacoes();
+
+      // Iniciar sequência de textos
+      iniciarSequenciaTextos();
+
+      return () => {
+        // Limpar timeouts quando a tela perder o foco
+        console.log('Tela perdeu foco - limpando timeouts');
+        limparTimeouts();
+      };
+    }, [])
+  );
+
+  const iniciarAnimacoes = () => {
     // Animação de rotação do círculo
     Animated.loop(
       Animated.timing(rotacao, {
@@ -75,31 +131,31 @@ export default function PreparandoResultadosScreen() {
     Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(escalaBarra1, {
-            toValue: 1,
+          Animated.timing(translateX1, {
+            toValue: 0,
             duration: 2000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra1, {
             toValue: 1,
             duration: 2000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
         Animated.parallel([
-          Animated.timing(escalaBarra1, {
-            toValue: 0.3,
+          Animated.timing(translateX1, {
+            toValue: -70,
             duration: 2000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra1, {
             toValue: 0.5,
             duration: 2000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
       ])
@@ -108,31 +164,31 @@ export default function PreparandoResultadosScreen() {
     Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(escalaBarra2, {
-            toValue: 1,
+          Animated.timing(translateX2, {
+            toValue: 0,
             duration: 2500,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra2, {
             toValue: 1,
             duration: 2500,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
         Animated.parallel([
-          Animated.timing(escalaBarra2, {
-            toValue: 0.6,
+          Animated.timing(translateX2, {
+            toValue: -40,
             duration: 2500,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra2, {
             toValue: 0.7,
             duration: 2500,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
       ])
@@ -141,43 +197,40 @@ export default function PreparandoResultadosScreen() {
     Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(escalaBarra3, {
-            toValue: 1,
+          Animated.timing(translateX3, {
+            toValue: 0,
             duration: 3000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra3, {
             toValue: 1,
             duration: 3000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
         Animated.parallel([
-          Animated.timing(escalaBarra3, {
-            toValue: 0.9,
+          Animated.timing(translateX3, {
+            toValue: -10,
             duration: 3000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(opacidadeBarra3, {
             toValue: 0.7,
             duration: 3000,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]),
       ])
     ).start();
-
-    // Iniciar sequência de textos
-    iniciarSequenciaTextos();
-  }, []);
+  };
 
   const iniciarSequenciaTextos = () => {
     let index = 0;
-    
+
     const mostrarProximaEtapa = () => {
       if (index < ETAPAS.length) {
         // Mostrar texto atual com animação
@@ -201,18 +254,21 @@ export default function PreparandoResultadosScreen() {
 
         // Programar próxima etapa
         if (index < ETAPAS.length) {
-          setTimeout(mostrarProximaEtapa, 800);
+          const timeout = setTimeout(mostrarProximaEtapa, 800);
+          timeoutsRef.current.push(timeout);
         } else {
           // Quando todas as etapas forem mostradas, navegar para próxima tela
-          setTimeout(() => {
+          const timeout = setTimeout(() => {
             router.push('/FinalizacaoScreen');
           }, 1500);
+          timeoutsRef.current.push(timeout);
         }
       }
     };
 
     // Iniciar primeira etapa
-    setTimeout(mostrarProximaEtapa, 500);
+    const initialTimeout = setTimeout(mostrarProximaEtapa, 500);
+    timeoutsRef.current.push(initialTimeout);
   };
 
   // Interpolação para rotação
@@ -267,10 +323,7 @@ export default function PreparandoResultadosScreen() {
                   style={[
                     styles.barraProgresso,
                     {
-                      width: escalaBarra1.interpolate({
-                        inputRange: [0.3, 1],
-                        outputRange: ['30%', '100%'],
-                      }),
+                      transform: [{ translateX: translateX1 }],
                       opacity: opacidadeBarra1,
                     },
                   ]}
@@ -284,10 +337,7 @@ export default function PreparandoResultadosScreen() {
                   style={[
                     styles.barraProgresso,
                     {
-                      width: escalaBarra2.interpolate({
-                        inputRange: [0.6, 1],
-                        outputRange: ['60%', '100%'],
-                      }),
+                      transform: [{ translateX: translateX2 }],
                       opacity: opacidadeBarra2,
                     },
                   ]}
@@ -301,10 +351,7 @@ export default function PreparandoResultadosScreen() {
                   style={[
                     styles.barraProgresso,
                     {
-                      width: escalaBarra3.interpolate({
-                        inputRange: [0.9, 1],
-                        outputRange: ['90%', '100%'],
-                      }),
+                      transform: [{ translateX: translateX3 }],
                       opacity: opacidadeBarra3,
                     },
                   ]}
@@ -388,10 +435,12 @@ export default function PreparandoResultadosScreen() {
               style={[
                 styles.progressoGeralPreenchimento,
                 {
-                  width: animacoesTexto[ETAPAS.length - 1].opacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
+                  transform: [{
+                    translateX: animacoesTexto[ETAPAS.length - 1].opacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-100, 0],
+                    })
+                  }],
                 },
               ]}
             />
@@ -495,6 +544,7 @@ const styles = StyleSheet.create({
   barraWrapper: {
     width: '100%',
     height: 8,
+    overflow: 'hidden',
   },
   barraFundo: {
     width: '100%',
@@ -504,6 +554,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   barraProgresso: {
+    width: '100%',
     height: '100%',
     backgroundColor: '#1E88E5',
     borderRadius: 4,
@@ -622,6 +673,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   progressoGeralPreenchimento: {
+    width: '100%',
     height: '100%',
     backgroundColor: '#4CAF50',
     borderRadius: 4,

@@ -35,7 +35,7 @@ export default function QuandoCalcularBFScreen() {
   };
 
   const handleVoltar = () => {
-    router.push('/ContextoBFScreen');
+    router.push('/DiasFixosScreen');
   };
 
   return (

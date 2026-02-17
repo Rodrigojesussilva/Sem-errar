@@ -51,7 +51,7 @@ export default function PescocoScreen() {
 
 
   const handleVoltar = () => {
-    router.push('/QuadroCalcularBFScreen');
+    router.push('/DiasFixosScreen');
   };
 
   const handleCmChange = (text: string) => {

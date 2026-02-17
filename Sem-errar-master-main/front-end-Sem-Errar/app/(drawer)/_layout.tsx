@@ -17,15 +17,13 @@ import {
   View,
 } from "react-native";
 
-// Importações das telas adicionais
-
 // Extender os tipos do Expo Router
 declare global {
   namespace ReactNavigation {
     interface RootParamList {
       index: undefined;
       login: undefined;
-      cadastro: undefined;
+      CadastroScreen: undefined; // ALTERADO: de cadastro para CadastroScreen
       perfil: undefined;
       historico: undefined;
       resultados: undefined;
@@ -52,11 +50,11 @@ declare global {
       RegistrarCardioScreen: undefined;
       EstruturaTreinosScreen: undefined;
       OrganizacaoTreinosScreen: undefined;
-      ConfiguracaoTreinosScreen: undefined; // NOVA TELA ADICIONADA
-      DiasFixosScreen: undefined; // NOVA TELA ADICIONADA
-      SequenciaScreen: undefined; // NOVA TELA ADICIONADA
+      ConfiguracaoTreinosScreen: undefined;
+      DiasFixosScreen: undefined;
+      SequenciaScreen: undefined;
       ContextoBFScreen: undefined;
-      QuandoCalcularBFScreen: undefined;
+      QuadroCalcularBFScreen: undefined;
       PescocoScreen: undefined;
       CinturaScreen: undefined;
       QuadrilScreen: undefined;
@@ -70,7 +68,7 @@ declare global {
 type RouteName =
   | 'index'
   | 'login'
-  | 'cadastro'
+  | 'CadastroScreen' // ALTERADO: de cadastro para CadastroScreen
   | 'perfil'
   | 'historico'
   | 'resultados'
@@ -97,11 +95,11 @@ type RouteName =
   | 'RegistrarCardioScreen'
   | 'EstruturaTreinosScreen'
   | 'OrganizacaoTreinosScreen'
-  | 'ConfiguracaoTreinosScreen' // NOVA TELA ADICIONADA
-  | 'DiasFixosScreen' // NOVA TELA ADICIONADA
-  | 'SequenciaScreen' // NOVA TELA ADICIONADA
+  | 'ConfiguracaoTreinosScreen'
+  | 'DiasFixosScreen'
+  | 'SequenciaScreen'
   | 'ContextoBFScreen'
-  | 'QuandoCalcularBFScreen'
+  | 'QuadroCalcularBFScreen'
   | 'PescocoScreen'
   | 'CinturaScreen'
   | 'QuadrilScreen'
@@ -126,7 +124,7 @@ function AuthRedirect() {
       });
 
       // Se está logado e na tela de login/cadastro, redireciona para home
-      if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'cadastro')) {
+      if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) { // ALTERADO
         console.log('Redirecionando para home...');
         (navigation as any).reset({
           index: 0,
@@ -259,7 +257,7 @@ function CustomDrawerContent(props: any) {
       colorScheme: { bg: "#E8EAF6", color: "#3F51B5" },
     },
     {
-      name: "cadastro" as RouteName,
+      name: "CadastroScreen" as RouteName, // ALTERADO: de cadastro para CadastroScreen
       label: "Cadastro",
       iconName: "person-add",
       iconLib: Ionicons,
@@ -554,7 +552,7 @@ export default function DrawerLayout() {
           // Telas que não mostram header nem drawer
           const hideHeaderAndDrawerRoutes = [
             'login',
-            'cadastro',
+            'CadastroScreen', // ALTERADO: de cadastro para CadastroScreen
             'dados',
             'BoasVindas1',
             'BoasVindas2',
@@ -573,11 +571,11 @@ export default function DrawerLayout() {
             'RegistrarCardioScreen',
             'EstruturaTreinosScreen',
             'OrganizacaoTreinosScreen',
-            'ConfiguracaoTreinosScreen', // NOVA TELA ADICIONADA
-            'DiasFixosScreen', // NOVA TELA ADICIONADA
-            'SequenciaScreen', // NOVA TELA ADICIONADA
+            'ConfiguracaoTreinosScreen',
+            'DiasFixosScreen',
+            'SequenciaScreen',
             'ContextoBFScreen',
-            'QuandoCalcularBFScreen',
+            'QuadroCalcularBFScreen',
             'PescocoScreen',
             'CinturaScreen',
             'QuadrilScreen',
@@ -587,7 +585,8 @@ export default function DrawerLayout() {
 
           if (hideHeaderAndDrawerRoutes.includes(route.name)) {
             screenOptions.headerShown = false;
-            screenOptions.swipeEnabled = false; // Desabilita swipe para abrir drawer
+            screenOptions.swipeEnabled = false;
+            screenOptions.drawerLockMode = 'locked-closed';
           }
 
           return screenOptions;
@@ -803,9 +802,9 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE QUANDO CALCULAR BF - SEM DRAWER */}
+        {/* TELA DE QUADRO CALCULAR BF - CORRIGIDA */}
         <Drawer.Screen
-          name="QuandoCalcularBFScreen"
+          name="QuadroCalcularBFScreen"
           options={{
             title: "Quando Calcular BF",
             drawerLabel: "Calcular BF",
@@ -889,8 +888,10 @@ export default function DrawerLayout() {
             headerShown: false,
           }}
         />
+        
+        {/* TELA DE CADASTRO - NOME ALTERADO PARA CadastroScreen */}
         <Drawer.Screen
-          name="cadastro"
+          name="CadastroScreen" // ALTERADO: de cadastro para CadastroScreen
           options={{
             title: "Cadastro",
             drawerLabel: "Cadastro",

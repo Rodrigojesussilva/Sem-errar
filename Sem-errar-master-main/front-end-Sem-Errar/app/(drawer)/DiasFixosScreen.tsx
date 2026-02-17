@@ -19,7 +19,7 @@ export default function DiasFixosScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [diaSelecionado, setDiaSelecionado] = useState<any>(null);
-  const [quantidadeTreinos, setQuantidadeTreinos] = useState(3); // Valor padrão
+  const [quantidadeTreinos, setQuantidadeTreinos] = useState(3);
   const [opcoesTreino, setOpcoesTreino] = useState<string[]>([]);
 
   // Carregar quantidade de treinos da Tela 14
@@ -32,11 +32,9 @@ export default function DiasFixosScreen() {
     try {
       const estruturaSalva = await AsyncStorage.getItem('@estruturaTreinos');
       if (estruturaSalva) {
-        // Extrair número da estrutura (1, 2, 3, 4)
         const numero = parseInt(estruturaSalva);
         setQuantidadeTreinos(numero || 3);
         
-        // Gerar opções de treino baseadas na quantidade
         const opcoes = [];
         for (let i = 1; i <= numero; i++) {
           opcoes.push(`Treino ${i}`);
@@ -87,7 +85,7 @@ export default function DiasFixosScreen() {
     return cores[index] || '#4CAF50';
   };
 
-  const handleSalvar = async () => {
+  const handleProximo = async () => {
     setIsLoading(true);
     try {
       await AsyncStorage.setItem('@diasFixosTreinos', JSON.stringify(diasSemana));
@@ -105,7 +103,7 @@ export default function DiasFixosScreen() {
               text: 'Continuar', 
               onPress: () => {
                 console.log('Dias fixos salvos:', diasSemana);
-                router.push('/CalculoBFScreen');
+                router.push('/PescocoScreen');
               }
             }
           ]
@@ -115,7 +113,7 @@ export default function DiasFixosScreen() {
       }
 
       console.log('Dias fixos salvos:', diasSemana);
-      router.push('/CalculoBFScreen');
+      router.push('/QuadroCalcularBFScreen');
     } catch (error) {
       console.error('Erro ao salvar dias fixos:', error);
       Alert.alert('Erro', 'Não foi possível salvar sua configuração. Tente novamente.');
@@ -125,7 +123,7 @@ export default function DiasFixosScreen() {
   };
 
   const handleVoltar = () => {
-    router.push('/OrganizacaoTreinosScreen'); // Redireciona para a tela de organização
+    router.push('/OrganizacaoTreinosScreen');
   };
 
   const getDiaIcone = (treino: string) => {
@@ -256,25 +254,33 @@ export default function DiasFixosScreen() {
 
             <View style={styles.divider} />
 
-            {/* BOTÃO SALVAR */}
+            {/* BOTÃO PRÓXIMO - CORRIGIDO */}
             <Pressable
               style={[
                 styles.primaryButton,
                 isLoading && styles.primaryButtonDisabled
               ]}
-              onPress={handleSalvar}
+              onPress={handleProximo}
               disabled={isLoading}
             >
               <View style={styles.buttonContent}>
-                <FontAwesome name="check" size={22} color="#FFFFFF" />
+                <FontAwesome name="arrow-right" size={22} color="#FFFFFF" />
                 <Text style={styles.primaryText}>
-                  {isLoading ? 'Salvando...' : 'Salvar Configuração'}
+                  {isLoading ? 'Salvando...' : 'Próximo'}
                 </Text>
               </View>
               <Text style={styles.buttonSubtitle}>
-                Seus treinos serão salvos e usados no app
+                Continuar para medidas corporais
               </Text>
             </Pressable>
+
+            {/* INFORMAÇÃO ADICIONAL */}
+            <View style={styles.infoProximoPasso}>
+              <FontAwesome name="info-circle" size={14} color="#999" />
+              <Text style={styles.infoProximoPassoText}>
+                Após configurar seus dias, você irá para as medidas corporais
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -633,6 +639,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 15,
     fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  infoProximoPasso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 20,
+  },
+
+  infoProximoPassoText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#999',
     textAlign: 'center',
   },
 
