@@ -50,6 +50,7 @@ declare global {
       CardioScreen: undefined;
       RegistrarTreinoScreen: undefined;
       RegistrarCardioScreen: undefined;
+      EstruturaTreinosScreen: undefined;
       ContextoBFScreen: undefined;
       QuandoCalcularBFScreen: undefined;
       PescocoScreen: undefined;
@@ -90,6 +91,7 @@ type RouteName =
   | 'CardioScreen'
   | 'RegistrarTreinoScreen'
   | 'RegistrarCardioScreen'
+  | 'EstruturaTreinosScreen'
   | 'ContextoBFScreen'
   | 'QuandoCalcularBFScreen'
   | 'PescocoScreen'
@@ -561,6 +563,7 @@ export default function DrawerLayout() {
             'CardioScreen',
             'RegistrarTreinoScreen',
             'RegistrarCardioScreen',
+            'EstruturaTreinosScreen',
             'ContextoBFScreen',
             'QuandoCalcularBFScreen',
             'PescocoScreen',
@@ -717,6 +720,17 @@ export default function DrawerLayout() {
           options={{
             title: "Registrar Cardio",
             drawerLabel: "Reg. Cardio",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE ESTRUTURA DE TREINOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="EstruturaTreinosScreen"
+          options={{
+            title: "Estrutura de Treinos",
+            drawerLabel: "Estrutura Treinos",
             drawerItemStyle: { display: 'none' },
             headerShown: false,
           }}

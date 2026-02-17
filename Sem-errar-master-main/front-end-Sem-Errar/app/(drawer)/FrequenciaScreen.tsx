@@ -11,10 +11,9 @@ export default function FrequenciaScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const frequencias = [
-    { id: '1-2', title: '1–2 dias', icon: 'calendar', color: '#FF9800' },
-    { id: '3-4', title: '3–4 dias', icon: 'calendar-check-o', color: '#4CAF50' },
-    { id: '5-6', title: '5–6 dias', icon: 'calendar-plus-o', color: '#2196F3' },
-    { id: '7', title: 'Todos os dias', icon: 'calendar-o', color: '#9C27B0' },
+    { id: '1-3', title: '1–3 dias', icon: 'calendar', color: '#FF9800' },
+    { id: '3-5', title: '3–5 dias', icon: 'calendar-check-o', color: '#4CAF50' },
+    { id: '6-7', title: '6–7 dias', icon: 'calendar-plus-o', color: '#2196F3' },    
   ];
 
   // Carregar frequência salva ao iniciar a tela
@@ -55,7 +54,7 @@ export default function FrequenciaScreen() {
         console.log('Nível de atividade:', nivelAtividade);
         
         // Navegar para próxima tela
-        router.push('/AguaScreen');
+        router.push('/RegistrarTreinoScreen');
       } catch (error) {
         console.error('Erro ao salvar frequência:', error);
         Alert.alert('Erro', 'Não foi possível salvar sua frequência de treino. Tente novamente.');
