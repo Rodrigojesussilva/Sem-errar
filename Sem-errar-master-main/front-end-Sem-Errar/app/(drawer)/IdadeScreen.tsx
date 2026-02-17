@@ -14,6 +14,7 @@ import {
   Dimensions,
   Modal,
   FlatList,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -30,7 +31,6 @@ const COLORS = {
 
 const CustomSelect = ({ label, value, options, onSelect, placeholder }: any) => {
   const [modalVisible, setModalVisible] = useState(false);
-
   const displayLabel = options.find((o: any) => (typeof o === 'string' ? o === value : o.value === value));
   const currentText = typeof displayLabel === 'object' ? displayLabel.label : displayLabel || placeholder;
 
@@ -134,24 +134,37 @@ export default function IdadeScreen() {
     }
   };
 
+  // PADRÃO DE FUNDO EXCLUSIVO PARA ESTA TELA
+  const renderStaticBackground = () => (
+    <View style={styles.visualArea}>
+      {/* Elipse superior esquerda mais suave */}
+      <View style={[styles.ellipseLine, { width: width * 1.1, height: width * 1.1, top: -width * 0.6, left: -width * 0.2, transform: [{ rotate: '-10deg' }] }]}>
+         <View style={[styles.staticDot, { bottom: '15%', right: '25%' }]} />
+      </View>
+      
+      {/* Elipse grande que sobe do fundo à direita - Diferente da tela de objetivo */}
+      <View style={[styles.ellipseLine, { width: width * 1.4, height: width * 1.4, bottom: -width * 0.5, right: -width * 0.4, transform: [{ rotate: '45deg' }] }]}>
+        <View style={[styles.staticDot, { top: '20%', left: '30%' }]} />
+      </View>
+
+      {/* Linha central sutil */}
+      <View style={[styles.ellipseLine, { width: width * 0.8, height: height * 0.5, top: height * 0.25, left: -width * 0.5, transform: [{ rotate: '20deg' }], borderStyle: 'dashed', opacity: 0.5 }]}>
+        <View style={[styles.staticDot, { bottom: '10%', right: '5%' }]} />
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       
-      {/* Background Fixo */}
       <View style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
-        <View style={styles.visualArea}>
-            <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3 }]} />
-        </View>
+        {renderStaticBackground()}
       </View>
 
-      {/* Header com Botão Voltar (Fora do Scroll para ficar no topo) */}
       <View style={styles.header}>
-        <Pressable 
-          onPress={() => router.replace('/(drawer)/ObjetivoScreen')} // Caminho explícito para garantir funcionamento
-          style={styles.backButton}
-        >
+        <Pressable onPress={() => router.replace('/(drawer)/SexoScreen')} style={styles.backButton}>
           <View style={styles.backIconCircle}>
             <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
           </View>
@@ -161,8 +174,15 @@ export default function IdadeScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
           <Text style={styles.title}>Qual sua data de nascimento?</Text>
-          <Text style={styles.subtitle}>Utilizamos sua idade para estimar sua demanda energética.</Text>
 
           <View style={styles.pickerRow}>
             <CustomSelect label="Dia" value={dia} options={dias} onSelect={setDia} placeholder="--" />
@@ -203,13 +223,20 @@ export default function IdadeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', zIndex: 0 },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
-  
-  // Header fixo no topo
+  staticDot: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLORS.dot,
+    backgroundColor: '#fff',
+  },
   header: {
     paddingHorizontal: 25,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 20,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
     zIndex: 100,
   },
   backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
@@ -222,19 +249,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     borderWidth: 1, 
     borderColor: COLORS.line,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    elevation: 3,
   },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
-
   scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
   content: { width: '100%', zIndex: 10 },
-
-  title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginBottom: 40 },
-  
+  logoContainer: { alignItems: 'center', marginBottom: 20, marginTop: 5 },
+  logo: { width: width * 0.5, height: 70 },
+  title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 40 },
   pickerRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
   pickerWrapper: { flex: 1 },
   pickerLabel: { fontSize: 12, fontWeight: '800', color: COLORS.primary, marginBottom: 8, textAlign: 'center', textTransform: 'uppercase' },
@@ -248,28 +270,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center', 
     elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
   },
   pickerSelected: { borderColor: COLORS.primary, borderWidth: 2 },
   pickerValueText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain, marginRight: 5 },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { 
-    backgroundColor: '#fff', 
-    borderTopLeftRadius: 35, 
-    borderTopRightRadius: 35, 
-    padding: 25, 
-    maxHeight: height * 0.7 
-  },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, maxHeight: height * 0.7 },
   modalIndicator: { width: 40, height: 5, backgroundColor: '#EEE', borderRadius: 3, alignSelf: 'center', marginBottom: 15 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 20 },
   modalOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
   modalOptionSelected: { backgroundColor: '#F8F4FF', borderRadius: 15, paddingHorizontal: 10 },
   modalOptionText: { fontSize: 17, color: '#555', fontWeight: '500' },
   modalOptionTextSelected: { color: COLORS.primary, fontWeight: '800' },
-
   feedbackCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, backgroundColor: '#F8F4FF', padding: 18, borderRadius: 20, borderWidth: 1, borderColor: COLORS.line },
   feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700', color: COLORS.primary },
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },

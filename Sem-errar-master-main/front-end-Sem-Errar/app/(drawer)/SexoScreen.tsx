@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -63,7 +64,7 @@ export default function SexoScreen() {
       setIsLoading(true);
       try {
         await AsyncStorage.setItem('@sexo', sexoSelecionado);
-        router.push('/IdadeScreen');
+        router.push('/(drawer)/IdadeScreen'); // Ajustado para o caminho correto na drawer
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível salvar.');
       } finally {
@@ -90,19 +91,37 @@ export default function SexoScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       
+      {/* Camada de fundo fixa */}
       <View style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
         {renderStaticBackground()}
       </View>
 
-      {/* Botão Voltar Fixo */}
-      <Pressable style={styles.backButton} onPress={() => router.back()}>
-        <FontAwesome name="chevron-left" size={16} color={COLORS.primary} />
-        <Text style={styles.backButtonText}>Voltar</Text>
-      </Pressable>
+      {/* Header Fixo no Topo - Botão Voltar */}
+      <View style={styles.header}>
+        <Pressable 
+          onPress={() => router.replace('/(drawer)/ObjetivoScreen')} 
+          style={styles.backButton}
+        >
+          <View style={styles.backIconCircle}>
+            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+          </View>
+          <Text style={styles.backText}>Voltar</Text>
+        </Pressable>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
+          
+          {/* Logo Centralizada */}
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
           <Text style={styles.title}>Qual é o seu sexo?</Text>
           <Text style={styles.subtitle}>Essencial para usar as fórmulas adequadas a cada sexo</Text>
 
@@ -161,30 +180,90 @@ export default function SexoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
-  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
-  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 20,
-    padding: 10,
+  visualArea: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+    overflow: 'hidden',
   },
-  backButtonText: { marginLeft: 8, fontSize: 16, fontWeight: '600', color: COLORS.primary },
+  ellipseLine: {
+    position: 'absolute',
+    borderWidth: 1.5,
+    borderColor: COLORS.line,
+    borderRadius: 999,
+  },
+  staticDot: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLORS.dot,
+    backgroundColor: '#fff',
+  },
+  // Header fixo para manter consistência
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    zIndex: 100,
+  },
+  backButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    alignSelf: 'flex-start' 
+  },
+  backIconCircle: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.line,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  backText: { 
+    color: COLORS.primary, 
+    marginLeft: 10, 
+    fontWeight: '700', 
+    fontSize: 16 
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 25,
-    paddingTop: 100,
+    paddingTop: 10,
     paddingBottom: 40,
     justifyContent: 'center',
   },
   content: { width: '100%', zIndex: 10 },
-  title: { fontSize: 28, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginBottom: 40, paddingHorizontal: 20 },
-  opcoesContainer: { gap: 15, marginBottom: 40 },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 25,
+    marginTop: 5,
+  },
+  logo: {
+    width: width * 0.5,
+    height: 70,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: COLORS.textMain,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.dot,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 35,
+    paddingHorizontal: 20
+  },
+  opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,13 +278,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
-  opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2, shadowColor: COLORS.primary, shadowOpacity: 0.1 },
-  opcaoIconContainer: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  opcaoItemSelecionado: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
+  },
+  opcaoIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
   opcaoTitulo: { fontSize: 18, fontWeight: '700', color: COLORS.textMain },
-  radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
+  radioButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
   radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 4,
+  },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 });

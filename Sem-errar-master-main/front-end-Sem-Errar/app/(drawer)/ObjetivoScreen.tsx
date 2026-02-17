@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -70,17 +71,12 @@ export default function ObjetivoScreen() {
 
   const renderStaticBackground = () => (
     <View style={styles.visualArea}>
-      {/* Elipse Superior Direita */}
       <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3, transform: [{ rotate: '15deg' }] }]}>
         <View style={[styles.staticDot, { bottom: '20%', left: '10%' }]} />
       </View>
-      
-      {/* Elipse Inferior Esquerda */}
       <View style={[styles.ellipseLine, { width: width * 1.0, height: width * 1.0, bottom: -width * 0.2, left: -width * 0.4, transform: [{ rotate: '-20deg' }] }]}>
         <View style={[styles.staticDot, { top: '15%', right: '15%' }]} />
       </View>
-
-      {/* Elipse Central Transversal */}
       <View style={[styles.ellipseLine, { width: width * 1.5, height: width * 0.8, top: height * 0.2, transform: [{ rotate: '110deg' }] }]}>
         <View style={[styles.staticDot, { top: '50%', right: -5 }]} />
       </View>
@@ -97,10 +93,33 @@ export default function ObjetivoScreen() {
         {renderStaticBackground()}
       </View>
 
+      {/* Header Fixo - Botão Voltar */}
+      <View style={styles.header}>
+        <Pressable 
+          onPress={() => router.replace('/(drawer)')} 
+          style={styles.backButton}
+        >
+          <View style={styles.backIconCircle}>
+            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+          </View>
+          <Text style={styles.backText}>Voltar</Text>
+        </Pressable>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
+          
+          {/* Logo Centralizada */}
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
           <Text style={styles.title}>Qual é seu principal objetivo agora?</Text>
-          <Text style={styles.subtitle}>Isso vai nos ajudar a personalizar seu desafio</Text>
+          {/* Texto auxiliar removido conforme solicitado */}
 
           <View style={styles.opcoesContainer}>
             {objetivos.map((objetivo) => {
@@ -161,7 +180,7 @@ const styles = StyleSheet.create({
   visualArea: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
-    overflow: 'hidden', // Garante que as elipses não criem scroll
+    overflow: 'hidden',
   },
   ellipseLine: {
     position: 'absolute',
@@ -178,29 +197,57 @@ const styles = StyleSheet.create({
     borderColor: COLORS.dot,
     backgroundColor: '#fff',
   },
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    zIndex: 100,
+  },
+  backButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    alignSelf: 'flex-start' 
+  },
+  backIconCircle: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.line,
+    elevation: 3,
+  },
+  backText: { 
+    color: COLORS.primary, 
+    marginLeft: 10, 
+    fontWeight: '700', 
+    fontSize: 16 
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 25,
-    paddingTop: 60,
+    paddingTop: 10,
     paddingBottom: 40,
-    justifyContent: 'center',
   },
   content: { width: '100%', zIndex: 10 },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 5,
+  },
+  logo: {
+    width: width * 0.5,
+    height: 70,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
     color: COLORS.textMain,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 40, // Aumentado para compensar a falta do subtítulo
   },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.dot,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  opcoesContainer: { gap: 15, marginBottom: 40 },
+  opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -218,8 +265,6 @@ const styles = StyleSheet.create({
   opcaoItemSelecionado: {
     borderColor: COLORS.primary,
     borderWidth: 2,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.1,
   },
   opcaoIconContainer: {
     width: 48,

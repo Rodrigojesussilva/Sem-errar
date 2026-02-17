@@ -1,58 +1,45 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Dimensions,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width, height } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#622db2',
+  dot: '#4ecdc4',
+  line: 'rgba(112, 82, 230, 0.15)',
+  textMain: '#1A1A1A',
+  disabled: '#F0F0F0',
+};
 
 export default function EstruturaTreinosScreen() {
   const router = useRouter();
   const [estruturaSelecionada, setEstruturaSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Ícones e cores seguindo o padrão da tela objetivo
   const estruturas = [
-    {
-      id: '1',
-      title: 'Sempre o mesmo treino',
-      subtitle: 'Full body ou ABC',
-      description: 'Faz o mesmo treino todos os dias',
-      icon: 'repeat',
-      color: '#4CAF50',
-    },
-    {
-      id: '2',
-      title: '2 treinos diferentes',
-      subtitle: 'Treino A e B',
-      description: 'Alterna entre 2 treinos',
-      icon: 'exchange',
-      color: '#2196F3',
-    },
-    {
-      id: '3',
-      title: '3 treinos diferentes',
-      subtitle: 'Treino A, B e C',
-      description: 'Alterna entre 3 treinos',
-      icon: 'random',
-      color: '#9C27B0',
-    },
-    {
-      id: '4',
-      title: '4 treinos diferentes',
-      subtitle: 'Treino A, B, C e D',
-      description: 'Alterna entre 4 treinos',
-      icon: 'arrows',
-      color: '#FF9800',
-    },
-    {
-      id: 'personalizar',
-      title: 'Personalizar',
-      subtitle: 'Crie seu próprio esquema',
-      description: 'Monte seus treinos manualmente',
-      icon: 'pencil-square-o',
-      color: '#E74C3C',
-    },
+    { id: '1', title: 'Sempre o mesmo treino', subtitle: 'Full body ou ABC', icon: 'refresh', color: '#4CAF50' },
+    { id: '2', title: '2 treinos diferentes', subtitle: 'Treino A e B', icon: 'retweet', color: '#2196F3' },
+    { id: '3', title: '3 treinos diferentes', subtitle: 'Treino A, B e C', icon: 'th-list', color: '#9C27B0' },
+    { id: '4', title: '4 treinos diferentes', subtitle: 'Treino A, B, C e D', icon: 'th-large', color: '#FF9800' },
+    { id: 'personalizar', title: 'Personalizar', subtitle: 'Crie seu próprio esquema', icon: 'edit', color: '#E74C3C' },
   ];
 
-  // Carregar estrutura salva ao iniciar a tela
   useEffect(() => {
     carregarEstruturaSalva();
   }, []);
@@ -60,408 +47,228 @@ export default function EstruturaTreinosScreen() {
   const carregarEstruturaSalva = async () => {
     try {
       const estruturaSalva = await AsyncStorage.getItem('@estruturaTreinos');
-      if (estruturaSalva) {
-        setEstruturaSelecionada(estruturaSalva);
-      }
+      if (estruturaSalva) setEstruturaSelecionada(estruturaSalva);
     } catch (error) {
-      console.error('Erro ao carregar estrutura de treinos:', error);
+      console.error('Erro ao carregar estrutura:', error);
     }
   };
 
   const handleProximo = async () => {
-    if (estruturaSelecionada) {
-      setIsLoading(true);
-      try {
-        await AsyncStorage.setItem('@estruturaTreinos', estruturaSelecionada);
-        
-        // Salvar informações adicionais baseado na seleção
-        const estruturaInfo = estruturas.find(e => e.id === estruturaSelecionada);
-        if (estruturaInfo) {
-          await AsyncStorage.setItem('@estruturaTreinosInfo', JSON.stringify(estruturaInfo));
-        }
-        
-        console.log('Estrutura de treinos salva:', estruturaSelecionada);
-        
-        // Navegar para próxima tela (próxima etapa do cadastro)
-        router.push('/ConfigurarTreinoScreen');
-      } catch (error) {
-        console.error('Erro ao salvar estrutura de treinos:', error);
-        Alert.alert('Erro', 'Não foi possível salvar sua escolha. Tente novamente.');
-      } finally {
-        setIsLoading(false);
-      }
+    if (!estruturaSelecionada) return;
+    setIsLoading(true);
+    try {
+      await AsyncStorage.setItem('@estruturaTreinos', estruturaSelecionada);
+      router.push('/ConfigurarTreinoScreen');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar sua escolha.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // ROTA CORRIGIDA: No expo-router, ignoramos os parênteses (drawer)
   const handleVoltar = () => {
-   // router.push('/BemVindoScreen'); // Ajuste para a tela anterior correta
+    router.replace('/RegistrarTreinoScreen');
   };
 
+  const renderStaticBackground = () => (
+    <View style={styles.visualArea}>
+      {/* Elipse Superior */}
+      <View style={[styles.ellipseLine, { width: width * 1.8, height: height * 0.5, top: -100, left: -width * 0.5, transform: [{ rotate: '-10deg' }] }]}>
+        <View style={[styles.staticDot, { bottom: '20%', right: '20%' }]} />
+      </View>
+      {/* Elipse Inferior */}
+      <View style={[styles.ellipseLine, { width: width * 1.5, height: height * 0.4, bottom: height * 0.1, right: -width * 0.4, transform: [{ rotate: '15deg' }] }]}>
+        <View style={[styles.staticDot, { top: '15%', left: '10%' }]} />
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.background}>
-      {/* BOTÃO VOLTAR NO TOPO - FIXO */}
-      <View style={styles.headerContainer}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      <View style={StyleSheet.absoluteFill}>
+        <View style={{ flex: 1, backgroundColor: '#fff' }} />
+        {renderStaticBackground()}
+      </View>
+
+      <View style={styles.header}>
         <Pressable 
+          onPress={handleVoltar} 
           style={styles.backButton}
-          onPress={handleVoltar}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
-          <FontAwesome name="arrow-left" size={20} color="#1E88E5" />
-          <Text style={styles.backButtonText}>Voltar</Text>
+          <View style={styles.backIconCircle}>
+            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+          </View>
+          <Text style={styles.backText}>Voltar</Text>
         </Pressable>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* CONTAINER PRINCIPAL */}
-        <View style={styles.mainContainer}>
-          {/* IMAGEM NO TOPO */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={require('@/assets/images/logo2.png')}
-              style={styles.topImage}
-              resizeMode="cover"
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              style={styles.logo}
+              resizeMode="contain"
             />
           </View>
-          
-          {/* CONTEÚDO ABAIXO DA IMAGEM */}
-          <View style={styles.content}>
-            <View style={styles.headerSection}>
-              <Text style={styles.sectionTitle}>🏋️ Estrutura de Treinos</Text>
-              <Text style={styles.welcomeTitle}>
-                Você faz sempre o mesmo treino ou alterna?
-              </Text>
-              <Text style={styles.obrigatorio}>* obrigatório</Text>
-            </View>
-            
-            <Text style={styles.subtitle}>
-              Escolha como você quer organizar seus treinos durante a semana
-            </Text>
-            
-            {/* OPÇÕES DE ESTRUTURA */}
-            <View style={styles.estruturasContainer}>
-              <View style={styles.estruturasGrid}>
-                {estruturas.map((estrutura) => (
-                  <Pressable
-                    key={estrutura.id}
-                    style={[
-                      styles.estruturaItem,
-                      estruturaSelecionada === estrutura.id && styles.estruturaItemSelecionado
-                    ]}
-                    onPress={() => setEstruturaSelecionada(estrutura.id)}
-                  >
-                    <View style={[
-                      styles.estruturaIconContainer,
-                      { backgroundColor: `${estrutura.color}15` }
-                    ]}>
-                      <FontAwesome name={estrutura.icon as any} size={28} color={estrutura.color} />
-                    </View>
-                    
-                    <View style={styles.estruturaContent}>
-                      <Text style={[
-                        styles.estruturaTitulo,
-                        estruturaSelecionada === estrutura.id && styles.estruturaTituloSelecionado
-                      ]}>
-                        {estrutura.title}
-                      </Text>
-                      <Text style={styles.estruturaSubtitulo}>{estrutura.subtitle}</Text>
-                      <Text style={styles.estruturaDescricao}>{estrutura.description}</Text>
-                    </View>
-                    
-                    <View style={[
-                      styles.radioButton,
-                      estruturaSelecionada === estrutura.id && styles.radioButtonSelecionado
-                    ]}>
-                      {estruturaSelecionada === estrutura.id && (
-                        <View style={styles.radioButtonInner} />
-                      )}
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-            
-            <View style={styles.divider} />
-            
-            {/* BOTÃO PRÓXIMO */}
-            <Pressable 
-              style={[
-                styles.primaryButton,
-                (!estruturaSelecionada || isLoading) && styles.primaryButtonDisabled
-              ]}
-              onPress={handleProximo}
-              disabled={!estruturaSelecionada || isLoading}
-            >
-              <View style={styles.buttonContent}>
-                <FontAwesome name="arrow-right" size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>
-                  {isLoading ? 'Salvando...' : 'Próximo'}
-                </Text>
-              </View>
-              <Text style={styles.buttonSubtitle}>
-                {estruturaSelecionada 
-                  ? 'Continue para o próximo passo' 
-                  : 'Selecione uma opção para continuar'}
-              </Text>
-            </Pressable>
+
+          {/* Sem texto auxiliar, direto na pergunta */}
+          <Text style={styles.title}>Você faz sempre o mesmo treino ou alterna?</Text>
+
+          <View style={styles.opcoesContainer}>
+            {estruturas.map((item) => {
+              const isSelected = estruturaSelecionada === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
+                  onPress={() => setEstruturaSelecionada(item.id)}
+                >
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${item.color}15` }]}>
+                    <FontAwesome name={item.icon as any} size={22} color={item.color} />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.opcaoTitulo, isSelected && { color: COLORS.primary }]}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.opcaoDescricaoItem}>{item.subtitle}</Text>
+                  </View>
+
+                  <View style={[styles.radioButton, isSelected && styles.radioButtonSelecionado]}>
+                    {isSelected && <View style={styles.radioButtonInner} />}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
+
+          <Pressable
+            onPress={handleProximo}
+            disabled={!estruturaSelecionada || isLoading}
+            style={styles.buttonWrapper}
+          >
+            {estruturaSelecionada ? (
+              <LinearGradient
+                colors={['#7b42d5', '#622db2', '#4b208c']}
+                style={styles.primaryButton}
+              >
+                <Text style={styles.primaryText}>{isLoading ? 'Salvando...' : 'Próximo'}</Text>
+              </LinearGradient>
+            ) : (
+              <View style={[styles.primaryButton, { backgroundColor: COLORS.disabled }]}>
+                <Text style={[styles.primaryText, { color: '#AAA' }]}>Selecione uma opção</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+  container: { flex: 1, backgroundColor: '#fff' },
+  visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
+  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
+  staticDot: { 
+    position: 'absolute', 
+    width: 10, 
+    height: 10, 
+    borderRadius: 5, 
+    borderWidth: 2, 
+    borderColor: COLORS.dot, 
+    backgroundColor: '#fff' 
   },
-
-  // Header fixo com botão voltar
-  headerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    zIndex: 10,
+  header: { 
+    paddingHorizontal: 25, 
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, 
+    zIndex: 100 
   },
-
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  backButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    alignSelf: 'flex-start' 
   },
-
-  backButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+  backIconCircle: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.line, 
+    elevation: 3 
   },
-  
-  scrollView: {
-    flex: 1,
+  backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
+  scrollContent: { 
+    flexGrow: 1, 
+    paddingHorizontal: 25, 
+    paddingTop: 60, 
+    paddingBottom: 40 
   },
-  
-  scrollContent: {
-    flexGrow: 1,
-    paddingTop: 15,
-    paddingBottom: 30,
-    paddingHorizontal: 5,
+  content: { width: '100%', zIndex: 10 },
+  logoContainer: { 
+    alignItems: 'center', 
+    marginBottom: 40 
   },
-
-  mainContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginHorizontal: 15,
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '92%',
-    marginTop: 5,
+  logo: { width: width * 0.5, height: 70 },
+  title: { 
+    fontSize: 26, 
+    fontWeight: '900', 
+    color: COLORS.textMain, 
+    textAlign: 'center', 
+    marginBottom: 40,
+    paddingHorizontal: 10
   },
-
-  imageContainer: {
-    height: 170,
-    width: '100%',
-    overflow: 'hidden',
-    backgroundColor: '#F5F5F5',
+  opcoesContainer: { gap: 12, marginBottom: 35 },
+  opcaoItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16, 
+    backgroundColor: '#fff', 
+    borderRadius: 20, 
+    borderWidth: 1.5, 
+    borderColor: '#f4f4f4', 
+    elevation: 2, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 5 
   },
-
-  topImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2 },
+  opcaoIconContainer: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 15, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 15 
   },
-
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 28,
-    alignItems: 'center',
+  opcaoTitulo: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
+  opcaoDescricaoItem: { fontSize: 13, color: '#888', marginTop: 2 },
+  radioButton: { 
+    width: 22, 
+    height: 22, 
+    borderRadius: 11, 
+    borderWidth: 2, 
+    borderColor: '#E0E0E0', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 20,
+  radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
+  radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+  buttonWrapper: { 
+    width: '100%', 
+    borderRadius: 22, 
+    overflow: 'hidden', 
+    elevation: 4 
   },
-
-  sectionTitle: {
-    color: '#666666',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#1E88E5',
-  },
-
-  welcomeTitle: {
-    color: '#000000',
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 32,
-  },
-
-  obrigatorio: {
-    color: '#FF5722',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 22,
-  },
-
-  subtitle: {
-    color: '#666666',
-    fontSize: 17,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-
-  // Estilos para as opções de estrutura
-  estruturasContainer: {
-    width: '100%',
-    marginBottom: 28,
-  },
-
-  estruturasGrid: {
-    gap: 16,
-  },
-
-  estruturaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#E9ECEF',
-    gap: 16,
-  },
-
-  estruturaItemSelecionado: {
-    backgroundColor: '#F0F9FF',
-    borderColor: '#1E88E5',
-  },
-
-  estruturaIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  estruturaContent: {
-    flex: 1,
-  },
-
-  estruturaTitulo: {
-    color: '#000000',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-
-  estruturaTituloSelecionado: {
-    color: '#1E88E5',
-  },
-
-  estruturaSubtitulo: {
-    color: '#1E88E5',
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-
-  estruturaDescricao: {
-    color: '#666666',
-    fontSize: 14,
-  },
-
-  radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#CCCCCC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  radioButtonSelecionado: {
-    borderColor: '#1E88E5',
-    backgroundColor: '#1E88E5',
-  },
-
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
-  },
-
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#E0E0E0',
-    marginVertical: 22,
-  },
-
-  primaryButton: {
-    width: '100%',
-    backgroundColor: '#1E88E5',
-    borderRadius: 18,
-    paddingVertical: 22,
-    paddingHorizontal: 26,
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: 12,
-  },
-
-  primaryButtonDisabled: {
-    backgroundColor: '#CCCCCC',
-    shadowColor: '#CCCCCC',
-  },
-
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 8,
-  },
-
-  primaryText: {
-    color: '#FFFFFF',
-    fontSize: 21,
-    fontWeight: '700',
-  },
-
-  buttonSubtitle: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 15,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+  primaryButton: { paddingVertical: 18, alignItems: 'center' },
+  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 });
