@@ -1,50 +1,51 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, View, Easing, StatusBar, Image, Platform } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { Animated, Dimensions, StyleSheet, Text, View, Easing, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-interface IconConfig {
-  name: string;
-  color: string;
-  size: number;
-}
-
-const ICONS: IconConfig[] = [
-  { name: 'dumbbell', color: '#7052e6', size: 18 },
-  { name: 'tint', color: '#5194e0', size: 20 },
-  { name: 'running', color: '#e96f04', size: 18 },
-  { name: 'apple-alt', color: '#fa3e3e', size: 22 },
-  { name: 'bread-slice', color: '#f5a623', size: 20 },
-  { name: 'glass-whiskey', color: '#5194e0', size: 18 },
-  { name: 'carrot', color: '#ed8a19', size: 20 },
-  { name: 'cheese', color: '#f5d142', size: 18 },
-  { name: 'egg', color: '#999', size: 16 },
-  { name: 'fish', color: '#64b6df', size: 20 },
-  { name: 'leaf', color: '#4cd964', size: 18 },
-  { name: 'coffee', color: '#a67c52', size: 18 },
-];
+const COLORS = {
+  line: 'rgba(112, 82, 230, 0.15)', 
+  dot: '#4ecdc4',                 
+  welcomeText: '#777', // Um cinza mais suave para o "Bem-vindo ao"
+  brandText: '#555', // Preto quase puro para o nome do app ter destaque
+};
 
 export default function BoasVindas1() {
   const animValue = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current; 
+  const pulseAnim = useRef(new Animated.Value(1)).current; 
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Animação infinita das órbitas
     animValue.setValue(0);
     Animated.loop(
       Animated.timing(animValue, {
         toValue: 1,
-        duration: 40000,
+        duration: 35000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // 2. Inicia o Fade Out aos 3.5 segundos
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.08,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     const fadeTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -53,7 +54,6 @@ export default function BoasVindas1() {
       }).start();
     }, 3500);
 
-    // 3. Redireciona exatamente aos 4 segundos
     const navTimer = setTimeout(() => {
       router.replace('/(drawer)/BoasVindas2');
     }, 4000);
@@ -67,42 +67,44 @@ export default function BoasVindas1() {
   const RADIUS = width * 0.85; 
   const ELLIPSE_RATIO = 0.55; 
 
-  const renderOrbit = (icons: IconConfig[], orbitRotation: string, direction: number = 1) => {
+  const renderOrbit = (count: number, orbitRotation: string, direction: number = 1) => {
+    const spin = animValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: direction === 1 ? ['0deg', '360deg'] : ['360deg', '0deg']
+    });
+
     return (
       <View style={[styles.orbitWrapper, { transform: [{ rotate: orbitRotation }] }]}>
-        <View style={[styles.ellipseLine, { 
-          width: RADIUS * 2, 
-          height: (RADIUS * 2) * ELLIPSE_RATIO, 
-          borderRadius: RADIUS 
-        }]} />
+        <Animated.View style={[
+          styles.ellipseLine, 
+          { 
+            width: RADIUS * 2, 
+            height: (RADIUS * 2) * ELLIPSE_RATIO, 
+            borderRadius: RADIUS,
+            transform: [{ rotate: spin }]
+          }
+        ]} />
         
-        {icons.map((icon, index) => {
-          const startAngle = (index * (360 / icons.length)) * (Math.PI / 180);
+        {Array.from({ length: count }).map((_, index) => {
+          const startAngle = (index * (360 / count)) * (Math.PI / 180);
           const inputRange = [0, 0.25, 0.5, 0.75, 1];
-          const outputX = inputRange.map(v => {
-            const angle = startAngle + (v * direction * 2 * Math.PI);
-            return RADIUS * Math.cos(angle);
-          });
-          const outputY = inputRange.map(v => {
-            const angle = startAngle + (v * direction * 2 * Math.PI);
-            return (RADIUS * ELLIPSE_RATIO) * Math.sin(angle);
-          });
+          const outputX = inputRange.map(v => RADIUS * Math.cos(startAngle + (v * direction * 2 * Math.PI)));
+          const outputY = inputRange.map(v => (RADIUS * ELLIPSE_RATIO) * Math.sin(startAngle + (v * direction * 2 * Math.PI)));
+
           return (
             <Animated.View
-              key={`${icon.name}-${index}`}
+              key={`dot-v1-${index}`}
               style={[
-                styles.iconContainer,
+                styles.dotContainer,
                 {
                   transform: [
                     { translateX: animValue.interpolate({ inputRange, outputRange: outputX }) },
                     { translateY: animValue.interpolate({ inputRange, outputRange: outputY }) },
-                    { rotate: orbitRotation.startsWith('-') ? orbitRotation.substring(1) : '-' + orbitRotation }
                   ],
-                  opacity: 0.5,
                 },
               ]}
             >
-              <FontAwesome5 name={icon.name as any} size={icon.size} color={icon.color} />
+              <View style={styles.hollowDot} />
             </Animated.View>
           );
         })}
@@ -112,42 +114,35 @@ export default function BoasVindas1() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* StatusBar corrigida - texto claro para fundo roxo */}
-      <StatusBar 
-        barStyle="light-content" 
-        backgroundColor="#7052e6" 
-        translucent={false}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
       
-      {/* Background idêntico às outras telas ✅ */}
-      <LinearGradient colors={['#FFFFFF', '#F9FAFF', '#FFFFFF']} style={styles.background} />
+      <LinearGradient colors={['#FFFFFF', '#FFFFFF', '#FFFFFF']} style={styles.background} />
       
       <View style={styles.visualArea}>
-        {renderOrbit(ICONS.slice(0, 4), '0deg', 1)}
-        {renderOrbit(ICONS.slice(4, 8), '120deg', -1)}
-        {renderOrbit(ICONS.slice(8, 12), '240deg', 1)}
+        {renderOrbit(2, '0deg', 1)}
+        {renderOrbit(2, '120deg', -1)}
+        {renderOrbit(2, '240deg', 1)}
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Bem-vindo ao</Text>
-        <Image 
-          source={require('../../assets/images/completa-sem-fundo1.png')} 
-          style={styles.logo}
+        <Animated.Image 
+          source={require('../../assets/images/icone-sem-fundo.png')} 
+          style={[styles.logoIcon, { transform: [{ scale: pulseAnim }] }]}
           resizeMode="contain"
         />
+        
+        <View style={styles.textWrapper}>
+          <Text style={styles.welcomeText}>Bem-vindo ao</Text>
+          <Text style={styles.brandName}>Sem Errar! Desafio Fitness</Text>
+        </View>
       </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff' 
-  },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  background: { ...StyleSheet.absoluteFillObject },
   visualArea: { 
     ...StyleSheet.absoluteFillObject, 
     justifyContent: 'center', 
@@ -162,14 +157,22 @@ const styles = StyleSheet.create({
   },
   ellipseLine: {
     position: 'absolute',
-    borderWidth: 1.2,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderWidth: 1.5,
+    borderColor: COLORS.line,
     backgroundColor: 'transparent',
   },
-  iconContainer: { 
+  dotContainer: { 
     position: 'absolute', 
     justifyContent: 'center', 
     alignItems: 'center' 
+  },
+  hollowDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLORS.dot,
+    backgroundColor: '#fff',
   },
   content: { 
     flex: 1, 
@@ -178,15 +181,27 @@ const styles = StyleSheet.create({
     padding: 20, 
     zIndex: 30 
   },
-  welcomeText: { 
-    color: '#555', 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    marginBottom: 8, 
-    textAlign: 'center' 
+  logoIcon: { 
+    width: 130, 
+    height: 130, 
+    marginBottom: 20
   },
-  logo: { 
-    width: width * 0.75, 
-    height: 150 
+  textWrapper: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  welcomeText: { 
+    color: COLORS.welcomeText, 
+    fontSize: 18, 
+    fontWeight: '500', 
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  brandName: { 
+    color: COLORS.brandText, 
+    fontSize: 24, 
+    fontWeight: '900', // Extra negrito para destaque máximo
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
 });
