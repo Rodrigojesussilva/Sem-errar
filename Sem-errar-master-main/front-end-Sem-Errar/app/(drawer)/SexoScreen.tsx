@@ -104,7 +104,7 @@ export default function SexoScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.title}>Qual é o seu sexo?</Text>
-          <Text style={styles.subtitle}>Essa informação nos ajuda a personalizar seu plano de treino</Text>
+          <Text style={styles.subtitle}>Essencial para usar as fórmulas adequadas a cada sexo</Text>
 
           <View style={styles.opcoesContainer}>
             {opcoesSexo.map((opcao) => {

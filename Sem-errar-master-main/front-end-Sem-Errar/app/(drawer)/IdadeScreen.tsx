@@ -1,552 +1,278 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  StatusBar,
+  Dimensions,
+  Modal,
+  FlatList,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width, height } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#622db2',
+  dot: '#4ecdc4',
+  line: 'rgba(112, 82, 230, 0.15)',
+  textMain: '#1A1A1A',
+  disabled: '#F0F0F0',
+  error: '#ff6b6b'
+};
+
+const CustomSelect = ({ label, value, options, onSelect, placeholder }: any) => {
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const displayLabel = options.find((o: any) => (typeof o === 'string' ? o === value : o.value === value));
+  const currentText = typeof displayLabel === 'object' ? displayLabel.label : displayLabel || placeholder;
+
+  return (
+    <View style={styles.pickerWrapper}>
+      <Text style={styles.pickerLabel}>{label}</Text>
+      <Pressable 
+        style={[styles.pickerContainer, value && styles.pickerSelected]} 
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={[styles.pickerValueText, !value && { color: '#999' }]}>
+          {currentText}
+        </Text>
+        <FontAwesome name="chevron-down" size={10} color={value ? COLORS.primary : '#CCC'} />
+      </Pressable>
+
+      <Modal transparent visible={modalVisible} animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIndicator} />
+            <Text style={styles.modalTitle}>Selecione o {label}</Text>
+            <FlatList
+              data={options}
+              keyExtractor={(item) => (typeof item === 'string' ? item : item.value)}
+              renderItem={({ item }) => {
+                const itemValue = typeof item === 'string' ? item : item.value;
+                const itemLabel = typeof item === 'string' ? item : item.labelFull || item.label;
+                const isSelected = itemValue === value;
+
+                return (
+                  <Pressable 
+                    style={[styles.modalOption, isSelected && styles.modalOptionSelected]}
+                    onPress={() => {
+                      onSelect(itemValue);
+                      setModalVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextSelected]}>
+                      {itemLabel}
+                    </Text>
+                    {isSelected && <FontAwesome name="check-circle" size={18} color={COLORS.primary} />}
+                  </Pressable>
+                );
+              }}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+};
 
 export default function IdadeScreen() {
   const router = useRouter();
-  const [dia, setDia] = useState<string>('');
-  const [mes, setMes] = useState<string>('');
-  const [ano, setAno] = useState<string>('');
+  const [dia, setDia] = useState('');
+  const [mes, setMes] = useState('');
+  const [ano, setAno] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [idade, setIdade] = useState<number | null>(null);
 
-  // Gerar arrays para os pickers
   const dias = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
   const meses = [
-    { value: '01', label: 'Jan' },
-    { value: '02', label: 'Fev' },
-    { value: '03', label: 'Mar' },
-    { value: '04', label: 'Abr' },
-    { value: '05', label: 'Mai' },
-    { value: '06', label: 'Jun' },
-    { value: '07', label: 'Jul' },
-    { value: '08', label: 'Ago' },
-    { value: '09', label: 'Set' },
-    { value: '10', label: 'Out' },
-    { value: '11', label: 'Nov' },
-    { value: '12', label: 'Dez' }
+    { value: '01', label: 'Jan', labelFull: 'Janeiro' },
+    { value: '02', label: 'Fev', labelFull: 'Fevereiro' },
+    { value: '03', label: 'Mar', labelFull: 'Março' },
+    { value: '04', label: 'Abr', labelFull: 'Abril' },
+    { value: '05', label: 'Mai', labelFull: 'Maio' },
+    { value: '06', label: 'Jun', labelFull: 'Junho' },
+    { value: '07', label: 'Jul', labelFull: 'Julho' },
+    { value: '08', label: 'Ago', labelFull: 'Agosto' },
+    { value: '09', label: 'Set', labelFull: 'Setembro' },
+    { value: '10', label: 'Out', labelFull: 'Outubro' },
+    { value: '11', label: 'Nov', labelFull: 'Novembro' },
+    { value: '12', label: 'Dez', labelFull: 'Dezembro' }
   ];
-  const anoAtual = new Date().getFullYear();
-  const anos = Array.from({ length: 120 }, (_, i) => (anoAtual - i).toString());
+  const anos = Array.from({ length: 100 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-  // Carregar data salva ao iniciar a tela
   useEffect(() => {
-    carregarDataSalva();
-  }, []);
-
-  const carregarDataSalva = async () => {
-    try {
-      const dataSalva = await AsyncStorage.getItem('@dataNascimento');
-      
-      if (dataSalva) {
-        const [anoSalvo, mesSalvo, diaSalvo] = dataSalva.split('-');
-        setDia(diaSalvo);
-        setMes(mesSalvo);
-        setAno(anoSalvo);
-        calcularIdade(parseInt(anoSalvo), parseInt(mesSalvo) - 1, parseInt(diaSalvo));
-      }
-    } catch (error) {
-      console.error('Erro ao carregar data de nascimento:', error);
-    }
-  };
-
-  const calcularIdade = (anoNum: number, mesNum: number, diaNum: number) => {
-    const hoje = new Date();
-    const nascimento = new Date(anoNum, mesNum, diaNum);
-    
-    // Verificar se a data é válida
-    if (isNaN(nascimento.getTime())) {
-      setIdade(null);
-      return;
-    }
-
-    // Verificar se a data não é futura
-    if (nascimento > hoje) {
-      setIdade(null);
-      Alert.alert('Data inválida', 'A data de nascimento não pode ser no futuro.');
-      return;
-    }
-
-    let idadeCalculada = hoje.getFullYear() - nascimento.getFullYear();
-    const mesAtual = hoje.getMonth();
-    const diaAtual = hoje.getDate();
-    
-    if (mesAtual < mesNum || (mesAtual === mesNum && diaAtual < diaNum)) {
-      idadeCalculada--;
-    }
-    
-    setIdade(idadeCalculada);
-  };
-
-  const handleDateChange = () => {
     if (dia && mes && ano) {
-      calcularIdade(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
-    } else {
-      setIdade(null);
+      const hoje = new Date();
+      const nascimento = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+      let idadeCalc = hoje.getFullYear() - nascimento.getFullYear();
+      if (hoje.getMonth() < nascimento.getMonth() || (hoje.getMonth() === nascimento.getMonth() && hoje.getDate() < nascimento.getDate())) {
+        idadeCalc--;
+      }
+      setIdade(nascimento > hoje ? -1 : idadeCalc);
     }
-  };
-
-  // Atualizar idade quando dia, mês ou ano mudar
-  useEffect(() => {
-    handleDateChange();
   }, [dia, mes, ano]);
 
   const handleProximo = async () => {
-    if (dia && mes && ano) {
-      if (idade !== null && idade >= 0) {
-        setIsLoading(true);
-        try {
-          // Formatar data no padrão ISO para salvar
-          const dataFormatada = `${ano}-${mes}-${dia}`;
-          await AsyncStorage.setItem('@dataNascimento', dataFormatada);
-          
-          // Salvar idade também para compatibilidade
-          await AsyncStorage.setItem('@idade', idade.toString());
-          
-          console.log('Data de nascimento salva:', `${dia}/${mes}/${ano}`);
-          console.log('Idade calculada:', idade);
-          
-          // Navegar para próxima tela
-          router.push('/AlturaScreen');
-        } catch (error) {
-          console.error('Erro ao salvar data de nascimento:', error);
-          Alert.alert('Erro', 'Não foi possível salvar sua data de nascimento. Tente novamente.');
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        Alert.alert('Data inválida', 'Por favor, selecione uma data de nascimento válida.');
+    if (idade !== null && idade >= 0) {
+      setIsLoading(true);
+      try {
+        await AsyncStorage.setItem('@idade', idade.toString());
+        router.push('/(drawer)/AlturaScreen');
+      } catch (error) {
+        Alert.alert('Erro', 'Não foi possível salvar.');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
-  const handleVoltar = () => {
-    router.push('/SexoScreen');
-  };
-
-  const dataCompleta = dia && mes && ano && idade !== null && idade >= 0;
-
   return (
-    <View style={styles.background}>
-      {/* BOTÃO VOLTAR NO TOPO - FIXO */}
-      <View style={styles.headerContainer}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      
+      {/* Background Fixo */}
+      <View style={StyleSheet.absoluteFill}>
+        <View style={{ flex: 1, backgroundColor: '#fff' }} />
+        <View style={styles.visualArea}>
+            <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3 }]} />
+        </View>
+      </View>
+
+      {/* Header com Botão Voltar (Fora do Scroll para ficar no topo) */}
+      <View style={styles.header}>
         <Pressable 
+          onPress={() => router.replace('/(drawer)/ObjetivoScreen')} // Caminho explícito para garantir funcionamento
           style={styles.backButton}
-          onPress={handleVoltar}
         >
-          <FontAwesome name="arrow-left" size={20} color="#1E88E5" />
-          <Text style={styles.backButtonText}>Voltar</Text>
+          <View style={styles.backIconCircle}>
+            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+          </View>
+          <Text style={styles.backText}>Voltar</Text>
         </Pressable>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* CONTAINER PRINCIPAL */}
-        <View style={styles.mainContainer}>
-          {/* IMAGEM NO TOPO */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={require('@/assets/images/logo2.png')}
-              style={styles.topImage}
-              resizeMode="cover"
-            />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Qual sua data de nascimento?</Text>
+          <Text style={styles.subtitle}>Utilizamos sua idade para estimar sua demanda energética.</Text>
+
+          <View style={styles.pickerRow}>
+            <CustomSelect label="Dia" value={dia} options={dias} onSelect={setDia} placeholder="--" />
+            <CustomSelect label="Mês" value={mes} options={meses} onSelect={setMes} placeholder="--" />
+            <CustomSelect label="Ano" value={ano} options={anos} onSelect={setAno} placeholder="----" />
           </View>
-          
-          {/* CONTEÚDO ABAIXO DA IMAGEM */}
-          <View style={styles.content}>
-            <View style={styles.headerSection}>
-              <Text style={styles.sectionTitle}>📏 Medidas básicas (1 de 3)</Text>
-              <Text style={styles.welcomeTitle}>Qual é sua data de nascimento?</Text>
-              <Text style={styles.obrigatorio}>* obrigatório</Text>
-            </View>
-            
-            <Text style={styles.subtitle}>
-              Sua idade influencia na quantidade de energia que seu corpo precisa por dia.
-            </Text>
-            
-            {/* SELETOR DE DATA COM 3 COLUNAS */}
-            <View style={styles.dateContainer}>
-              <Text style={styles.dateLabel}>Data de nascimento:</Text>
-              
-              <View style={styles.pickerRow}>
-                {/* PICKER DE DIA */}
-                <View style={styles.pickerWrapper}>
-                  <Text style={styles.pickerLabel}>Dia</Text>
-                  <View style={[
-                    styles.pickerContainer,
-                    dia && styles.pickerContainerSelected
-                  ]}>
-                    <Picker
-                      selectedValue={dia}
-                      onValueChange={(itemValue) => setDia(itemValue)}
-                      style={styles.picker}
-                      dropdownIconColor="#1E88E5"
-                    >
-                      <Picker.Item label="DD" value="" />
-                      {dias.map((d) => (
-                        <Picker.Item key={d} label={d} value={d} />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
 
-                {/* PICKER DE MÊS */}
-                <View style={styles.pickerWrapper}>
-                  <Text style={styles.pickerLabel}>Mês</Text>
-                  <View style={[
-                    styles.pickerContainer,
-                    mes && styles.pickerContainerSelected
-                  ]}>
-                    <Picker
-                      selectedValue={mes}
-                      onValueChange={(itemValue) => setMes(itemValue)}
-                      style={styles.picker}
-                      dropdownIconColor="#1E88E5"
-                    >
-                      <Picker.Item label="MÊS" value="" />
-                      {meses.map((m) => (
-                        <Picker.Item key={m.value} label={m.label} value={m.value} />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-
-                {/* PICKER DE ANO */}
-                <View style={styles.pickerWrapper}>
-                  <Text style={styles.pickerLabel}>Ano</Text>
-                  <View style={[
-                    styles.pickerContainer,
-                    ano && styles.pickerContainerSelected
-                  ]}>
-                    <Picker
-                      selectedValue={ano}
-                      onValueChange={(itemValue) => setAno(itemValue)}
-                      style={styles.picker}
-                      dropdownIconColor="#1E88E5"
-                    >
-                      <Picker.Item label="AAAA" value="" />
-                      {anos.map((a) => (
-                        <Picker.Item key={a} label={a} value={a} />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
-              
-              {idade !== null && idade >= 0 && dataCompleta && (
-                <View style={styles.idadeInfo}>
-                  <FontAwesome name="birthday-cake" size={18} color="#1E88E5" />
-                  <Text style={styles.idadeText}>
-                    Você tem <Text style={styles.idadeDestaque}>{idade} anos</Text>
-                  </Text>
-                </View>
-              )}
-
-              {idade !== null && idade < 0 && (
-                <View style={[styles.idadeInfo, styles.idadeInfoError]}>
-                  <FontAwesome name="exclamation-circle" size={18} color="#FF5722" />
-                  <Text style={styles.idadeTextError}>
-                    Data de nascimento inválida
-                  </Text>
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.divider} />
-            
-            {/* BOTÃO PRÓXIMO */}
-            <Pressable 
-              style={[
-                styles.primaryButton,
-                (!dataCompleta || isLoading) && styles.primaryButtonDisabled
-              ]}
-              onPress={handleProximo}
-              disabled={!dataCompleta || isLoading}
-            >
-              <View style={styles.buttonContent}>
-                <FontAwesome name="arrow-right" size={22} color="#FFFFFF" />
-                <Text style={styles.primaryText}>
-                  {isLoading ? 'Salvando...' : 'Próximo'}
-                </Text>
-              </View>
-              <Text style={styles.buttonSubtitle}>
-                {dataCompleta 
-                  ? 'Continue para a próxima etapa' 
-                  : 'Selecione sua data de nascimento para continuar'}
+          {idade !== null && (
+            <View style={[styles.feedbackCard, idade < 0 && { borderColor: COLORS.error, backgroundColor: '#FFF5F5' }]}>
+              <FontAwesome name={idade < 0 ? "exclamation-triangle" : "birthday-cake"} size={18} color={idade < 0 ? COLORS.error : COLORS.primary} />
+              <Text style={[styles.feedbackText, idade < 0 && { color: COLORS.error }]}>
+                {idade < 0 ? "Data inválida" : `Você tem ${idade} anos`}
               </Text>
-            </Pressable>
-          </View>
+            </View>
+          )}
+
+          <Pressable 
+            onPress={handleProximo} 
+            disabled={!dia || !mes || !ano || idade! < 0 || isLoading} 
+            style={styles.buttonWrapper}
+          >
+            <LinearGradient
+              colors={(!dia || !mes || !ano || idade! < 0) ? ['#F0F0F0', '#F0F0F0'] : ['#7b42d5', '#622db2', '#4b208c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.primaryButton}
+            >
+              <Text style={[styles.primaryText, (!dia || !mes || !ano || idade! < 0) && { color: '#AAA' }]}>
+                {isLoading ? 'Salvando...' : 'Próximo'}
+              </Text>
+            </LinearGradient>
+          </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-
-  // Header fixo com botão voltar
-  headerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    zIndex: 10,
-  },
-
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  backButtonText: {
-    color: '#1E88E5',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   
-  scrollView: {
-    flex: 1,
+  // Header fixo no topo
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 20,
+    zIndex: 100,
   },
-  
-  scrollContent: {
-    flexGrow: 1,
-    paddingTop: 15,
-    paddingBottom: 30,
-    paddingHorizontal: 5,
-  },
-
-  mainContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+  backIconCircle: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.line,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginHorizontal: 15,
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '92%',
-    marginTop: 5,
+    shadowRadius: 2,
   },
+  backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
 
-  imageContainer: {
-    height: 170,
-    width: '100%',
-    overflow: 'hidden',
-    backgroundColor: '#F5F5F5',
-  },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
+  content: { width: '100%', zIndex: 10 },
 
-  topImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginBottom: 40 },
+  
+  pickerRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
+  pickerWrapper: { flex: 1 },
+  pickerLabel: { fontSize: 12, fontWeight: '800', color: COLORS.primary, marginBottom: 8, textAlign: 'center', textTransform: 'uppercase' },
+  pickerContainer: { 
+    height: 62, 
+    backgroundColor: '#fff', 
+    borderRadius: 18, 
+    borderWidth: 1.5, 
+    borderColor: '#F0F0F0', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
   },
+  pickerSelected: { borderColor: COLORS.primary, borderWidth: 2 },
+  pickerValueText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain, marginRight: 5 },
 
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 28,
-    alignItems: 'center',
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { 
+    backgroundColor: '#fff', 
+    borderTopLeftRadius: 35, 
+    borderTopRightRadius: 35, 
+    padding: 25, 
+    maxHeight: height * 0.7 
   },
+  modalIndicator: { width: 40, height: 5, backgroundColor: '#EEE', borderRadius: 3, alignSelf: 'center', marginBottom: 15 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 20 },
+  modalOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
+  modalOptionSelected: { backgroundColor: '#F8F4FF', borderRadius: 15, paddingHorizontal: 10 },
+  modalOptionText: { fontSize: 17, color: '#555', fontWeight: '500' },
+  modalOptionTextSelected: { color: COLORS.primary, fontWeight: '800' },
 
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-
-  sectionTitle: {
-    color: '#666666',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#1E88E5',
-  },
-
-  welcomeTitle: {
-    color: '#000000',
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 32,
-  },
-
-  obrigatorio: {
-    color: '#FF5722',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 22,
-  },
-
-  subtitle: {
-    color: '#666666',
-    fontSize: 17,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-
-  // Estilos para os pickers
-  dateContainer: {
-    width: '100%',
-    marginBottom: 28,
-  },
-
-  dateLabel: {
-    color: '#000000',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-
-  pickerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 20,
-  },
-
-  pickerWrapper: {
-    flex: 1,
-  },
-
-  pickerLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-    marginLeft: 2,
-    fontWeight: '500',
-  },
-
-  pickerContainer: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    overflow: 'hidden',
-    height: 55, // AUMENTEI A ALTURA DE 45 PARA 55
-    justifyContent: 'center',
-  },
-
-  pickerContainerSelected: {
-    borderColor: '#1E88E5',
-    backgroundColor: '#F0F9FF',
-    borderWidth: 1.5,
-  },
-
-  picker: {
-    height: 55, // AUMENTEI A ALTURA DE 45 PARA 55
-    width: '100%',
-    color: '#000000',
-    backgroundColor: 'transparent',
-    marginLeft: -5,
-  },
-
-  idadeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0F9FF',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#1E88E5',
-  },
-
-  idadeInfoError: {
-    backgroundColor: '#FFF1F0',
-    borderColor: '#FF5722',
-  },
-
-  idadeText: {
-    color: '#333333',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-
-  idadeTextError: {
-    color: '#FF5722',
-    fontSize: 16,
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-
-  idadeDestaque: {
-    color: '#1E88E5',
-    fontWeight: '700',
-    fontSize: 18,
-  },
-
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#E0E0E0',
-    marginVertical: 22,
-  },
-
-  primaryButton: {
-    width: '100%',
-    backgroundColor: '#1E88E5',
-    borderRadius: 18,
-    paddingVertical: 22,
-    paddingHorizontal: 26,
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: 12,
-  },
-
-  primaryButtonDisabled: {
-    backgroundColor: '#CCCCCC',
-    shadowColor: '#CCCCCC',
-  },
-
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 8,
-  },
-
-  primaryText: {
-    color: '#FFFFFF',
-    fontSize: 21,
-    fontWeight: '700',
-  },
-
-  buttonSubtitle: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 15,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+  feedbackCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, backgroundColor: '#F8F4FF', padding: 18, borderRadius: 20, borderWidth: 1, borderColor: COLORS.line },
+  feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
+  primaryButton: { paddingVertical: 18, alignItems: 'center' },
+  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 });
