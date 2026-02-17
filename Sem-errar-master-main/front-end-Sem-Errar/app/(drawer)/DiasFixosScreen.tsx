@@ -105,7 +105,7 @@ export default function DiasFixosScreen() {
               text: 'Continuar', 
               onPress: () => {
                 console.log('Dias fixos salvos:', diasSemana);
-                router.push('/FinalizacaoScreen');
+                router.push('/CalculoBFScreen');
               }
             }
           ]
@@ -115,7 +115,7 @@ export default function DiasFixosScreen() {
       }
 
       console.log('Dias fixos salvos:', diasSemana);
-      router.push('/FinalizacaoScreen');
+      router.push('/CalculoBFScreen');
     } catch (error) {
       console.error('Erro ao salvar dias fixos:', error);
       Alert.alert('Erro', 'Não foi possível salvar sua configuração. Tente novamente.');

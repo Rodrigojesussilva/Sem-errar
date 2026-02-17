@@ -20,17 +20,30 @@ export default function CinturaScreen() {
   const [cinturaCm, setCinturaCm] = useState<string>('');
   const [sexo, setSexo] = useState<string>('masculino');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSexo, setIsLoadingSexo] = useState(true); // Estado para loading do sexo
 
   // Buscar sexo salvo anteriormente
   useEffect(() => {
     const carregarSexo = async () => {
       try {
+        setIsLoadingSexo(true);
         const sexoSalvo = await AsyncStorage.getItem('@sexo');
+        console.log('Sexo carregado:', sexoSalvo); // Debug
+        
         if (sexoSalvo) {
           setSexo(sexoSalvo);
+        } else {
+          // Se não tiver sexo salvo, volta para tela de sexo
+          Alert.alert(
+            'Informação incompleta',
+            'Por favor, selecione seu sexo primeiro.',
+            [{ text: 'OK', onPress: () => router.push('/SexoScreen') }]
+          );
         }
       } catch (error) {
         console.error('Erro ao carregar sexo:', error);
+      } finally {
+        setIsLoadingSexo(false);
       }
     };
 
@@ -50,12 +63,15 @@ export default function CinturaScreen() {
       await AsyncStorage.setItem('@cinturaCm', cinturaCm);
 
       console.log('Medida da cintura salva:', cinturaCm);
+      console.log('Sexo atual:', sexo); // Debug
 
-      // Navegação condicional
+      // Navegação condicional baseada no sexo
       if (sexo === 'feminino') {
+        console.log('Navegando para QuadrilScreen (feminino)');
         router.push('/QuadrilScreen');
       } else {
-        router.push('/CalculoBFScreen');
+        console.log('Navegando para PreparandoResultadosScreen (masculino)');
+        router.push('/PreparandoResultadosScreen');
       }
     } catch (error) {
       console.error('Erro ao salvar medida da cintura:', error);
@@ -79,6 +95,16 @@ export default function CinturaScreen() {
       setCinturaCm(numericText);
     }
   };
+
+  // Mostrar loading enquanto carrega o sexo
+  if (isLoadingSexo) {
+    return (
+      <View style={[styles.background, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#1E88E5" />
+        <Text style={{ marginTop: 16, color: '#666' }}>Carregando...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.background}>
@@ -112,6 +138,11 @@ export default function CinturaScreen() {
                 Qual é a medida da sua cintura?
               </Text>
               <Text style={styles.obrigatorio}>* obrigatório</Text>
+              
+              {/* Mostrar sexo atual para debug (opcional) */}
+              <Text style={styles.sexoInfo}>
+                Sexo: {sexo === 'feminino' ? 'Feminino' : 'Masculino'}
+              </Text>
             </View>
 
             <Text style={styles.subtitle}>
@@ -258,6 +289,12 @@ const styles = StyleSheet.create({
   obrigatorio: {
     fontSize: 13,
     color: '#FF5722',
+  },
+  sexoInfo: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   subtitle: {
     textAlign: 'center',
