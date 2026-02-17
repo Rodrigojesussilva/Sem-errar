@@ -58,18 +58,18 @@ export default function ConfiguracaoTreinosScreen() {
   const [quantidadeTreinos, setQuantidadeTreinos] = useState<number>(0);
   const [treinos, setTreinos] = useState<Treino[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Estados para modais
   const [modalFormVisible, setModalFormVisible] = useState(false);
   const [modalEdicaoVisible, setModalEdicaoVisible] = useState(false);
   const [treinoSelecionado, setTreinoSelecionado] = useState<Treino | null>(null);
-  
+
   // Estados do formulário de adicionar exercícios
   const [searchText, setSearchText] = useState('');
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [filterMenuVisible, setFilterMenuVisible] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
-  
+
   // Animações
   const slideFormAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const slideEdicaoAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -116,15 +116,15 @@ export default function ConfiguracaoTreinosScreen() {
       // Buscar a estrutura de treinos escolhida pelo usuário
       const estruturaSalva = await AsyncStorage.getItem('@estruturaTreinos');
       const estruturaInfo = await AsyncStorage.getItem('@estruturaTreinosInfo');
-      
+
       console.log('Estrutura salva:', estruturaSalva);
       console.log('Estrutura info:', estruturaInfo);
-      
+
       let quantidade = 0;
-      
+
       if (estruturaSalva) {
         // Converter a escolha do usuário em número de treinos
-        switch(estruturaSalva) {
+        switch (estruturaSalva) {
           case '1':
             quantidade = 1;
             break;
@@ -148,17 +148,17 @@ export default function ConfiguracaoTreinosScreen() {
         // Se não encontrar, usar valor padrão
         quantidade = 1;
       }
-      
+
       setQuantidadeTreinos(quantidade);
       console.log('Quantidade de treinos carregada:', quantidade);
-      
+
       // Criar treinos baseado na quantidade
       const novosTreinos: Treino[] = [];
       for (let i = 1; i <= quantidade; i++) {
         // Verificar se já existem exercícios salvos para este treino
         const treinoSalvo = await AsyncStorage.getItem(`@treino_${i}`);
         let exerciciosSalvos: ExercicioConfigurado[] = [];
-        
+
         if (treinoSalvo) {
           try {
             exerciciosSalvos = JSON.parse(treinoSalvo);
@@ -167,7 +167,7 @@ export default function ConfiguracaoTreinosScreen() {
             console.error('Erro ao parsear treino salvo:', e);
           }
         }
-        
+
         novosTreinos.push({
           id: `treino-${i}`,
           nome: `Treino ${i}`,
@@ -239,8 +239,8 @@ export default function ConfiguracaoTreinosScreen() {
     if (grupoId === 'todos') {
       setSelectedGroups([]);
     } else {
-      setSelectedGroups(prev => 
-        prev.includes(grupoId) 
+      setSelectedGroups(prev =>
+        prev.includes(grupoId)
           ? prev.filter(g => g !== grupoId)
           : [...prev, grupoId]
       );
@@ -262,7 +262,7 @@ export default function ConfiguracaoTreinosScreen() {
     const novosExercicios: ExercicioConfigurado[] = selectedExercises.map(exId => {
       const exercicio = exerciciosDisponiveis.find(ex => ex.id === exId)!;
       const grupo = gruposMusculares.find(g => g.nome === exercicio.grupoMuscular);
-      
+
       return {
         id: Date.now().toString() + exId,
         nome: exercicio.nome,
@@ -339,7 +339,7 @@ export default function ConfiguracaoTreinosScreen() {
     // Verificar se todos os treinos têm pelo menos 1 exercício
     const todosConfigurados = treinos.every(t => t.exercicios.length > 0);
     if (todosConfigurados) {
-      router.push('/RegistrarCardioScreen');
+      router.push('/OrganizacaoTreinosScreen');
     }
   };
 
@@ -370,17 +370,17 @@ export default function ConfiguracaoTreinosScreen() {
         </Pressable>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.mainContainer}>
           <View style={styles.imageContainer}>
-            <Image 
-              source={require('@/assets/images/logo2.png')} 
-              style={styles.topImage} 
-              resizeMode="cover" 
+            <Image
+              source={require('@/assets/images/logo2.png')}
+              style={styles.topImage}
+              resizeMode="cover"
             />
           </View>
 
@@ -407,10 +407,10 @@ export default function ConfiguracaoTreinosScreen() {
                       styles.treinoIcon,
                       { backgroundColor: treino.configurado ? '#4CAF50' : '#E0E0E0' }
                     ]}>
-                      <MaterialCommunityIcons 
-                        name="dumbbell" 
-                        size={24} 
-                        color={treino.configurado ? '#FFFFFF' : '#999999'} 
+                      <MaterialCommunityIcons
+                        name="dumbbell"
+                        size={24}
+                        color={treino.configurado ? '#FFFFFF' : '#999999'}
                       />
                     </View>
                     <View style={styles.treinoInfo}>
@@ -421,8 +421,8 @@ export default function ConfiguracaoTreinosScreen() {
                         {treino.nome}
                       </Text>
                       <Text style={styles.treinoStatus}>
-                        {treino.configurado 
-                          ? `${treino.exercicios.length} exercício(s)` 
+                        {treino.configurado
+                          ? `${treino.exercicios.length} exercício(s)`
                           : 'Não configurado'}
                       </Text>
                     </View>
@@ -463,8 +463,8 @@ export default function ConfiguracaoTreinosScreen() {
                 <Text style={styles.primaryText}>Continuar</Text>
               </View>
               <Text style={styles.buttonSubtitle}>
-                {todosConfigurados 
-                  ? 'Ir para o próximo passo' 
+                {todosConfigurados
+                  ? 'Ir para o próximo passo'
                   : 'Configure todos os treinos para continuar'}
               </Text>
             </TouchableOpacity>
@@ -510,10 +510,10 @@ export default function ConfiguracaoTreinosScreen() {
               >
                 <MaterialIcons name="filter-list" size={20} color="#1E88E5" />
                 <Text style={styles.filterButtonText}>Grupo muscular</Text>
-                <MaterialIcons 
-                  name={filterMenuVisible ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} 
-                  size={20} 
-                  color="#666" 
+                <MaterialIcons
+                  name={filterMenuVisible ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                  size={20}
+                  color="#666"
                 />
               </TouchableOpacity>
 
@@ -551,7 +551,7 @@ export default function ConfiguracaoTreinosScreen() {
               renderItem={({ item }) => {
                 const isSelected = selectedExercises.includes(item.id);
                 const grupo = gruposMusculares.find(g => g.nome === item.grupoMuscular);
-                
+
                 return (
                   <TouchableOpacity
                     style={[
@@ -562,10 +562,10 @@ export default function ConfiguracaoTreinosScreen() {
                   >
                     <View style={styles.exercicioItemContent}>
                       <View style={[styles.exercicioIcon, { backgroundColor: `${grupo?.cor}15` || '#F0F9FF' }]}>
-                        <MaterialCommunityIcons 
-                          name={item.icone as any} 
-                          size={20} 
-                          color={grupo?.cor || '#1E88E5'} 
+                        <MaterialCommunityIcons
+                          name={item.icone as any}
+                          size={20}
+                          color={grupo?.cor || '#1E88E5'}
                         />
                       </View>
                       <View style={styles.exercicioInfo}>
@@ -573,7 +573,7 @@ export default function ConfiguracaoTreinosScreen() {
                         <Text style={styles.exercicioGrupo}>{item.grupoMuscular}</Text>
                       </View>
                     </View>
-                    
+
                     <View style={[
                       styles.exercicioCheckbox,
                       isSelected && styles.exercicioCheckboxSelected
@@ -606,8 +606,8 @@ export default function ConfiguracaoTreinosScreen() {
                   end={{ x: 1, y: 1 }}
                 >
                   <Text style={styles.bottomButtonText}>
-                    {selectedExercises.length === 0 
-                      ? 'Selecionar exercícios' 
+                    {selectedExercises.length === 0
+                      ? 'Selecionar exercícios'
                       : `Adicionar ${selectedExercises.length} exercício(s)`}
                   </Text>
                 </LinearGradient>
@@ -642,10 +642,10 @@ export default function ConfiguracaoTreinosScreen() {
                   <View style={styles.exercicioConfiguradoHeader}>
                     <View style={styles.exercicioConfiguradoInfo}>
                       <View style={[styles.exercicioConfiguradoIcon, { backgroundColor: `${exercicio.cor}15` }]}>
-                        <MaterialCommunityIcons 
-                          name={exercicio.icone as any} 
-                          size={20} 
-                          color={exercicio.cor} 
+                        <MaterialCommunityIcons
+                          name={exercicio.icone as any}
+                          size={20}
+                          color={exercicio.cor}
                         />
                       </View>
                       <View>
@@ -653,8 +653,8 @@ export default function ConfiguracaoTreinosScreen() {
                         <Text style={styles.exercicioConfiguradoGrupo}>{exercicio.grupoMuscular}</Text>
                       </View>
                     </View>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       style={styles.removeExerciseButton}
                       onPress={() => {
                         if (treinoSelecionado) {
@@ -783,85 +783,85 @@ export default function ConfiguracaoTreinosScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: { 
-    flex: 1, 
-    backgroundColor: '#FFFFFF' 
+  background: {
+    flex: 1,
+    backgroundColor: '#FFFFFF'
   },
-  headerContainer: { 
-    backgroundColor: '#FFFFFF', 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#E0E0E0', 
-    zIndex: 10 
+  headerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    zIndex: 10
   },
-  backButton: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingVertical: 16 
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16
   },
-  backButtonText: { 
-    color: '#1E88E5', 
-    fontSize: 16, 
-    fontWeight: '600', 
-    marginLeft: 8 
+  backButtonText: {
+    color: '#1E88E5',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8
   },
-  scrollView: { 
-    flex: 1 
+  scrollView: {
+    flex: 1
   },
-  scrollContent: { 
-    flexGrow: 1, 
-    paddingTop: 15, 
-    paddingBottom: 30, 
-    paddingHorizontal: 5 
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: 15,
+    paddingBottom: 30,
+    paddingHorizontal: 5
   },
-  mainContainer: { 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 20, 
-    overflow: 'hidden', 
-    borderWidth: 1, 
-    borderColor: '#E0E0E0', 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 3 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 8, 
-    elevation: 5, 
-    marginHorizontal: 15, 
-    maxWidth: 400, 
-    alignSelf: 'center', 
-    width: '92%', 
-    marginTop: 5 
+  mainContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    marginHorizontal: 15,
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '92%',
+    marginTop: 5
   },
-  imageContainer: { 
-    height: 170, 
-    width: '100%', 
-    overflow: 'hidden', 
-    backgroundColor: '#F5F5F5' 
+  imageContainer: {
+    height: 170,
+    width: '100%',
+    overflow: 'hidden',
+    backgroundColor: '#F5F5F5'
   },
-  topImage: { 
-    width: '100%', 
-    height: '100%', 
-    resizeMode: 'cover' 
+  topImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
   },
-  content: { 
-    paddingHorizontal: 24, 
-    paddingTop: 28, 
-    paddingBottom: 28, 
-    alignItems: 'center' 
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 28,
+    alignItems: 'center'
   },
-  welcomeTitle: { 
-    color: '#000000', 
-    fontSize: 26, 
-    fontWeight: '700', 
-    textAlign: 'center', 
-    marginBottom: 12, 
-    lineHeight: 32 
+  welcomeTitle: {
+    color: '#000000',
+    fontSize: 26,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 32
   },
-  subtitle: { 
-    color: '#666666', 
-    fontSize: 17, 
-    textAlign: 'center', 
-    marginBottom: 32, 
-    lineHeight: 24 
+  subtitle: {
+    color: '#666666',
+    fontSize: 17,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24
   },
   treinosContainer: {
     width: '100%',
@@ -940,36 +940,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     marginVertical: 22,
   },
-  primaryButton: { 
-    width: '100%', 
-    backgroundColor: '#1E88E5', 
-    borderRadius: 18, 
-    paddingVertical: 22, 
-    paddingHorizontal: 26, 
-    alignItems: 'center', 
-    shadowColor: '#1E88E5', 
-    shadowOffset: { width: 0, height: 5 }, 
-    shadowOpacity: 0.35, 
-    shadowRadius: 6.27, 
-    elevation: 10 
+  primaryButton: {
+    width: '100%',
+    backgroundColor: '#1E88E5',
+    borderRadius: 18,
+    paddingVertical: 22,
+    paddingHorizontal: 26,
+    alignItems: 'center',
+    shadowColor: '#1E88E5',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6.27,
+    elevation: 10
   },
-  primaryButtonDisabled: { 
-    opacity: 0.5 
+  primaryButtonDisabled: {
+    opacity: 0.5
   },
-  buttonContent: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 12 
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
   },
-  primaryText: { 
-    color: '#FFFFFF', 
-    fontWeight: '700', 
-    fontSize: 18 
+  primaryText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 18
   },
-  buttonSubtitle: { 
-    color: '#F1F5F9', 
-    fontSize: 14, 
-    marginTop: 4 
+  buttonSubtitle: {
+    color: '#F1F5F9',
+    fontSize: 14,
+    marginTop: 4
   },
   fullScreenModal: {
     position: 'absolute',
