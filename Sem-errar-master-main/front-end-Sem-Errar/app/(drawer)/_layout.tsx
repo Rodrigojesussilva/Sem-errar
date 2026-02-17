@@ -50,6 +50,11 @@ declare global {
       CardioScreen: undefined;
       RegistrarTreinoScreen: undefined;
       RegistrarCardioScreen: undefined;
+      EstruturaTreinosScreen: undefined;
+      OrganizacaoTreinosScreen: undefined;
+      ConfiguracaoTreinosScreen: undefined; // NOVA TELA ADICIONADA
+      DiasFixosScreen: undefined; // NOVA TELA ADICIONADA
+      SequenciaScreen: undefined; // NOVA TELA ADICIONADA
       ContextoBFScreen: undefined;
       QuandoCalcularBFScreen: undefined;
       PescocoScreen: undefined;
@@ -90,6 +95,11 @@ type RouteName =
   | 'CardioScreen'
   | 'RegistrarTreinoScreen'
   | 'RegistrarCardioScreen'
+  | 'EstruturaTreinosScreen'
+  | 'OrganizacaoTreinosScreen'
+  | 'ConfiguracaoTreinosScreen' // NOVA TELA ADICIONADA
+  | 'DiasFixosScreen' // NOVA TELA ADICIONADA
+  | 'SequenciaScreen' // NOVA TELA ADICIONADA
   | 'ContextoBFScreen'
   | 'QuandoCalcularBFScreen'
   | 'PescocoScreen'
@@ -561,6 +571,11 @@ export default function DrawerLayout() {
             'CardioScreen',
             'RegistrarTreinoScreen',
             'RegistrarCardioScreen',
+            'EstruturaTreinosScreen',
+            'OrganizacaoTreinosScreen',
+            'ConfiguracaoTreinosScreen', // NOVA TELA ADICIONADA
+            'DiasFixosScreen', // NOVA TELA ADICIONADA
+            'SequenciaScreen', // NOVA TELA ADICIONADA
             'ContextoBFScreen',
             'QuandoCalcularBFScreen',
             'PescocoScreen',
@@ -717,6 +732,61 @@ export default function DrawerLayout() {
           options={{
             title: "Registrar Cardio",
             drawerLabel: "Reg. Cardio",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* TELA DE ESTRUTURA DE TREINOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="EstruturaTreinosScreen"
+          options={{
+            title: "Estrutura de Treinos",
+            drawerLabel: "Estrutura Treinos",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* NOVA TELA DE CONFIGURAÇÃO DE TREINOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="ConfiguracaoTreinosScreen"
+          options={{
+            title: "Configurar Treinos",
+            drawerLabel: "Config. Treinos",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* NOVA TELA DE ORGANIZAÇÃO DE TREINOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="OrganizacaoTreinosScreen"
+          options={{
+            title: "Organização dos Treinos",
+            drawerLabel: "Organização Treinos",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* NOVA TELA DE DIAS FIXOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="DiasFixosScreen"
+          options={{
+            title: "Dias Fixos",
+            drawerLabel: "Dias Fixos",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* NOVA TELA DE SEQUÊNCIA - SEM DRAWER */}
+        <Drawer.Screen
+          name="SequenciaScreen"
+          options={{
+            title: "Sequência de Treinos",
+            drawerLabel: "Sequência",
             drawerItemStyle: { display: 'none' },
             headerShown: false,
           }}
