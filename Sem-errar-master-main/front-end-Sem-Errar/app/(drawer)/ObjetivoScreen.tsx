@@ -156,7 +156,7 @@ export default function ObjetivoScreen() {
           >
             {objetivoSelecionado ? (
               <LinearGradient
-                colors={['#7b42d5', '#622db2', '#4b208c']}
+                colors={['#4ecdc4', '#622db2', '#4b208c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}

@@ -18,30 +18,32 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4',
+  dot: '#4ecdc4', // Nosso verde padrão
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
+  error: '#ff4444', // Vermelho para o "depois"
 };
 
 export default function RegistrarTreinoScreen() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
 
+  // Aplicando o padrão de cores dinâmicas nos objetos
   const opcoes = [
     {
       id: 'agora',
       title: 'Vamos lá',
       subtitle: 'Registrar meu treino agora',
       icon: 'rocket',
-      color: COLORS.primary,
+      color: COLORS.dot, // Verde para ação positiva/agora
     },
     {
       id: 'depois',
       title: 'Registrar mais tarde',
       subtitle: 'Voltar para o app depois',
       icon: 'clock-o',
-      color: '#757575',
+      color: COLORS.error, // Vermelho para adiar
     },
   ];
 
@@ -100,7 +102,6 @@ export default function RegistrarTreinoScreen() {
             />
           </View>
 
-          {/* Texto auxiliar menor e com espaçamento */}
           <Text style={styles.subtitleAuxiliar}>
             Use o app para acompanhar seus treinos e sua evolução
           </Text>
@@ -116,7 +117,8 @@ export default function RegistrarTreinoScreen() {
                   style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
                   onPress={() => setOpcaoSelecionada(opcao.id)}
                 >
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.color}10` }]}>
+                  {/* Container do ícone com 10% de opacidade da cor definida no array */}
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.color}15` }]}>
                     <FontAwesome name={opcao.icon as any} size={22} color={opcao.color} />
                   </View>
 
@@ -142,7 +144,7 @@ export default function RegistrarTreinoScreen() {
           >
             {opcaoSelecionada ? (
               <LinearGradient
-                colors={['#7b42d5', '#622db2', '#4b208c']}
+                colors={['#4ecdc4', '#622db2', '#4b208c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}
@@ -182,14 +184,12 @@ const styles = StyleSheet.create({
   content: { width: '100%', zIndex: 10 },
   logoContainer: { alignItems: 'center', marginBottom: 25, marginTop: 10 },
   logo: { width: width * 0.5, height: 70 },
-  
-  // Ajustes de tamanho e espaçamento
   subtitleAuxiliar: {
     fontSize: 15,
     color: COLORS.dot,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 15, // Aumentado para separar da pergunta
+    marginBottom: 15,
     paddingHorizontal: 20
   },
   title: { 
@@ -199,7 +199,6 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     marginBottom: 35 
   },
-
   opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: { flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
   opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2 },

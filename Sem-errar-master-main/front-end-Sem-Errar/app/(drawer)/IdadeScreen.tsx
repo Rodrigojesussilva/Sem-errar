@@ -116,12 +116,18 @@ export default function IdadeScreen() {
       if (hoje.getMonth() < nascimento.getMonth() || (hoje.getMonth() === nascimento.getMonth() && hoje.getDate() < nascimento.getDate())) {
         idadeCalc--;
       }
-      setIdade(nascimento > hoje ? -1 : idadeCalc);
+      
+      // Validação: se for no futuro ou menor que 16, marcamos como inválido (-1)
+      if (nascimento > hoje || idadeCalc < 16) {
+        setIdade(-1);
+      } else {
+        setIdade(idadeCalc);
+      }
     }
   }, [dia, mes, ano]);
 
   const handleProximo = async () => {
-    if (idade !== null && idade >= 0) {
+    if (idade !== null && idade >= 16) {
       setIsLoading(true);
       try {
         await AsyncStorage.setItem('@idade', idade.toString());
@@ -134,20 +140,14 @@ export default function IdadeScreen() {
     }
   };
 
-  // PADRÃO DE FUNDO EXCLUSIVO PARA ESTA TELA
   const renderStaticBackground = () => (
     <View style={styles.visualArea}>
-      {/* Elipse superior esquerda mais suave */}
       <View style={[styles.ellipseLine, { width: width * 1.1, height: width * 1.1, top: -width * 0.6, left: -width * 0.2, transform: [{ rotate: '-10deg' }] }]}>
          <View style={[styles.staticDot, { bottom: '15%', right: '25%' }]} />
       </View>
-      
-      {/* Elipse grande que sobe do fundo à direita - Diferente da tela de objetivo */}
       <View style={[styles.ellipseLine, { width: width * 1.4, height: width * 1.4, bottom: -width * 0.5, right: -width * 0.4, transform: [{ rotate: '45deg' }] }]}>
         <View style={[styles.staticDot, { top: '20%', left: '30%' }]} />
       </View>
-
-      {/* Linha central sutil */}
       <View style={[styles.ellipseLine, { width: width * 0.8, height: height * 0.5, top: height * 0.25, left: -width * 0.5, transform: [{ rotate: '20deg' }], borderStyle: 'dashed', opacity: 0.5 }]}>
         <View style={[styles.staticDot, { bottom: '10%', right: '5%' }]} />
       </View>
@@ -191,26 +191,26 @@ export default function IdadeScreen() {
           </View>
 
           {idade !== null && (
-            <View style={[styles.feedbackCard, idade < 0 && { borderColor: COLORS.error, backgroundColor: '#FFF5F5' }]}>
-              <FontAwesome name={idade < 0 ? "exclamation-triangle" : "birthday-cake"} size={18} color={idade < 0 ? COLORS.error : COLORS.primary} />
-              <Text style={[styles.feedbackText, idade < 0 && { color: COLORS.error }]}>
-                {idade < 0 ? "Data inválida" : `Você tem ${idade} anos`}
+            <View style={[styles.feedbackCard, { borderColor: idade < 0 ? COLORS.error : COLORS.dot }, idade < 0 && { backgroundColor: '#FFF5F5' }]}>
+              <FontAwesome name={idade < 0 ? "exclamation-triangle" : "birthday-cake"} size={18} color={idade < 0 ? COLORS.error : COLORS.dot} />
+              <Text style={[styles.feedbackText, { color: idade < 0 ? COLORS.error : COLORS.dot }]}>
+                {idade < 0 ? "Idade mínima: 16 anos" : `Você tem ${idade} anos`}
               </Text>
             </View>
           )}
 
           <Pressable 
             onPress={handleProximo} 
-            disabled={!dia || !mes || !ano || idade! < 0 || isLoading} 
+            disabled={!dia || !mes || !ano || idade! < 16 || isLoading} 
             style={styles.buttonWrapper}
           >
             <LinearGradient
-              colors={(!dia || !mes || !ano || idade! < 0) ? ['#F0F0F0', '#F0F0F0'] : ['#7b42d5', '#622db2', '#4b208c']}
+              colors={(!dia || !mes || !ano || idade! < 16) ? ['#F0F0F0', '#F0F0F0'] : ['#4ecdc4', '#622db2', '#4b208c']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.primaryButton}
             >
-              <Text style={[styles.primaryText, (!dia || !mes || !ano || idade! < 0) && { color: '#AAA' }]}>
+              <Text style={[styles.primaryText, (!dia || !mes || !ano || idade! < 16) && { color: '#AAA' }]}>
                 {isLoading ? 'Salvando...' : 'Próximo'}
               </Text>
             </LinearGradient>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   modalOptionText: { fontSize: 17, color: '#555', fontWeight: '500' },
   modalOptionTextSelected: { color: COLORS.primary, fontWeight: '800' },
   feedbackCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, backgroundColor: '#F8F4FF', padding: 18, borderRadius: 20, borderWidth: 1, borderColor: COLORS.line },
-  feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700' }, // Removido a cor fixa daqui para usar inline
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
