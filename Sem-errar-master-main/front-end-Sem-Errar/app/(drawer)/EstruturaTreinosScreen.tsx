@@ -31,7 +31,6 @@ export default function EstruturaTreinosScreen() {
   const [estruturaSelecionada, setEstruturaSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Ícones e cores seguindo o padrão da tela objetivo
   const estruturas = [
     { id: '1', title: 'Sempre o mesmo treino', subtitle: 'Full body ou ABC', icon: 'refresh', color: '#4CAF50' },
     { id: '2', title: '2 treinos diferentes', subtitle: 'Treino A e B', icon: 'retweet', color: '#2196F3' },
@@ -66,18 +65,15 @@ export default function EstruturaTreinosScreen() {
     }
   };
 
-  // ROTA CORRIGIDA: No expo-router, ignoramos os parênteses (drawer)
   const handleVoltar = () => {
     router.replace('/RegistrarTreinoScreen');
   };
 
   const renderStaticBackground = () => (
     <View style={styles.visualArea}>
-      {/* Elipse Superior */}
       <View style={[styles.ellipseLine, { width: width * 1.8, height: height * 0.5, top: -100, left: -width * 0.5, transform: [{ rotate: '-10deg' }] }]}>
         <View style={[styles.staticDot, { bottom: '20%', right: '20%' }]} />
       </View>
-      {/* Elipse Inferior */}
       <View style={[styles.ellipseLine, { width: width * 1.5, height: height * 0.4, bottom: height * 0.1, right: -width * 0.4, transform: [{ rotate: '15deg' }] }]}>
         <View style={[styles.staticDot, { top: '15%', left: '10%' }]} />
       </View>
@@ -116,7 +112,6 @@ export default function EstruturaTreinosScreen() {
             />
           </View>
 
-          {/* Sem texto auxiliar, direto na pergunta */}
           <Text style={styles.title}>Você faz sempre o mesmo treino ou alterna?</Text>
 
           <View style={styles.opcoesContainer}>
@@ -154,7 +149,9 @@ export default function EstruturaTreinosScreen() {
           >
             {estruturaSelecionada ? (
               <LinearGradient
-                colors={['#7b42d5', '#622db2', '#4b208c']}
+                colors={['#4ecdc4', '#622db2', '#4b208c']} // Cores alteradas para o padrão das outras telas
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}
               >
                 <Text style={styles.primaryText}>{isLoading ? 'Salvando...' : 'Próximo'}</Text>

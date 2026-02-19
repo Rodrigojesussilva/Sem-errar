@@ -33,18 +33,21 @@ export default function OrganizacaoTreinosScreen() {
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Alteração das cores aqui: Azul para calendário e Laranja para sequência
   const opcoesOrganizacao = [
     {
       id: 'diasFixos',
       title: 'Dias fixos da semana',
       subtitle: 'Segunda → Quarta → Sexta',
       icon: 'calendar',
+      iconColor: '#2196F3', // Azul
     },
     {
       id: 'sequenciaRepetida',
       title: 'Sequência que se repete',
       subtitle: 'Treino 1 → Treino 2 → Descanso',
       icon: 'repeat',
+      iconColor: '#FF9800', // Laranja
     },
   ];
 
@@ -137,8 +140,9 @@ export default function OrganizacaoTreinosScreen() {
                   style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
                   onPress={() => setOrganizacaoSelecionada(opcao.id)}
                 >
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${COLORS.primary}10` }]}>
-                    <FontAwesome name={opcao.icon as any} size={24} color={COLORS.primary} />
+                  {/* Fundo do ícone agora usa a cor personalizada com opacidade */}
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.iconColor}15` }]}>
+                    <FontAwesome name={opcao.icon as any} size={24} color={opcao.iconColor} />
                   </View>
 
                   <View style={{ flex: 1 }}>
@@ -174,7 +178,7 @@ export default function OrganizacaoTreinosScreen() {
           >
             {organizacaoSelecionada ? (
               <LinearGradient
-                colors={['#7b42d5', '#622db2', '#4b208c']}
+                colors={['#4ecdc4', '#622db2', '#4b208c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}

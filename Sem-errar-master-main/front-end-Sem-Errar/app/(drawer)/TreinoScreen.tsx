@@ -21,10 +21,11 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4',
+  dot: '#4ecdc4', // Nosso verde/ciano
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
+  error: '#ff4444' // Vermelho para o "Não"
 };
 
 export default function TreinoScreen() {
@@ -38,12 +39,14 @@ export default function TreinoScreen() {
       title: 'Sim',
       description: 'Já tenho uma rotina de treinos',
       icon: 'dumbbell',
+      color: COLORS.dot, // Verde
     },
     {
       id: 'nao',
       title: 'Não',
       description: 'Quero começar a treinar agora',
       icon: 'person-running',
+      color: COLORS.error, // Vermelho
     },
   ];
 
@@ -132,12 +135,11 @@ export default function TreinoScreen() {
                   style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
                   onPress={() => setTreinaSelecionado(opcao.id)}
                 >
-                  {/* Fundo do ícone agora segue o padrão da tela Objetivo (cinza leve ou roxo transparente) */}
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: isSelected ? `${COLORS.primary}10` : '#F4F4F4' }]}>
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.color}15` }]}>
                     <FontAwesome6 
                         name={opcao.icon} 
                         size={20} 
-                        color={isSelected ? COLORS.primary : '#888'} 
+                        color={opcao.color} 
                     />
                   </View>
 
@@ -163,7 +165,7 @@ export default function TreinoScreen() {
           >
             {treinaSelecionado ? (
               <LinearGradient
-                colors={['#7b42d5', '#622db2', '#4b208c']}
+                colors={['#4ecdc4', '#622db2', '#4b208c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}
@@ -187,31 +189,15 @@ const styles = StyleSheet.create({
   visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  header: { 
-    paddingHorizontal: 25, 
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, 
-    zIndex: 100,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
+  header: { paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
   backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
-  
-  scrollContent: { 
-    flexGrow: 1, 
-    paddingHorizontal: 25, 
-    justifyContent: 'center', 
-    paddingBottom: 40,
-    paddingTop: 80, 
-  },
-  
+  scrollContent: { flexGrow: 1, paddingHorizontal: 25, justifyContent: 'center', paddingBottom: 40, paddingTop: 10 },
   content: { width: '100%', zIndex: 10 },
-  logoContainer: { alignItems: 'center', marginBottom: 30 },
+  logoContainer: { alignItems: 'center', marginBottom: 20, marginTop: 5 },
   logo: { width: width * 0.5, height: 70 },
   title: { fontSize: 24, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 40 },
-  
   opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: {
     flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4',
@@ -221,11 +207,9 @@ const styles = StyleSheet.create({
   opcaoIconContainer: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
   opcaoDescricao: { fontSize: 14, color: '#888', marginTop: 2 },
-  
   radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
   radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
   radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  
   buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
