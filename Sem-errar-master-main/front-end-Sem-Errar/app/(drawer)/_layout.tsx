@@ -23,7 +23,7 @@ declare global {
     interface RootParamList {
       index: undefined;
       login: undefined;
-      CadastroScreen: undefined; // ALTERADO: de cadastro para CadastroScreen
+      CadastroScreen: undefined;
       perfil: undefined;
       historico: undefined;
       resultados: undefined;
@@ -50,7 +50,7 @@ declare global {
       RegistrarCardioScreen: undefined;
       EstruturaTreinosScreen: undefined;
       OrganizacaoTreinosScreen: undefined;
-      ConfiguracaoTreinosScreen: undefined;
+      ConfigurarTreinoScreen: undefined;
       DiasFixosScreen: undefined;
       SequenciaScreen: undefined;
       ContextoBFScreen: undefined;
@@ -60,6 +60,7 @@ declare global {
       QuadrilScreen: undefined;
       CalculoBFScreen: undefined;
       FinalizacaoScreen: undefined;
+      PreparandoResultadosScreen: undefined; // NOVA TELA ADICIONADA
     }
   }
 }
@@ -68,7 +69,7 @@ declare global {
 type RouteName =
   | 'index'
   | 'login'
-  | 'CadastroScreen' // ALTERADO: de cadastro para CadastroScreen
+  | 'CadastroScreen'
   | 'perfil'
   | 'historico'
   | 'resultados'
@@ -95,7 +96,7 @@ type RouteName =
   | 'RegistrarCardioScreen'
   | 'EstruturaTreinosScreen'
   | 'OrganizacaoTreinosScreen'
-  | 'ConfiguracaoTreinosScreen'
+  | 'ConfigurarTreinoScreen'
   | 'DiasFixosScreen'
   | 'SequenciaScreen'
   | 'ContextoBFScreen'
@@ -104,7 +105,8 @@ type RouteName =
   | 'CinturaScreen'
   | 'QuadrilScreen'
   | 'CalculoBFScreen'
-  | 'FinalizacaoScreen';
+  | 'FinalizacaoScreen'
+  | 'PreparandoResultadosScreen'; // NOVA TELA ADICIONADA
 
 // Componente para redirecionamento baseado no auth
 function AuthRedirect() {
@@ -124,7 +126,7 @@ function AuthRedirect() {
       });
 
       // Se está logado e na tela de login/cadastro, redireciona para home
-      if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) { // ALTERADO
+      if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) {
         console.log('Redirecionando para home...');
         (navigation as any).reset({
           index: 0,
@@ -257,7 +259,7 @@ function CustomDrawerContent(props: any) {
       colorScheme: { bg: "#E8EAF6", color: "#3F51B5" },
     },
     {
-      name: "CadastroScreen" as RouteName, // ALTERADO: de cadastro para CadastroScreen
+      name: "CadastroScreen" as RouteName,
       label: "Cadastro",
       iconName: "person-add",
       iconLib: Ionicons,
@@ -552,7 +554,7 @@ export default function DrawerLayout() {
           // Telas que não mostram header nem drawer
           const hideHeaderAndDrawerRoutes = [
             'login',
-            'CadastroScreen', // ALTERADO: de cadastro para CadastroScreen
+            'CadastroScreen',
             'dados',
             'BoasVindas1',
             'BoasVindas2',
@@ -571,7 +573,7 @@ export default function DrawerLayout() {
             'RegistrarCardioScreen',
             'EstruturaTreinosScreen',
             'OrganizacaoTreinosScreen',
-            'ConfiguracaoTreinosScreen',
+            'ConfigurarTreinoScreen',
             'DiasFixosScreen',
             'SequenciaScreen',
             'ContextoBFScreen',
@@ -580,7 +582,8 @@ export default function DrawerLayout() {
             'CinturaScreen',
             'QuadrilScreen',
             'CalculoBFScreen',
-            'FinalizacaoScreen'
+            'FinalizacaoScreen',
+            'PreparandoResultadosScreen' // NOVA TELA ADICIONADA
           ];
 
           if (hideHeaderAndDrawerRoutes.includes(route.name)) {
@@ -747,18 +750,19 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA DE CONFIGURAÇÃO DE TREINOS - SEM DRAWER */}
+        {/* TELA DE CONFIGURAR TREINO - SEM DRAWER */}
         <Drawer.Screen
-          name="ConfiguracaoTreinosScreen"
+          name="ConfigurarTreinoScreen"
           options={{
-            title: "Configurar Treinos",
-            drawerLabel: "Config. Treinos",
+            title: "Configurar Treino",
+            drawerLabel: "Config. Treino",
             drawerItemStyle: { display: 'none' },
             headerShown: false,
+            swipeEnabled: false,
           }}
         />
 
-        {/* NOVA TELA DE ORGANIZAÇÃO DE TREINOS - SEM DRAWER */}
+        {/* TELA DE ORGANIZAÇÃO DE TREINOS - SEM DRAWER */}
         <Drawer.Screen
           name="OrganizacaoTreinosScreen"
           options={{
@@ -769,7 +773,7 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA DE DIAS FIXOS - SEM DRAWER */}
+        {/* TELA DE DIAS FIXOS - SEM DRAWER */}
         <Drawer.Screen
           name="DiasFixosScreen"
           options={{
@@ -780,7 +784,7 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA DE SEQUÊNCIA - SEM DRAWER */}
+        {/* TELA DE SEQUÊNCIA - SEM DRAWER */}
         <Drawer.Screen
           name="SequenciaScreen"
           options={{
@@ -802,7 +806,7 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE QUADRO CALCULAR BF - CORRIGIDA */}
+        {/* TELA DE QUADRO CALCULAR BF */}
         <Drawer.Screen
           name="QuadroCalcularBFScreen"
           options={{
@@ -868,6 +872,18 @@ export default function DrawerLayout() {
           }}
         />
 
+        {/* NOVA TELA DE PREPARANDO RESULTADOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="PreparandoResultadosScreen"
+          options={{
+            title: "Preparando Resultados",
+            drawerLabel: "Prep. Resultados",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+            swipeEnabled: false,
+          }}
+        />
+
         {/* TELA INICIAL - SEM DRAWER */}
         <Drawer.Screen
           name="index"
@@ -889,9 +905,9 @@ export default function DrawerLayout() {
           }}
         />
         
-        {/* TELA DE CADASTRO - NOME ALTERADO PARA CadastroScreen */}
+        {/* TELA DE CADASTRO */}
         <Drawer.Screen
-          name="CadastroScreen" // ALTERADO: de cadastro para CadastroScreen
+          name="CadastroScreen"
           options={{
             title: "Cadastro",
             drawerLabel: "Cadastro",
