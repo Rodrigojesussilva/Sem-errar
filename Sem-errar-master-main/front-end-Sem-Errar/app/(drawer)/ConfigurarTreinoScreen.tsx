@@ -17,14 +17,14 @@ import {
   Image,
   Modal,
   Pressable,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  SafeAreaView,
-  StatusBar
+  View
 } from 'react-native';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -65,7 +65,7 @@ type Treino = {
   exercicios: ExercicioConfigurado[];
 };
 
-export default function ConfiguracaoTreinosScreen() {
+export default function ConfigurarTreinoScreen() {
   const router = useRouter();
   const [quantidadeTreinos, setQuantidadeTreinos] = useState<number>(0);
   const [treinos, setTreinos] = useState<Treino[]>([]);

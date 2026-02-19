@@ -72,7 +72,7 @@ export default function LoginScreen() {
       // Simulação de chamada API com delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Mock de dados do usuário
+      // Mock de dados do usuário (EXATAMENTE COMO ESTAVA)
       const mockUsuario = {
         id: `user_${Date.now()}`,
         nome: "João Silva",
@@ -90,14 +90,8 @@ export default function LoginScreen() {
       auth?.setUsuario(mockUsuario);
       auth?.setToken(mockToken);
       
-      // Verifica se já tem dados biométricos
-      const temDadosBiometricos = false; // Para teste, sempre ir para dados
-      
-      if (temDadosBiometricos) {
-        router.replace("/(drawer)/perfil");
-      } else {
-        router.replace("/(drawer)/dados");
-      }
+      // ÚNICA ALTERAÇÃO: redirecionamento direto para perfil
+      router.replace("/(drawer)/diarias");
       
     } catch (error: any) {
       setMensagemErro("Erro ao conectar ao servidor. Verifique sua conexão e tente novamente.");
@@ -109,7 +103,7 @@ export default function LoginScreen() {
   };
 
   const handleCadastro = () => {
-    router.push("/(drawer)/cadastro");
+    router.push("/(drawer)/CadastroScreen");
   };
 
   const handleEsqueciSenha = () => {
