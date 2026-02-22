@@ -21,11 +21,11 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4', // Nosso verde/ciano
+  dot: '#4ecdc4', // Verde/Ciano para SIM
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
-  error: '#ff4444' // Vermelho para o "Não"
+  error: '#ff4444' // Vermelho para NÃO
 };
 
 export default function TreinoScreen() {
@@ -129,28 +129,39 @@ export default function TreinoScreen() {
           <View style={styles.opcoesContainer}>
             {opcoesTreino.map((opcao) => {
               const isSelected = treinaSelecionado === opcao.id;
+              const activeColor = opcao.color; // Pega o verde ou vermelho do objeto
+
               return (
                 <Pressable
                   key={opcao.id}
-                  style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
+                  style={[
+                    styles.opcaoItem, 
+                    isSelected && { borderColor: activeColor, borderWidth: 2 } // Borda colorida dinâmica
+                  ]}
                   onPress={() => setTreinaSelecionado(opcao.id)}
                 >
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.color}15` }]}>
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${activeColor}15` }]}>
                     <FontAwesome6 
                         name={opcao.icon} 
                         size={20} 
-                        color={opcao.color} 
+                        color={activeColor} 
                     />
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.opcaoTitulo, isSelected && { color: COLORS.primary }]}>
+                    <Text style={[
+                        styles.opcaoTitulo, 
+                        isSelected && { color: activeColor } // Texto colorido dinâmico
+                    ]}>
                       {opcao.title}
                     </Text>
                     <Text style={styles.opcaoDescricao}>{opcao.description}</Text>
                   </View>
 
-                  <View style={[styles.radioButton, isSelected && styles.radioButtonSelecionado]}>
+                  <View style={[
+                      styles.radioButton, 
+                      isSelected && { borderColor: activeColor, backgroundColor: activeColor } // Radio colorido
+                  ]}>
                     {isSelected && <View style={styles.radioButtonInner} />}
                   </View>
                 </Pressable>
@@ -203,12 +214,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4',
     elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5,
   },
-  opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2 },
+  // O estilo 'opcaoItemSelecionado' foi movido para o componente via style dinâmico para suportar cores diferentes
   opcaoIconContainer: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
   opcaoDescricao: { fontSize: 14, color: '#888', marginTop: 2 },
   radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
-  radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
   radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
   buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },

@@ -18,11 +18,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const COLORS = {
-  primary: '#622db2', // Roxo
-  dot: '#4ecdc4',    // Ciano
+  primary: '#622db2',
+  dot: '#4ecdc4',
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
@@ -46,8 +46,9 @@ export default function PescocoScreen() {
   }, []);
 
   const handleProximo = async () => {
-    if (!pescocoCm) {
-      Alert.alert('Atenção', 'Digite a medida do pescoço');
+    // Validação básica de preenchimento
+    if (!pescocoCm || Number(pescocoCm) <= 0) {
+      Alert.alert('Atenção', 'Por favor, insira uma medida válida.');
       return;
     }
     
@@ -56,21 +57,20 @@ export default function PescocoScreen() {
       await AsyncStorage.setItem('@pescocoCm', pescocoCm);
       router.push('/CinturaScreen');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a medida.');
+      Alert.alert('Erro', 'Não foi possível guardar a medida.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // LÓGICA DE TRAVA: APENAS NÚMEROS INTEIROS, MÁXIMO 3 DÍGITOS
   const handleCmChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9.]/g, '');
-    const parts = cleaned.split('.');
-    if (parts.length <= 2) {
-      if (parts.length === 2 && parts[1].length > 1) {
-        setPescocoCm(parts[0] + '.' + parts[1].charAt(0));
-      } else {
-        setPescocoCm(cleaned);
-      }
+    // Remove qualquer caractere que não seja número
+    const onlyNums = text.replace(/[^0-9]/g, '');
+    
+    // Agora permite até 3 dígitos (ex: até 999)
+    if (onlyNums.length <= 3) {
+      setPescocoCm(onlyNums);
     }
   };
 
@@ -134,20 +134,20 @@ export default function PescocoScreen() {
                 style={[styles.input, { color: COLORS.primary }]}
                 value={pescocoCm}
                 onChangeText={handleCmChange}
-                placeholder="00.0"
+                placeholder="00"
                 placeholderTextColor="#CCC"
-                keyboardType="decimal-pad"
+                keyboardType="number-pad"
+                maxLength={3} // Alterado para 3 dígitos
               />
               <Text style={[styles.cmLabel, { color: COLORS.dot }]}>cm</Text>
             </View>
-            <Text style={styles.inputHelpText}>Use uma fita métrica flexível para maior precisão</Text>
+            <Text style={styles.inputHelpText}>Digite o valor em centímetros</Text>
           </View>
 
-          {/* Caixa de Dicas em Roxo com Dicas Concisas */}
           <View style={[styles.instructionsContainer, { borderColor: COLORS.primary }]}>
               <Text style={[styles.instructionsTitle, { color: COLORS.primary }]}>Como medir corretamente:</Text>
               {[
-                "Posicione a fita 2,5 cm acima dos ombros.",
+                "Posicione a fita 2,5 cm acima dos ombros ou na parte inferior do pomo de adão.",
                 "Mantenha a fita rente ao pescoço, sem apertar.",
                 "Certifique-se de que a fita esteja reta.",
                 "Olhe para frente com os ombros relaxados."
@@ -205,8 +205,8 @@ const styles = StyleSheet.create({
   imageCircle: { width: 160, height: 160, borderRadius: 80, backgroundColor: '#fff', borderWidth: 3, borderColor: COLORS.dot, overflow: 'hidden', elevation: 6 },
   imageIllustration: { width: '100%', height: '100%' },
   inputSection: { alignItems: 'center', marginBottom: 25 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 25, height: 70, borderRadius: 20, borderWidth: 2.5, width: '75%', justifyContent: 'center', elevation: 4 },
-  input: { fontSize: 32, fontWeight: '800', textAlign: 'center', width: 100 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 25, height: 70, borderRadius: 20, borderWidth: 2.5, width: '65%', justifyContent: 'center', elevation: 4 },
+  input: { fontSize: 32, fontWeight: '800', textAlign: 'center', width: 80 }, // Largura aumentada para 3 dígitos
   cmLabel: { fontSize: 22, fontWeight: '900', marginLeft: 8 },
   inputHelpText: { fontSize: 14, color: '#4ecdc4', marginTop: 12, fontWeight: '700', textAlign: 'center', fontStyle: 'italic' },
   instructionsContainer: { backgroundColor: 'rgba(255,255,255,0.9)', padding: 18, borderRadius: 22, borderWidth: 2, marginBottom: 25, elevation: 2 },

@@ -18,32 +18,31 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4', // Nosso verde padrão
+  dot: '#4ecdc4', // Verde padrão
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
-  error: '#ff4444', // Vermelho para o "depois"
+  error: '#ff4444', // Vermelho
 };
 
 export default function RegistrarTreinoScreen() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
 
-  // Aplicando o padrão de cores dinâmicas nos objetos
   const opcoes = [
     {
       id: 'agora',
       title: 'Vamos lá',
       subtitle: 'Registrar meu treino agora',
       icon: 'rocket',
-      color: COLORS.dot, // Verde para ação positiva/agora
+      color: COLORS.dot, // Verde
     },
     {
       id: 'depois',
       title: 'Registrar mais tarde',
       subtitle: 'Voltar para o app depois',
       icon: 'clock-o',
-      color: COLORS.error, // Vermelho para adiar
+      color: COLORS.error, // Vermelho
     },
   ];
 
@@ -111,25 +110,35 @@ export default function RegistrarTreinoScreen() {
           <View style={styles.opcoesContainer}>
             {opcoes.map((opcao) => {
               const isSelected = opcaoSelecionada === opcao.id;
+              const activeColor = opcao.color; // Define se será verde ou vermelho
+
               return (
                 <Pressable
                   key={opcao.id}
-                  style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
+                  style={[
+                    styles.opcaoItem, 
+                    isSelected && { borderColor: activeColor, borderWidth: 2 }
+                  ]}
                   onPress={() => setOpcaoSelecionada(opcao.id)}
                 >
-                  {/* Container do ícone com 10% de opacidade da cor definida no array */}
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.color}15` }]}>
-                    <FontAwesome name={opcao.icon as any} size={22} color={opcao.color} />
+                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${activeColor}15` }]}>
+                    <FontAwesome name={opcao.icon as any} size={22} color={activeColor} />
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.opcaoTitulo, isSelected && { color: COLORS.primary }]}>
+                    <Text style={[
+                      styles.opcaoTitulo, 
+                      isSelected && { color: activeColor }
+                    ]}>
                       {opcao.title}
                     </Text>
                     <Text style={styles.opcaoDescricaoItem}>{opcao.subtitle}</Text>
                   </View>
 
-                  <View style={[styles.radioButton, isSelected && styles.radioButtonSelecionado]}>
+                  <View style={[
+                    styles.radioButton, 
+                    isSelected && { borderColor: activeColor, backgroundColor: activeColor }
+                  ]}>
                     {isSelected && <View style={styles.radioButtonInner} />}
                   </View>
                 </Pressable>
@@ -167,15 +176,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
-  staticDot: { 
-    position: 'absolute', 
-    width: 10, 
-    height: 10, 
-    borderRadius: 5, 
-    borderWidth: 2, 
-    borderColor: COLORS.dot, 
-    backgroundColor: '#fff' 
-  },
+  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
   header: { paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
   backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
@@ -184,29 +185,14 @@ const styles = StyleSheet.create({
   content: { width: '100%', zIndex: 10 },
   logoContainer: { alignItems: 'center', marginBottom: 25, marginTop: 10 },
   logo: { width: width * 0.5, height: 70 },
-  subtitleAuxiliar: {
-    fontSize: 15,
-    color: COLORS.dot,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 20
-  },
-  title: { 
-    fontSize: 26, 
-    fontWeight: '900', 
-    color: COLORS.textMain, 
-    textAlign: 'center', 
-    marginBottom: 35 
-  },
+  subtitleAuxiliar: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginBottom: 15, paddingHorizontal: 20 },
+  title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 35 },
   opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: { flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
-  opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2 },
   opcaoIconContainer: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
   opcaoDescricaoItem: { fontSize: 14, color: '#888', marginTop: 2 },
   radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
-  radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
   radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
   buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
