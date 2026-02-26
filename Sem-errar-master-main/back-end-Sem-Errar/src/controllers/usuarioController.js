@@ -1,6 +1,7 @@
 const Usuario = require("../models/Usuario");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 module.exports = {
 
   async logar(req, res) {
@@ -68,19 +69,133 @@ module.exports = {
 
   async criar(req, res) {
     try {
-      const { nome, email, senha, tipoUsuario, foto } = req.body;
+      // ===== TODOS OS CAMPOS DO ONBOARDING =====
+      const { 
+        // Campos básicos
+        nome, 
+        email, 
+        senha, 
+        tipoUsuario, 
+        foto,
+        
+        // Objetivo
+        objetivo,
+        objetivoCompleto,
+        
+        // Dados pessoais
+        sexo,
+        idade,
+        faixaIdade,
+        
+        // Altura (completo)
+        alturaUnidade,
+        altura,
+        alturaFt,
+        alturaIn,
+        alturaCm,
+        
+        // Peso (completo)
+        pesoUnidade,
+        pesoKg,
+        pesoLb,
+        pesoEmKg,
+        
+        // Frequência de treino
+        frequenciaTreino,
+        nivelAtividade,
+        frequenciaTreinoDescricao,
+        treinaAtualmente,
+        
+        // Água
+        querLembretesAgua,
+        coposAguaDia,
+        
+        // Cardio
+        frequenciaCardio,
+        frequenciaCardioDescricao,
+        
+        // Medidas corporais
+        pescocoCm,
+        cinturaCm,
+        quadrilCm
+      } = req.body;
 
+      // Log para debug
+      console.log("📥 Recebendo cadastro com dados do onboarding:", {
+        nome,
+        email,
+        objetivo,
+        sexo,
+        idade,
+        alturaCm,
+        pesoEmKg,
+        frequenciaTreino,
+        pescocoCm,
+        cinturaCm
+      });
+
+      // Criar usuário com TODOS os campos
       const usuario = await Usuario.create({
+        // Campos básicos
         nome,
         email,
         senha,
         tipoUsuario,
         foto,
+        
+        // Objetivo
+        objetivo,
+        objetivoCompleto,
+        
+        // Dados pessoais
+        sexo,
+        idade,
+        faixaIdade,
+        
+        // Altura
+        alturaUnidade,
+        altura,
+        alturaFt,
+        alturaIn,
+        alturaCm,
+        
+        // Peso
+        pesoUnidade,
+        pesoKg,
+        pesoLb,
+        pesoEmKg,
+        
+        // Frequência de treino
+        frequenciaTreino,
+        nivelAtividade,
+        frequenciaTreinoDescricao,
+        treinaAtualmente,
+        
+        // Água
+        querLembretesAgua,
+        coposAguaDia,
+        
+        // Cardio
+        frequenciaCardio,
+        frequenciaCardioDescricao,
+        
+        // Medidas
+        pescocoCm,
+        cinturaCm,
+        quadrilCm
       });
 
+      console.log("✅ Usuário criado com sucesso! ID:", usuario.id);
+      console.log("📊 Dados completos salvos no banco");
+
       return res.status(201).json(usuario);
+
     } catch (error) {
-      return res.status(500).json({ erro: error.message });
+      console.error("❌ Erro ao criar usuário:", error);
+      return res.status(500).json({ 
+        erro: error.message,
+        detalhes: "Erro ao salvar dados do onboarding" 
+      });
     }
   },
 
