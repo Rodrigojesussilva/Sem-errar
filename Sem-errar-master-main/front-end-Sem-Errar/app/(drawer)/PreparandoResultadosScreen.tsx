@@ -8,11 +8,22 @@ import {
   StyleSheet,
   Text,
   View,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
-// Lista de etapas do cálculo
+const COLORS = {
+  primary: '#622db2',
+  dot: '#4ecdc4',
+  line: 'rgba(112, 82, 230, 0.15)',
+  textMain: '#1A1A1A',
+  textSub: '#6B7A8F',
+  bgCard: 'rgba(255, 255, 255, 0.95)',
+};
+
 const ETAPAS = [
   'Calculando índice de massa corporal…',
   'Calculando taxa metabólica basal…',
@@ -29,666 +40,234 @@ export default function PreparandoResultadosScreen() {
   // Animações
   const rotacao = useRef(new Animated.Value(0)).current;
   const pulsar = useRef(new Animated.Value(1)).current;
-  
-  // Para as barras de progresso
-  const translateX1 = useRef(new Animated.Value(-70)).current;
-  const translateX2 = useRef(new Animated.Value(-40)).current;
-  const translateX3 = useRef(new Animated.Value(-10)).current;
-  
-  // Opacidades
-  const opacidadeBarra1 = useRef(new Animated.Value(0.5)).current;
-  const opacidadeBarra2 = useRef(new Animated.Value(0.7)).current;
-  const opacidadeBarra3 = useRef(new Animated.Value(1)).current;
+  const translateX1 = useRef(new Animated.Value(-150)).current;
+  const translateX2 = useRef(new Animated.Value(-150)).current;
+  const translateX3 = useRef(new Animated.Value(-150)).current;
 
-  // Referências para os timeouts
-  const timeoutsRef = useRef<number[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Animações individuais para cada texto
   const animacoesTexto = useRef(
     ETAPAS.map(() => ({
       opacity: new Animated.Value(0),
-      translateY: new Animated.Value(20),
+      translateY: new Animated.Value(10),
     }))
   ).current;
 
-  // Função para limpar todos os timeouts
   const limparTimeouts = useCallback(() => {
     timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     timeoutsRef.current = [];
   }, []);
 
-  // Usar useFocusEffect para reiniciar as animações sempre que a tela for focada
   useFocusEffect(
     useCallback(() => {
-      console.log('Tela focada - reiniciando animações');
-      
-      // Limpar timeouts anteriores
       limparTimeouts();
-      
-      // Resetar estados
       setEtapaAtual(0);
-      
-      // Resetar valores das animações
       rotacao.setValue(0);
       pulsar.setValue(1);
-      translateX1.setValue(-70);
-      translateX2.setValue(-40);
-      translateX3.setValue(-10);
-      opacidadeBarra1.setValue(0.5);
-      opacidadeBarra2.setValue(0.7);
-      opacidadeBarra3.setValue(1);
       
-      // Resetar animações dos textos
       animacoesTexto.forEach(anim => {
         anim.opacity.setValue(0);
-        anim.translateY.setValue(20);
+        anim.translateY.setValue(10);
       });
 
-      // Iniciar animações
       iniciarAnimacoes();
-
-      // Iniciar sequência de textos
       iniciarSequenciaTextos();
 
-      return () => {
-        // Limpar timeouts quando a tela perder o foco
-        console.log('Tela perdeu foco - limpando timeouts');
-        limparTimeouts();
-      };
+      return () => limparTimeouts();
     }, [])
   );
 
   const iniciarAnimacoes = () => {
-    // Animação de rotação do círculo
     Animated.loop(
       Animated.timing(rotacao, {
         toValue: 1,
-        duration: 3000,
+        duration: 8000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // Animação de pulsar do círculo
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulsar, {
-          toValue: 1.2,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulsar, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulsar, { toValue: 1.1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulsar, { toValue: 1, duration: 1000, useNativeDriver: true }),
       ])
     ).start();
 
-    // Animações das barras
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(translateX1, {
-            toValue: 0,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra1, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(translateX1, {
-            toValue: -70,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra1, {
-            toValue: 0.5,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
+    const animaBarra = (val: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(val, { toValue: 150, duration: 1800, useNativeDriver: true }),
+          Animated.timing(val, { toValue: -150, duration: 0, useNativeDriver: true }),
+        ])
+      ).start();
+    };
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(translateX2, {
-            toValue: 0,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra2, {
-            toValue: 1,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(translateX2, {
-            toValue: -40,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra2, {
-            toValue: 0.7,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(translateX3, {
-            toValue: 0,
-            duration: 3000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra3, {
-            toValue: 1,
-            duration: 3000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(translateX3, {
-            toValue: -10,
-            duration: 3000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacidadeBarra3, {
-            toValue: 0.7,
-            duration: 3000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
+    animaBarra(translateX1, 0);
+    animaBarra(translateX2, 300);
+    animaBarra(translateX3, 600);
   };
 
   const iniciarSequenciaTextos = () => {
     let index = 0;
-
     const mostrarProximaEtapa = () => {
       if (index < ETAPAS.length) {
-        // Mostrar texto atual com animação
         Animated.parallel([
-          Animated.timing(animacoesTexto[index].opacity, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(animacoesTexto[index].translateY, {
-            toValue: 0,
-            duration: 600,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
+          Animated.timing(animacoesTexto[index].opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(animacoesTexto[index].translateY, { toValue: 0, duration: 400, useNativeDriver: true }),
         ]).start();
 
         setEtapaAtual(index);
         index++;
 
-        // Programar próxima etapa
         if (index < ETAPAS.length) {
-          const timeout = setTimeout(mostrarProximaEtapa, 800);
+          const timeout = setTimeout(mostrarProximaEtapa, 1200);
           timeoutsRef.current.push(timeout);
         } else {
-          // Quando todas as etapas forem mostradas, navegar para próxima tela
-          const timeout = setTimeout(() => {
+          // Transição automática para a tela de finalização
+          const timeoutFinal = setTimeout(() => {
             router.push('/FinalizacaoScreen');
           }, 1500);
-          timeoutsRef.current.push(timeout);
+          timeoutsRef.current.push(timeoutFinal);
         }
       }
     };
-
-    // Iniciar primeira etapa
-    const initialTimeout = setTimeout(mostrarProximaEtapa, 500);
-    timeoutsRef.current.push(initialTimeout);
+    timeoutsRef.current.push(setTimeout(mostrarProximaEtapa, 500));
   };
 
-  // Interpolação para rotação
   const spin = rotacao.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
-  return (
-    <View style={styles.background}>
-      <View style={styles.container}>
-        {/* Título principal */}
-        <Text style={styles.titulo}>Preparando seus resultados</Text>
-        <Text style={styles.subtitulo}>Estamos analisando suas medidas</Text>
-
-        {/* Área de visualização animada */}
-        <View style={styles.visualizacaoContainer}>
-          {/* Círculo animado principal */}
-          <View style={styles.circuloContainer}>
-            <Animated.View
-              style={[
-                styles.circuloExterno,
-                {
-                  transform: [{ rotate: spin }],
-                },
-              ]}
-            >
-              <View style={styles.circuloExternoInner} />
-            </Animated.View>
-
-            <Animated.View
-              style={[
-                styles.circuloMedio,
-                {
-                  transform: [{ scale: pulsar }],
-                },
-              ]}
-            >
-              <View style={styles.circuloMedioInner} />
-            </Animated.View>
-
-            <View style={styles.circuloInterno}>
-              <FontAwesome name="heartbeat" size={40} color="#1E88E5" />
-            </View>
-          </View>
-
-          {/* Barras de progresso animadas */}
-          <View style={styles.barrasContainer}>
-            <View style={styles.barraWrapper}>
-              <View style={styles.barraFundo}>
-                <Animated.View
-                  style={[
-                    styles.barraProgresso,
-                    {
-                      transform: [{ translateX: translateX1 }],
-                      opacity: opacidadeBarra1,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.barraWrapper}>
-              <View style={styles.barraFundo}>
-                <Animated.View
-                  style={[
-                    styles.barraProgresso,
-                    {
-                      transform: [{ translateX: translateX2 }],
-                      opacity: opacidadeBarra2,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.barraWrapper}>
-              <View style={styles.barraFundo}>
-                <Animated.View
-                  style={[
-                    styles.barraProgresso,
-                    {
-                      transform: [{ translateX: translateX3 }],
-                      opacity: opacidadeBarra3,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Indicadores de progresso */}
-          <View style={styles.indicadoresContainer}>
-            <View style={styles.indicadorItem}>
-              <View style={[styles.indicadorCirculo, styles.indicadorCirculo1]} />
-              <Text style={styles.indicadorTexto}>IMC</Text>
-            </View>
-            <View style={styles.indicadorItem}>
-              <View style={[styles.indicadorCirculo, styles.indicadorCirculo2]} />
-              <Text style={styles.indicadorTexto}>TMB</Text>
-            </View>
-            <View style={styles.indicadorItem}>
-              <View style={[styles.indicadorCirculo, styles.indicadorCirculo3]} />
-              <Text style={styles.indicadorTexto}>TDEE</Text>
-            </View>
-            <View style={styles.indicadorItem}>
-              <View style={[styles.indicadorCirculo, styles.indicadorCirculo4]} />
-              <Text style={styles.indicadorTexto}>BF%</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Lista de etapas */}
-        <View style={styles.etapasContainer}>
-          {ETAPAS.map((texto, index) => (
-            <Animated.View
-              key={index}
-              style={[
-                styles.etapaItem,
-                {
-                  opacity: animacoesTexto[index].opacity,
-                  transform: [
-                    { translateY: animacoesTexto[index].translateY },
-                  ],
-                },
-              ]}
-            >
-              <View style={styles.etapaBullet}>
-                {index <= etapaAtual ? (
-                  <View style={styles.bulletAtivo}>
-                    {index < etapaAtual ? (
-                      <FontAwesome name="check" size={10} color="#FFFFFF" />
-                    ) : (
-                      <View style={styles.bulletPulsante} />
-                    )}
-                  </View>
-                ) : (
-                  <View style={styles.bulletInativo} />
-                )}
-              </View>
-              <Text
-                style={[
-                  styles.etapaTexto,
-                  index <= etapaAtual && styles.etapaTextoAtivo,
-                ]}
-              >
-                {texto}
-              </Text>
-              {index === etapaAtual && (
-                <View style={styles.loadingDots}>
-                  <View style={styles.dot} />
-                  <View style={[styles.dot, styles.dotDelay1]} />
-                  <View style={[styles.dot, styles.dotDelay2]} />
-                </View>
-              )}
-            </Animated.View>
-          ))}
-        </View>
-
-        {/* Indicador de progresso geral */}
-        <View style={styles.progressoGeralContainer}>
-          <View style={styles.progressoGeralFundo}>
-            <Animated.View
-              style={[
-                styles.progressoGeralPreenchimento,
-                {
-                  transform: [{
-                    translateX: animacoesTexto[ETAPAS.length - 1].opacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-100, 0],
-                    })
-                  }],
-                },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressoGeralTexto}>
-            {Math.round(((etapaAtual + 1) / ETAPAS.length) * 100)}% concluído
-          </Text>
-        </View>
-
-        {/* Mensagem de otimismo */}
-        <Text style={styles.mensagemOtimista}>
-          Quase lá! Estamos preparando tudo com carinho para você 💪
-        </Text>
-      </View>
+  const renderBackground = () => (
+    <View style={styles.visualArea}>
+      <Animated.View style={[styles.ellipseLine, { width: width * 1.3, height: width * 1.3, top: -width * 0.3, transform: [{ rotate: spin }] }]}>
+         <View style={[styles.staticDot, { bottom: '20%', right: '20%' }]} />
+      </Animated.View>
+      <Animated.View style={[styles.ellipseLine, { width: width * 1.6, height: width * 1.6, bottom: -width * 0.4, transform: [{ rotate: spin }] }]}>
+        <View style={[styles.staticDot, { top: '15%', left: '15%' }]} />
+      </Animated.View>
     </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {renderBackground()}
+
+      <View style={styles.mainWrapper}>
+        
+        {/* CABEÇALHO (SEM LOGO) */}
+        <View style={styles.sectionTop}>
+            <Text style={styles.titulo}>Analisando Dados</Text>
+            <Text style={styles.subtitulo}>Processando suas informações corporais</Text>
+        </View>
+
+        {/* ÁREA CENTRAL ANIMADA */}
+        <View style={styles.sectionCenter}>
+          <View style={styles.visualContainer}>
+            <Animated.View style={[styles.radarCircle, { transform: [{ rotate: spin }] }]} />
+            <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulsar }] }]} />
+            <View style={styles.iconBox}>
+              <LinearGradient colors={[COLORS.dot, COLORS.primary]} style={styles.gradient}>
+                <FontAwesome name="heartbeat" size={36} color="#FFF" />
+              </LinearGradient>
+            </View>
+          </View>
+
+          <View style={styles.dataBarsContainer}>
+            <View style={styles.barTrack}><Animated.View style={[styles.barFill, { transform: [{ translateX: translateX1 }] }]} /></View>
+            <View style={styles.barTrack}><Animated.View style={[styles.barFill, { transform: [{ translateX: translateX2 }] }]} /></View>
+            <View style={styles.barTrack}><Animated.View style={[styles.barFill, { transform: [{ translateX: translateX3 }] }]} /></View>
+          </View>
+
+          <View style={styles.statsRow}>
+             {['IMC', 'TMB', 'TDEE', 'BF%'].map((st, i) => (
+               <View key={i} style={styles.statItem}>
+                 <View style={[styles.statDot, { backgroundColor: i % 2 === 0 ? COLORS.dot : COLORS.primary }]} />
+                 <Text style={styles.statText}>{st}</Text>
+               </View>
+             ))}
+          </View>
+        </View>
+
+        {/* ETAPAS E PROGRESSO */}
+        <View style={styles.sectionBottom}>
+            <View style={styles.listWrapper}>
+              {ETAPAS.map((texto, index) => (
+                <Animated.View key={index} style={[styles.cardEtapa, { opacity: animacoesTexto[index].opacity, transform: [{ translateY: animacoesTexto[index].translateY }], borderColor: index === etapaAtual ? COLORS.dot : 'transparent' }]}>
+                  <View style={styles.checkSpace}>
+                    {index < etapaAtual ? <FontAwesome name="check-circle" size={18} color={COLORS.dot} /> : <View style={[styles.dotOff, index === etapaAtual && { backgroundColor: COLORS.dot }]} />}
+                  </View>
+                  <Text style={[styles.textoEtapa, index === etapaAtual && styles.textoEtapaActive]}>{texto}</Text>
+                </Animated.View>
+              ))}
+            </View>
+
+            <View style={styles.progressoArea}>
+                <Text style={styles.otimismo}>Quase lá! Preparando tudo para você 💪</Text>
+                <View style={styles.fullBar}>
+                    <Animated.View style={[styles.fillBar, { width: `${((etapaAtual + 1) / ETAPAS.length) * 100}%` }]} />
+                </View>
+                <Text style={styles.percentText}>Concluindo {Math.round(((etapaAtual + 1) / ETAPAS.length) * 100)}%</Text>
+            </View>
+        </View>
+
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+  container: { flex: 1, backgroundColor: '#fff' },
+  visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', zIndex: 0 },
+  ellipseLine: { position: 'absolute', borderWidth: 1, borderColor: COLORS.line, borderRadius: 999, alignSelf: 'center' },
+  staticDot: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.dot },
+
+  mainWrapper: { 
+    flex: 1, 
+    zIndex: 10, 
+    paddingHorizontal: 25, 
+    paddingVertical: 40, 
+    justifyContent: 'space-around', 
+    alignItems: 'center' 
   },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1A2C3E',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitulo: {
-    fontSize: 16,
-    color: '#6B7A8F',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-  visualizacaoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-    width: '100%',
-  },
-  circuloContainer: {
-    width: 160,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  circuloExterno: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 3,
-    borderColor: '#1E88E5',
-    borderStyle: 'dashed',
-  },
-  circuloExternoInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 80,
-  },
-  circuloMedio: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(30, 136, 229, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circuloMedioInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 60,
-  },
-  circuloInterno: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  barrasContainer: {
-    width: width * 0.7,
-    gap: 12,
-    marginBottom: 20,
-  },
-  barraWrapper: {
-    width: '100%',
-    height: 8,
-    overflow: 'hidden',
-  },
-  barraFundo: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#F0F4F8',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  barraProgresso: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#1E88E5',
-    borderRadius: 4,
-  },
-  indicadoresContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
-  },
-  indicadorItem: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  indicadorCirculo: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  indicadorCirculo1: {
-    backgroundColor: '#1E88E5',
-  },
-  indicadorCirculo2: {
-    backgroundColor: '#4CAF50',
-  },
-  indicadorCirculo3: {
-    backgroundColor: '#FF9800',
-  },
-  indicadorCirculo4: {
-    backgroundColor: '#E91E63',
-  },
-  indicadorTexto: {
-    fontSize: 12,
-    color: '#6B7A8F',
-    fontWeight: '500',
-  },
-  etapasContainer: {
-    width: '100%',
-    maxWidth: 400,
-    gap: 12,
-    marginVertical: 30,
-  },
-  etapaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#F8FAFD',
-    borderRadius: 12,
-  },
-  etapaBullet: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bulletAtivo: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#1E88E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bulletPulsante: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-  },
-  bulletInativo: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#E0E0E0',
-  },
-  etapaTexto: {
-    flex: 1,
-    fontSize: 15,
-    color: '#9AABC0',
-  },
-  etapaTextoAtivo: {
-    color: '#1A2C3E',
-    fontWeight: '600',
-  },
-  loadingDots: {
-    flexDirection: 'row',
-    marginLeft: 8,
-    gap: 4,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#1E88E5',
-    opacity: 0.5,
-  },
-  dotDelay1: {
-    opacity: 0.8,
-  },
-  dotDelay2: {
-    opacity: 1,
-  },
-  progressoGeralContainer: {
-    width: '100%',
-    maxWidth: 400,
-    marginBottom: 20,
-  },
-  progressoGeralFundo: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#F0F4F8',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressoGeralPreenchimento: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#4CAF50',
-    borderRadius: 4,
-  },
-  progressoGeralTexto: {
-    fontSize: 14,
-    color: '#6B7A8F',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  mensagemOtimista: {
-    fontSize: 14,
-    color: '#6B7A8F',
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginTop: 10,
-  },
+
+  sectionTop: { alignItems: 'center', width: '100%', marginBottom: 10 },
+  sectionCenter: { alignItems: 'center', width: '100%' },
+  sectionBottom: { width: '100%' },
+
+  titulo: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center' },
+  subtitulo: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginTop: 4 },
+
+  visualContainer: { height: 130, width: 130, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  radarCircle: { position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 1.5, borderColor: COLORS.dot, borderStyle: 'dashed', opacity: 0.4 },
+  pulseCircle: { position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(78, 205, 196, 0.15)' },
+  iconBox: { width: 70, height: 70, borderRadius: 35, elevation: 6, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 5 },
+  gradient: { flex: 1, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
+
+  dataBarsContainer: { width: 100, gap: 5, marginVertical: 10 },
+  barTrack: { width: '100%', height: 3, backgroundColor: '#f0f0f0', borderRadius: 2, overflow: 'hidden' },
+  barFill: { width: '100%', height: '100%', backgroundColor: COLORS.dot },
+
+  statsRow: { flexDirection: 'row', gap: 12, marginTop: 5 },
+  statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statDot: { width: 5, height: 5, borderRadius: 2.5 },
+  statText: { fontSize: 10, fontWeight: '800', color: COLORS.textSub },
+
+  listWrapper: { width: '100%', gap: 6, marginBottom: 20 },
+  cardEtapa: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: COLORS.bgCard, borderRadius: 15, borderWidth: 1, elevation: 1, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 2 },
+  checkSpace: { marginRight: 12 },
+  dotOff: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E0E0E0' },
+  textoEtapa: { flex: 1, fontSize: 13, color: COLORS.textSub, fontWeight: '500' },
+  textoEtapaActive: { color: COLORS.primary, fontWeight: '800' },
+
+  progressoArea: { width: '100%', alignItems: 'center' },
+  otimismo: { fontSize: 12, color: COLORS.textSub, fontStyle: 'italic', marginBottom: 10 },
+  fullBar: { width: '100%', height: 6, backgroundColor: '#f0f0f0', borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
+  fillBar: { height: '100%', backgroundColor: COLORS.dot },
+  percentText: { fontSize: 12, fontWeight: '800', color: COLORS.primary },
 });
