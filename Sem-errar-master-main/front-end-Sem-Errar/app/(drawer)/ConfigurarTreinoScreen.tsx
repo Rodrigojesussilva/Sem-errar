@@ -36,7 +36,16 @@ const COLORS = {
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
   inputBg: '#F8F9FA',
-  success: '#622db2' // Alterado de verde para Roxo conforme pedido
+  success: '#622db2',
+  // Cores dos grupos musculares para os ícones
+  peito: '#8D6E63',
+  costas: '#42A5F5',
+  ombros: '#66BB6A',
+  biceps: '#FBC02D',
+  triceps: '#EF5350',
+  antebraco: '#AB47BC',
+  pernas: '#8D6E63',
+  abdomen: '#FF9800',
 };
 
 // Tipos
@@ -55,7 +64,8 @@ type ExercicioConfigurado = {
   descanso: string;
   grupoMuscular: string;
   icone: string;
-  cor: string;
+  iconeGrupo: string;
+  corGrupo: string;
 };
 
 type Treino = {
@@ -86,33 +96,161 @@ export default function ConfigurarTreinoScreen() {
   const slideFormAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const slideEdicaoAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Mock de exercícios disponíveis
+  // Lista completa de exercícios por grupo muscular
   const exerciciosDisponiveis: Exercicio[] = [
-    { id: '1', nome: 'Supino Reto', grupoMuscular: 'Peito', icone: 'arm-flex' },
-    { id: '2', nome: 'Supino Inclinado', grupoMuscular: 'Peito', icone: 'arm-flex' },
-    { id: '3', nome: 'Crucifixo', grupoMuscular: 'Peito', icone: 'arm-flex' },
-    { id: '4', nome: 'Puxada Frontal', grupoMuscular: 'Costas', icone: 'human-handsup' },
-    { id: '5', nome: 'Remada Curvada', grupoMuscular: 'Costas', icone: 'human-handsup' },
-    { id: '6', nome: 'Agachamento', grupoMuscular: 'Pernas', icone: 'run' },
-    { id: '7', nome: 'Leg Press', grupoMuscular: 'Pernas', icone: 'run' },
-    { id: '8', nome: 'Cadeira Extensora', grupoMuscular: 'Pernas', icone: 'run' },
-    { id: '9', nome: 'Desenvolvimento', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
-    { id: '10', nome: 'Elevação Lateral', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
-    { id: '11', nome: 'Rosca Direta', grupoMuscular: 'Braços', icone: 'arm-flex-outline' },
-    { id: '12', nome: 'Tríceps Pulley', grupoMuscular: 'Braços', icone: 'arm-flex-outline' },
-    { id: '13', nome: 'Abdominal', grupoMuscular: 'Abdômen', icone: 'human-male' },
-    { id: '14', nome: 'Prancha', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    // 🟫 PEITO
+    { id: '1', nome: 'Supino reto com barra', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '2', nome: 'Supino reto com halteres', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '3', nome: 'Supino inclinado com barra', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '4', nome: 'Supino inclinado com halteres', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '5', nome: 'Supino declinado com barra', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '6', nome: 'Supino declinado com halteres', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '7', nome: 'Supino em máquina', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '8', nome: 'Supino fechado', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '9', nome: 'Crucifixo reto com halteres', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '10', nome: 'Crucifixo inclinado', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '11', nome: 'Crucifixo declinado', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '12', nome: 'Crucifixo em máquina (peck deck)', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '13', nome: 'Cross over no cabo', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '14', nome: 'Cross over de baixo para cima', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '15', nome: 'Cross over de cima para baixo', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '16', nome: 'Flexão de braço', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '17', nome: 'Flexão inclinada', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '18', nome: 'Flexão declinada', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '19', nome: 'Mergulho em barras paralelas (foco no peito)', grupoMuscular: 'Peito', icone: 'arm-flex' },
+    { id: '20', nome: 'Pullover com halter', grupoMuscular: 'Peito', icone: 'arm-flex' },
+
+    // 🟦 COSTAS
+    { id: '21', nome: 'Barra fixa (todas variações)', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '22', nome: 'Puxada na frente (pulldown)', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '23', nome: 'Puxada atrás', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '24', nome: 'Remada curvada com barra', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '25', nome: 'Remada com halteres', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '26', nome: 'Remada unilateral', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '27', nome: 'Remada baixa no cabo', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '28', nome: 'Remada cavalinho (T-bar)', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '29', nome: 'Remada em máquina articulada', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '30', nome: 'Remada sentado pegada aberta', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '31', nome: 'Remada invertida', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '32', nome: 'Pullover na máquina', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '33', nome: 'Levantamento terra', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '34', nome: 'Terra romeno', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '35', nome: 'Good morning', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '36', nome: 'Hiperextensão lombar', grupoMuscular: 'Costas', icone: 'human-handsup' },
+    { id: '37', nome: 'Rack pull', grupoMuscular: 'Costas', icone: 'human-handsup' },
+
+    // 🟩 OMBROS
+    { id: '38', nome: 'Desenvolvimento com barra', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '39', nome: 'Desenvolvimento com halteres', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '40', nome: 'Desenvolvimento em máquina', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '41', nome: 'Desenvolvimento Arnold', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '42', nome: 'Elevação frontal com halteres', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '43', nome: 'Elevação frontal com barra', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '44', nome: 'Elevação frontal no cabo', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '45', nome: 'Elevação lateral com halteres', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '46', nome: 'Elevação lateral no cabo', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '47', nome: 'Elevação lateral em máquina', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '48', nome: 'Elevação lateral inclinada', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '49', nome: 'Crucifixo inverso com halteres', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '50', nome: 'Crucifixo inverso em máquina', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '51', nome: 'Face pull', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+    { id: '52', nome: 'Remada alta', grupoMuscular: 'Ombros', icone: 'weight-lifter' },
+
+    // 🟨 BÍCEPS
+    { id: '53', nome: 'Rosca direta com barra', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '54', nome: 'Rosca direta com halteres', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '55', nome: 'Rosca alternada', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '56', nome: 'Rosca martelo', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '57', nome: 'Rosca concentrada', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '58', nome: 'Rosca Scott', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '59', nome: 'Rosca no cabo', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '60', nome: 'Rosca 21', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '61', nome: 'Rosca inversa', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '62', nome: 'Rosca spider', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+    { id: '63', nome: 'Rosca inclinada', grupoMuscular: 'Bíceps', icone: 'arm-flex-outline' },
+
+    // 🟥 TRÍCEPS
+    { id: '64', nome: 'Tríceps testa', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '65', nome: 'Tríceps francês', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '66', nome: 'Tríceps corda no pulley', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '67', nome: 'Tríceps barra no pulley', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '68', nome: 'Mergulho em banco', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '69', nome: 'Mergulho em paralelas', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '70', nome: 'Supino fechado', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '71', nome: 'Coice de tríceps', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+    { id: '72', nome: 'Tríceps unilateral no cabo', grupoMuscular: 'Tríceps', icone: 'arm-flex-outline' },
+
+    // 🟪 ANTEBRAÇO
+    { id: '73', nome: 'Rosca de punho', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+    { id: '74', nome: 'Rosca de punho inversa', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+    { id: '75', nome: 'Farmer\'s walk', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+    { id: '76', nome: 'Pegada estática na barra', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+    { id: '77', nome: 'Rosca inversa', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+    { id: '78', nome: 'Extensão de punho com halter', grupoMuscular: 'Antebraço', icone: 'hand-peace' },
+
+    // 🟫 PERNAS
+    { id: '79', nome: 'Agachamento livre', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '80', nome: 'Agachamento frontal', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '81', nome: 'Agachamento sumô', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '82', nome: 'Leg press', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '83', nome: 'Hack machine', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '84', nome: 'Cadeira extensora', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '85', nome: 'Mesa flexora', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '86', nome: 'Flexora em pé', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '87', nome: 'Levantamento terra', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '88', nome: 'Terra romeno', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '89', nome: 'Good morning', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '90', nome: 'Passada (avanço)', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '91', nome: 'Afundo', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '92', nome: 'Step up', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '93', nome: 'Elevação pélvica (hip thrust)', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '94', nome: 'Ponte de glúteo', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '95', nome: 'Coice no cabo', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '96', nome: 'Abdução de quadril', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '97', nome: 'Glute ham raise', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '98', nome: 'Sissy squat', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '99', nome: 'Elevação de panturrilha em pé', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '100', nome: 'Elevação de panturrilha sentado', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '101', nome: 'Panturrilha no leg press', grupoMuscular: 'Pernas', icone: 'run' },
+    { id: '102', nome: 'Panturrilha unilateral', grupoMuscular: 'Pernas', icone: 'run' },
+
+    // 🟧 ABDÔMEN / CORE
+    { id: '103', nome: 'Abdominal tradicional', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '104', nome: 'Abdominal supra', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '105', nome: 'Abdominal infra', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '106', nome: 'Abdominal oblíquo', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '107', nome: 'Abdominal na máquina', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '108', nome: 'Elevação de pernas', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '109', nome: 'Elevação de joelhos na barra', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '110', nome: 'Russian twist', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '111', nome: 'Prancha', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '112', nome: 'Prancha lateral', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '113', nome: 'Prancha com elevação de braço', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '114', nome: 'Prancha com elevação de perna', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '115', nome: 'Ab wheel', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '116', nome: 'Hollow hold', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '117', nome: 'Dead bug', grupoMuscular: 'Abdômen', icone: 'human-male' },
+    { id: '118', nome: 'Rotação no cabo', grupoMuscular: 'Abdômen', icone: 'human-male' },
   ];
 
   const gruposMusculares = [
-    { id: 'todos', nome: 'Todos os grupos' },
-    { id: 'Peito', nome: 'Peito', cor: '#622db2' },
-    { id: 'Costas', nome: 'Costas', cor: '#7b42d5' },
-    { id: 'Pernas', nome: 'Pernas', cor: '#4ecdc4' },
-    { id: 'Ombros', nome: 'Ombros', cor: '#8E44AD' },
-    { id: 'Braços', nome: 'Braços', cor: '#F39C12' },
-    { id: 'Abdômen', nome: 'Abdômen', cor: '#00BCD4' },
+    { id: 'todos', nome: 'Todos os grupos', icone: 'view-grid', cor: COLORS.primary },
+    { id: 'Peito', nome: '🟫 PEITO', icone: 'arm-flex', cor: COLORS.peito },
+    { id: 'Costas', nome: '🟦 COSTAS', icone: 'human-handsup', cor: COLORS.costas },
+    { id: 'Ombros', nome: '🟩 OMBROS', icone: 'weight-lifter', cor: COLORS.ombros },
+    { id: 'Bíceps', nome: '🟨 BÍCEPS', icone: 'arm-flex-outline', cor: COLORS.biceps },
+    { id: 'Tríceps', nome: '🟥 TRÍCEPS', icone: 'arm-flex-outline', cor: COLORS.triceps },
+    { id: 'Antebraço', nome: '🟪 ANTEBRAÇO', icone: 'hand-peace', cor: COLORS.antebraco },
+    { id: 'Pernas', nome: '🟫 PERNAS', icone: 'run', cor: COLORS.pernas },
+    { id: 'Abdômen', nome: '🟧 ABDÔMEN / CORE', icone: 'human-male', cor: COLORS.abdomen },
   ];
+
+  const getCorGrupo = (grupoMuscular: string): string => {
+    const grupo = gruposMusculares.find(g => 
+      g.id === grupoMuscular || g.nome.includes(grupoMuscular)
+    );
+    return grupo?.cor || COLORS.primary;
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -236,7 +374,7 @@ export default function ConfigurarTreinoScreen() {
     if (!treinoSelecionado || selectedExercises.length === 0) return;
     const novosExercicios: ExercicioConfigurado[] = selectedExercises.map(exId => {
       const exercicio = exerciciosDisponiveis.find(ex => ex.id === exId)!;
-      const grupo = gruposMusculares.find(g => g.nome === exercicio.grupoMuscular);
+      const grupo = gruposMusculares.find(g => g.id === exercicio.grupoMuscular || g.nome.includes(exercicio.grupoMuscular));
       return {
         id: Date.now().toString() + exId,
         nome: exercicio.nome,
@@ -245,7 +383,8 @@ export default function ConfigurarTreinoScreen() {
         descanso: '60s',
         grupoMuscular: exercicio.grupoMuscular,
         icone: exercicio.icone,
-        cor: grupo?.cor || '#622db2',
+        iconeGrupo: grupo?.icone || 'dumbbell',
+        corGrupo: grupo?.cor || COLORS.primary,
       };
     });
 
@@ -283,17 +422,33 @@ export default function ConfigurarTreinoScreen() {
       }
       return t;
     });
+    
     setTreinos(treinosAtualizados);
+    
     try {
       const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
       if (treinoAtualizado) {
         const numeroTreino = treinoId.split('-')[1];
         await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
+        
+        // Forçar uma atualização do estado para garantir que o modal reflita as mudanças
+        setTreinoSelecionado(prev => {
+          if (prev && prev.id === treinoId) {
+            return {
+              ...prev,
+              exercicios: treinoAtualizado.exercicios,
+              configurado: treinoAtualizado.exercicios.length > 0
+            };
+          }
+          return prev;
+        });
       }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error('Erro ao remover exercício:', error);
+      Alert.alert('Erro', 'Não foi possível remover o exercício. Tente novamente.');
+    }
   };
 
-  // Alteração do destino do botão voltar conforme solicitado
   const handleVoltar = () => router.push('/(drawer)/EstruturaTreinosScreen');
   
   const handleContinuar = () => {
@@ -406,7 +561,12 @@ export default function ConfigurarTreinoScreen() {
                   <View style={styles.exerciciosPreview}>
                     {treino.exercicios.slice(0, 2).map((ex) => (
                       <View key={ex.id} style={styles.exercicioPreviewItem}>
-                        <View style={[styles.exercicioPreviewBullet, { backgroundColor: ex.cor }]} />
+                        <MaterialCommunityIcons 
+                          name={ex.iconeGrupo as any} 
+                          size={12} 
+                          color={ex.corGrupo} 
+                          style={styles.exercicioPreviewIcon}
+                        />
                         <Text style={styles.exercicioPreviewText} numberOfLines={1}>{ex.nome}</Text>
                       </View>
                     ))}
@@ -469,23 +629,32 @@ export default function ConfigurarTreinoScreen() {
 
             <View style={styles.filterContainer}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {gruposMusculares.map((grupo) => (
-                  <TouchableOpacity
-                    key={grupo.id}
-                    style={[
-                      styles.filterChip,
-                      (grupo.id === 'todos' && selectedGroups.length === 0) || selectedGroups.includes(grupo.id) ? styles.filterChipSelected : null
-                    ]}
-                    onPress={() => toggleGrupoMuscular(grupo.id)}
-                  >
-                    <Text style={[
-                      styles.filterChipText,
-                      (grupo.id === 'todos' && selectedGroups.length === 0) || selectedGroups.includes(grupo.id) ? styles.filterChipTextSelected : null
-                    ]}>
-                      {grupo.nome}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {gruposMusculares.map((grupo) => {
+                  const isSelected = (grupo.id === 'todos' && selectedGroups.length === 0) || selectedGroups.includes(grupo.id);
+                  return (
+                    <TouchableOpacity
+                      key={grupo.id}
+                      style={[
+                        styles.filterChip,
+                        isSelected && styles.filterChipSelected
+                      ]}
+                      onPress={() => toggleGrupoMuscular(grupo.id)}
+                    >
+                      <MaterialCommunityIcons 
+                        name={grupo.icone as any} 
+                        size={16} 
+                        color={isSelected ? '#FFF' : grupo.cor} 
+                        style={styles.filterChipIcon}
+                      />
+                      <Text style={[
+                        styles.filterChipText,
+                        isSelected && styles.filterChipTextSelected
+                      ]}>
+                        {grupo.nome}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </View>
 
@@ -494,19 +663,21 @@ export default function ConfigurarTreinoScreen() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
                 const isSelected = selectedExercises.includes(item.id);
-                const grupo = gruposMusculares.find(g => g.nome === item.grupoMuscular);
+                const corGrupo = getCorGrupo(item.grupoMuscular);
                 return (
                   <TouchableOpacity
                     style={[styles.exercicioItem, isSelected && styles.exercicioItemSelected]}
                     onPress={() => toggleExercicioSelecionado(item.id)}
                   >
                     <View style={styles.exercicioItemContent}>
-                      <View style={[styles.exercicioIconBox, { backgroundColor: `${grupo?.cor}15` }]}>
-                        <MaterialCommunityIcons name={item.icone as any} size={20} color={grupo?.cor || COLORS.primary} />
-                      </View>
+                      <MaterialCommunityIcons 
+                        name={item.icone as any} 
+                        size={24} 
+                        color={corGrupo} 
+                      />
                       <View>
                         <Text style={styles.exercicioNomeText}>{item.nome}</Text>
-                        <Text style={styles.exercicioGrupoText}>{item.grupoMuscular}</Text>
+                        <Text style={[styles.exercicioGrupoText, { color: corGrupo }]}>{item.grupoMuscular}</Text>
                       </View>
                     </View>
                     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -538,7 +709,7 @@ export default function ConfigurarTreinoScreen() {
         </Animated.View>
       </Modal>
 
-      {/* MODAL - Edição do Treino (O roxo agora predomina aqui) */}
+      {/* MODAL - Edição do Treino */}
       <Modal visible={modalEdicaoVisible} transparent animationType="none">
         <Animated.View style={[styles.fullScreenModal, { transform: [{ translateY: slideEdicaoAnim }] }]}>
           <View style={styles.modalHeader}>
@@ -556,12 +727,14 @@ export default function ConfigurarTreinoScreen() {
               <View key={exercicio.id} style={styles.exercicioConfiguradoCard}>
                 <View style={styles.exHeader}>
                   <View style={styles.exInfo}>
-                    <View style={[styles.exIcon, { backgroundColor: `${COLORS.primary}15` }]}>
-                      <MaterialCommunityIcons name={exercicio.icone as any} size={20} color={COLORS.primary} />
-                    </View>
+                    <MaterialCommunityIcons 
+                      name={exercicio.iconeGrupo as any} 
+                      size={24} 
+                      color={exercicio.corGrupo} 
+                    />
                     <View>
                       <Text style={styles.exNome}>{exercicio.nome}</Text>
-                      <Text style={styles.exGrupo}>{exercicio.grupoMuscular}</Text>
+                      <Text style={[styles.exGrupo, { color: exercicio.corGrupo }]}>{exercicio.grupoMuscular}</Text>
                     </View>
                   </View>
                   <TouchableOpacity onPress={() => handleRemoveExercicio(treinoSelecionado.id, exercicio.id)}>
@@ -623,7 +796,7 @@ const styles = StyleSheet.create({
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerContainer: { paddingHorizontal: 25, paddingTop: 20, zIndex: 10 },
+  headerContainer: { paddingHorizontal: 25, paddingTop: 40, zIndex: 10 }, // Aumentei o paddingTop de 20 para 40
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 2 },
   backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: '700', marginLeft: 10 },
@@ -645,7 +818,7 @@ const styles = StyleSheet.create({
   treinoStatus: { fontSize: 13, color: '#888', marginTop: 2 },
   exerciciosPreview: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#F0F0F0', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   exercicioPreviewItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  exercicioPreviewBullet: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  exercicioPreviewIcon: { marginRight: 6 },
   exercicioPreviewText: { fontSize: 11, color: '#666', fontWeight: '600', maxWidth: 100 },
   maisExerciciosText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
   primaryButtonWrapper: { width: '100%', alignItems: 'center' },
@@ -660,16 +833,27 @@ const styles = StyleSheet.create({
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 15, paddingHorizontal: 15, height: 55, marginBottom: 20 },
   searchInput: { flex: 1, marginLeft: 10, fontSize: 16, fontWeight: '600' },
   filterContainer: { marginBottom: 20 },
-  filterChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 25, backgroundColor: '#F0F0F0', marginRight: 10, borderWidth: 1, borderColor: '#E0E0E0' },
-  filterChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChip: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    marginRight: 8,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 20,
+  },
+  filterChipIcon: { marginRight: 6 },
+  filterChipSelected: { 
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+  },
   filterChipText: { fontSize: 13, fontWeight: '700', color: '#666' },
   filterChipTextSelected: { color: '#FFF' },
   exercicioItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, backgroundColor: '#FFF', borderRadius: 18, marginBottom: 12, borderWidth: 1, borderColor: '#F0F0F0' },
   exercicioItemSelected: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}05` },
   exercicioItemContent: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-  exercicioIconBox: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   exercicioNomeText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
-  exercicioGrupoText: { fontSize: 12, color: '#888' },
+  exercicioGrupoText: { fontSize: 12 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#DDD', justifyContent: 'center', alignItems: 'center' },
   checkboxSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   bottomButtonContainer: { position: 'absolute', bottom: 30, left: 20, right: 20 },
@@ -679,9 +863,8 @@ const styles = StyleSheet.create({
   exercicioConfiguradoCard: { backgroundColor: '#FFF', borderRadius: 22, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: '#F0F0F0', elevation: 2 },
   exHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   exInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  exIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   exNome: { fontSize: 16, fontWeight: '800', color: COLORS.textMain },
-  exGrupo: { fontSize: 12, color: '#999' },
+  exGrupo: { fontSize: 12 },
   configGrid: { flexDirection: 'row', gap: 10 },
   configItem: { flex: 1, backgroundColor: '#F8F9FA', borderRadius: 12, padding: 10 },
   configLabel: { fontSize: 10, fontWeight: '700', color: '#AAA', marginBottom: 5, textTransform: 'uppercase' },
