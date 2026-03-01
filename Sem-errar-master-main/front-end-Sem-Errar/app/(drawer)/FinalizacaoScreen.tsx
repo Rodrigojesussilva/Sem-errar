@@ -336,30 +336,30 @@ export default function FinalizacaoScreen() {
     const pesoMinimo = 18.5 * (alturaMetros * alturaMetros);
     const pesoMaximo = 24.9 * (alturaMetros * alturaMetros);
 
-    const calcularPercentualGordura = (): number => {
-      if (pescocoCm > 0 && cinturaCm > 0) {
-        const alturaInches = alturaCm * 0.393701;
-        const cinturaInches = cinturaCm * 0.393701;
-        const pescocoInches = pescocoCm * 0.393701;
-
-        if (sexo === 'masculino') {
-          const logAltura = Math.log10(alturaInches);
-          const logCinturaMenosPescoco = Math.log10(cinturaInches - pescocoInches);
-          const bf = 495 / (1.0324 - 0.19077 * logCinturaMenosPescoco + 0.15456 * logAltura) - 450;
-          return Math.max(5, Math.min(bf, 50));
-        } else {
-          if (quadrilCm && quadrilCm > 0) {
-            const quadrilInches = quadrilCm * 0.393701;
-            const logAltura = Math.log10(alturaInches);
-            const logSoma = Math.log10(cinturaInches + quadrilInches - pescocoInches);
-            const bf = 495 / (1.29579 - 0.35004 * logSoma + 0.22100 * logAltura) - 450;
-            return Math.max(10, Math.min(bf, 60));
-          }
-        }
+     const calcularPercentualGordura = (): number => {
+    // Fórmula da Marinha dos EUA (U.S. Navy Method)
+    const alturaInches = alturaCm * 0.393701;
+    const pescocoInches = pescocoCm * 0.393701;
+    const cinturaInches = cinturaCm * 0.393701;
+    
+    if (sexo === 'masculino') {
+      // Para homens: %Gordura = 86.010 * log10(cintura - pescoço) - 70.041 * log10(altura) + 36.76
+      const bf = 86.010 * Math.log10(cinturaInches - pescocoInches) - 70.041 * Math.log10(alturaInches) + 36.76;
+      return Math.max(3, Math.min(bf, 45));
+    } else {
+      // Para mulheres: precisa do quadril
+      if (quadrilCm && quadrilCm > 0) {
+        const quadrilInches = quadrilCm * 0.393701;
+        // %Gordura = 163.205 * log10(cintura + quadril - pescoço) - 97.684 * log10(altura) - 78.387
+        const bf = 163.205 * Math.log10(cinturaInches + quadrilInches - pescocoInches) - 97.684 * Math.log10(alturaInches) - 78.387;
+        return Math.max(8, Math.min(bf, 55));
       }
-      const sexoValor = sexo === 'feminino' ? 1 : 0;
-      return Math.max(5, Math.min((1.20 * imc) + (0.23 * idade) - (10.8 * sexoValor) - 5.4, 50));
-    };
+    }
+    
+    // Fallback: estimativa baseada em IMC caso não tenha todas medidas
+    const sexoValor = sexo === 'feminino' ? 1 : 0;
+    return Math.max(5, Math.min((1.20 * imc) + (0.23 * idade) - (10.8 * sexoValor) - 5.4, 50));
+  };
 
     const percentualGordura = calcularPercentualGordura();
     const massaGordaKg = (percentualGordura / 100) * pesoEmKg;
@@ -443,11 +443,12 @@ export default function FinalizacaoScreen() {
 
     const classificacaoBF = getClassificacaoBF(percentualGordura, sexo === 'masculino');
 
-    const calcularTMB = (): number => {
+        const calcularTMB = (): number => {
+      // Mifflin-St Jeor Equation
       if (sexo === 'feminino') {
-        return 447.593 + (9.247 * pesoEmKg) + (3.098 * alturaCm) - (4.330 * idade);
+        return (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) - 161;
       } else {
-        return 88.362 + (13.397 * pesoEmKg) + (4.799 * alturaCm) - (5.677 * idade);
+        return (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) + 5;
       }
     };
 
