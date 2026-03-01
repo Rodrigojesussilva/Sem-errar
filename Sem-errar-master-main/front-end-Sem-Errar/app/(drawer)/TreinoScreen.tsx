@@ -72,7 +72,7 @@ export default function TreinoScreen() {
           router.push('/FrequenciaScreen');
         } else {
           await AsyncStorage.setItem('@frequenciaTreino', '0');
-          router.push('/FinalizacaoScreen');
+          router.push('/(drawer)/QuadroCalcularBFScreentreino');
         }
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível salvar.');

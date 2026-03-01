@@ -52,7 +52,7 @@ export default function QuadroCalcularBFScreenDiasFixos() {
     if (opcaoSelecionada === 'agora') {
       router.push('/PescocoScreen');
     } else {
-      router.push('/FinalizacaoScreen');
+      router.push('/PreparandoResultadosScreen');
     }
   };
 
