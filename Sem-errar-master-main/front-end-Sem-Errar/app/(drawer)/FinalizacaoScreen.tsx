@@ -336,7 +336,7 @@ export default function FinalizacaoScreen() {
     const pesoMinimo = 18.5 * (alturaMetros * alturaMetros);
     const pesoMaximo = 24.9 * (alturaMetros * alturaMetros);
 
-   const calcularPercentualGordura = (): number => {
+     const calcularPercentualGordura = (): number => {
     // Fórmula da Marinha dos EUA (U.S. Navy Method)
     const alturaInches = alturaCm * 0.393701;
     const pescocoInches = pescocoCm * 0.393701;
