@@ -54,6 +54,7 @@ declare global {
       DiasFixosScreen: undefined;
       SequenciaScreen: undefined;
       ContextoBFScreen: undefined;
+      QuadroCalcularBFScreen: undefined; // Tela genérica
       QuadroCalcularBFScreenDiasFixos: undefined;
       QuadroCalcularBFScreenSequencia: undefined;
       PescocoScreen: undefined;
@@ -101,6 +102,7 @@ type RouteName =
   | 'DiasFixosScreen'
   | 'SequenciaScreen'
   | 'ContextoBFScreen'
+  | 'QuadroCalcularBFScreen' // Tela genérica
   | 'QuadroCalcularBFScreenDiasFixos'
   | 'QuadroCalcularBFScreenSequencia'
   | 'PescocoScreen'
@@ -579,6 +581,7 @@ export default function DrawerLayout() {
             'DiasFixosScreen',
             'SequenciaScreen',
             'ContextoBFScreen',
+            'QuadroCalcularBFScreen', // Tela genérica
             'QuadroCalcularBFScreenDiasFixos',
             'QuadroCalcularBFScreenSequencia',
             'PescocoScreen',
@@ -806,6 +809,18 @@ export default function DrawerLayout() {
             drawerLabel: "Contexto BF",
             drawerItemStyle: { display: 'none' },
             headerShown: false,
+          }}
+        />
+
+        {/* NOVA TELA: QUADRO CALCULAR BF GENÉRICO - SEM DRAWER */}
+        <Drawer.Screen
+          name="QuadroCalcularBFScreen"
+          options={{
+            title: "Quadro Calcular BF",
+            drawerLabel: "Quadro BF",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+            swipeEnabled: false,
           }}
         />
 

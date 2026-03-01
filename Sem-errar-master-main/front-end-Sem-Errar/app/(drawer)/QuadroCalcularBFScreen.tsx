@@ -18,29 +18,29 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4', // Verde padrão
+  dot: '#4ecdc4', // Ciano/Verde padrão
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
-  error: '#ff4444', // Vermelho
+  error: '#ff4444', // Vermelho para o "depois"
 };
 
-export default function RegistrarTreinoScreen() {
+export default function QuadroCalcularBFScreenDiasFixos() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
 
   const opcoes = [
     {
       id: 'agora',
-      title: 'Vamos lá',
-      subtitle: 'Registrar meu treino agora',
+      title: 'Calcular agora',
+      subtitle: 'Vamos fazer as medições necessárias',
       icon: 'rocket',
       color: COLORS.dot, // Verde
     },
     {
       id: 'depois',
-      title: 'Registrar mais tarde',
-      subtitle: 'Voltar para o app depois',
+      title: 'Calcular ao entrar',
+      subtitle: 'Farei as medições mais tarde',
       icon: 'clock-o',
       color: COLORS.error, // Vermelho
     },
@@ -49,14 +49,14 @@ export default function RegistrarTreinoScreen() {
   const handleProximo = () => {
     if (!opcaoSelecionada) return;
     if (opcaoSelecionada === 'agora') {
-      router.push('/EstruturaTreinosScreen');
+      router.push('/PescocoScreen');
     } else {
-      router.push('/QuadroCalcularBFScreen');
+      router.push('/FinalizacaoScreen');
     }
   };
 
   const handleVoltar = () => {
-    router.replace('/FrequenciaScreen');
+    router.replace('/RegistrarTreinoScreen');
   };
 
   const renderStaticBackground = () => (
@@ -66,9 +66,6 @@ export default function RegistrarTreinoScreen() {
       </View>
       <View style={[styles.ellipseLine, { width: width * 1.2, height: height * 0.5, top: height * 0.3, right: -width * 0.4, transform: [{ rotate: '35deg' }] }]}>
         <View style={[styles.staticDot, { bottom: '30%', left: '10%' }]} />
-      </View>
-      <View style={[styles.ellipseLine, { width: width * 1.6, height: height * 0.3, bottom: -height * 0.05, left: -width * 0.2, transform: [{ rotate: '5deg' }] }]}>
-        <View style={[styles.staticDot, { top: '10%', left: '40%' }]} />
       </View>
     </View>
   );
@@ -95,22 +92,18 @@ export default function RegistrarTreinoScreen() {
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              source={require('@/assets/images/logo-sem-fundo1.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
 
-          <Text style={styles.subtitleAuxiliar}>
-            Use o app para acompanhar seus treinos e sua evolução
-          </Text>
-
-          <Text style={styles.title}>Deseja registrar seu treino agora?</Text>
+          <Text style={styles.title}>Vamos calcular seu percentual de gordura?</Text>
           
           <View style={styles.opcoesContainer}>
             {opcoes.map((opcao) => {
               const isSelected = opcaoSelecionada === opcao.id;
-              const activeColor = opcao.color; // Define se será verde ou vermelho
+              const activeColor = opcao.color; // Define verde ou vermelho
 
               return (
                 <Pressable
@@ -144,6 +137,13 @@ export default function RegistrarTreinoScreen() {
                 </Pressable>
               );
             })}
+          </View>
+
+          <View style={styles.infoBox}>
+            <FontAwesome name="info-circle" size={18} color={COLORS.dot} />
+            <Text style={styles.infoText}>
+              Você precisará de uma fita métrica flexível para realizar as medições corporais.
+            </Text>
           </View>
 
           <Pressable
@@ -181,19 +181,20 @@ const styles = StyleSheet.create({
   backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingTop: 60, paddingBottom: 40 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingTop: 40, paddingBottom: 40 },
   content: { width: '100%', zIndex: 10 },
-  logoContainer: { alignItems: 'center', marginBottom: 25, marginTop: 10 },
-  logo: { width: width * 0.5, height: 70 },
-  subtitleAuxiliar: { fontSize: 15, color: COLORS.dot, fontWeight: '700', textAlign: 'center', marginBottom: 15, paddingHorizontal: 20 },
-  title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 35 },
-  opcoesContainer: { gap: 15, marginBottom: 35 },
+  logoContainer: { alignItems: 'center', marginBottom: 30 },
+  logo: { width: width * 0.45, height: 60 },
+  title: { fontSize: 24, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 35 },
+  opcoesContainer: { gap: 15, marginBottom: 25 },
   opcaoItem: { flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
   opcaoIconContainer: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
   opcaoDescricaoItem: { fontSize: 14, color: '#888', marginTop: 2 },
   radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
   radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+  infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(78, 205, 196, 0.08)', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(78, 205, 196, 0.3)', marginBottom: 35, gap: 12 },
+  infoText: { flex: 1, fontSize: 14, color: '#3BA9A1', fontWeight: '600', lineHeight: 20 },
   buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },

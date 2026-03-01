@@ -56,16 +56,27 @@ type Exercicio = {
   icone: string;
 };
 
+type Serie = {
+  id: string;
+  repeticoes?: string;
+  descanso?: string;
+  tempoIsolado?: string;
+  isolado: boolean; // Checkbox por série
+};
+
 type ExercicioConfigurado = {
   id: string;
   nome: string;
-  series: number;
-  repeticoes: string;
-  descanso: string;
+  series: Serie[]; // Agora é um array de séries
   grupoMuscular: string;
   icone: string;
   iconeGrupo: string;
   corGrupo: string;
+  // Campos antigos para migração
+  repeticoes?: string;
+  descanso?: string;
+  tempoIsolado?: string;
+  isolado?: boolean;
 };
 
 type Treino = {
@@ -252,6 +263,81 @@ export default function ConfigurarTreinoScreen() {
     return grupo?.cor || COLORS.primary;
   };
 
+  // Função de migração para converter exercícios antigos para o novo formato
+  const migrarExerciciosAntigos = (exercicios: any[]): ExercicioConfigurado[] => {
+    return exercicios.map(ex => {
+      // Se já tem series como array, verifica se precisa migrar as séries
+      if (Array.isArray(ex.series)) {
+        // Migra cada série para o novo formato
+        const seriesMigradas = ex.series.map((s: any) => {
+          if (typeof s === 'object') {
+            return {
+              id: s.id || Date.now().toString() + Math.random().toString(),
+              repeticoes: s.repeticoes,
+              descanso: s.descanso,
+              tempoIsolado: s.tempoIsolado,
+              isolado: s.isolado || false
+            };
+          }
+          return {
+            id: Date.now().toString() + Math.random().toString(),
+            repeticoes: '8-12',
+            descanso: '60s',
+            isolado: false
+          };
+        });
+        
+        return {
+          ...ex,
+          series: seriesMigradas
+        };
+      }
+      
+      // Verifica se é o formato antigo (series é número)
+      if (typeof ex.series === 'number') {
+        // Cria um array de séries baseado no número de séries
+        const seriesArray: Serie[] = [];
+        const repeticoes = ex.repeticoes || '8-12';
+        const descanso = ex.descanso || '60s';
+        
+        for (let i = 0; i < ex.series; i++) {
+          seriesArray.push({
+            id: Date.now().toString() + i + Math.random().toString(),
+            repeticoes: repeticoes,
+            descanso: descanso,
+            isolado: false
+          });
+        }
+        
+        return {
+          id: ex.id,
+          nome: ex.nome,
+          series: seriesArray,
+          grupoMuscular: ex.grupoMuscular,
+          icone: ex.icone,
+          iconeGrupo: ex.iconeGrupo || 'dumbbell',
+          corGrupo: ex.corGrupo || COLORS.primary,
+        };
+      }
+      
+      // Se não tem series (formato muito antigo), cria com uma série padrão
+      return {
+        id: ex.id,
+        nome: ex.nome,
+        series: [{
+          id: Date.now().toString() + 's1',
+          repeticoes: ex.repeticoes || '8-12',
+          descanso: ex.descanso || '60s',
+          isolado: false
+        }],
+        grupoMuscular: ex.grupoMuscular,
+        icone: ex.icone,
+        iconeGrupo: ex.iconeGrupo || 'dumbbell',
+        corGrupo: ex.corGrupo || COLORS.primary,
+      };
+    });
+  };
+
   useFocusEffect(
     useCallback(() => {
       carregarQuantidadeTreinos();
@@ -278,16 +364,26 @@ export default function ConfigurarTreinoScreen() {
 
       setQuantidadeTreinos(quantidade);
       const novosTreinos: Treino[] = [];
+      
       for (let i = 1; i <= quantidade; i++) {
         const treinoSalvo = await AsyncStorage.getItem(`@treino_${i}`);
         let exerciciosSalvos: ExercicioConfigurado[] = [];
+        
         if (treinoSalvo) {
           try {
-            exerciciosSalvos = JSON.parse(treinoSalvo);
+            const parsed = JSON.parse(treinoSalvo);
+            // Migra os exercícios antigos para o novo formato
+            exerciciosSalvos = migrarExerciciosAntigos(parsed);
+            
+            // Se houve migração, salva de volta no formato novo
+            if (JSON.stringify(parsed) !== JSON.stringify(exerciciosSalvos)) {
+              await AsyncStorage.setItem(`@treino_${i}`, JSON.stringify(exerciciosSalvos));
+            }
           } catch (e) {
-            console.error(e);
+            console.error('Erro ao parsear treino:', e);
           }
         }
+        
         novosTreinos.push({
           id: `treino-${i}`,
           nome: `Treino ${i}`,
@@ -295,6 +391,7 @@ export default function ConfigurarTreinoScreen() {
           exercicios: exerciciosSalvos,
         });
       }
+      
       setTreinos(novosTreinos);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar seus treinos.');
@@ -372,15 +469,23 @@ export default function ConfigurarTreinoScreen() {
 
   const handleAdicionarExercicios = async () => {
     if (!treinoSelecionado || selectedExercises.length === 0) return;
+    
     const novosExercicios: ExercicioConfigurado[] = selectedExercises.map(exId => {
       const exercicio = exerciciosDisponiveis.find(ex => ex.id === exId)!;
       const grupo = gruposMusculares.find(g => g.id === exercicio.grupoMuscular || g.nome.includes(exercicio.grupoMuscular));
-      return {
-        id: Date.now().toString() + exId,
-        nome: exercicio.nome,
-        series: 3,
+      
+      // Criar uma série inicial com checkbox isolado false
+      const serieInicial: Serie = {
+        id: Date.now().toString() + 's1' + Math.random().toString(),
         repeticoes: '8-12',
         descanso: '60s',
+        isolado: false
+      };
+
+      return {
+        id: Date.now().toString() + exId + Math.random().toString(),
+        nome: exercicio.nome,
+        series: [serieInicial],
         grupoMuscular: exercicio.grupoMuscular,
         icone: exercicio.icone,
         iconeGrupo: grupo?.icone || 'dumbbell',
@@ -400,14 +505,196 @@ export default function ConfigurarTreinoScreen() {
     });
 
     setTreinos(treinosAtualizados);
+    
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoSelecionado.id);
+    setTreinoSelecionado(treinoAtualizado || null);
+    
     try {
-      const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoSelecionado.id);
       if (treinoAtualizado) {
         const numeroTreino = treinoSelecionado.id.split('-')[1];
         await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
       }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+    }
     closeFormModal();
+  };
+
+  // Função para adicionar uma nova série
+  const handleAdicionarSerie = (treinoId: string, exercicioId: string) => {
+    const novaSerie: Serie = {
+      id: Date.now().toString() + Math.random().toString(),
+      repeticoes: '8-12',
+      descanso: '60s',
+      isolado: false
+    };
+
+    const treinosAtualizados = treinos.map(t => {
+      if (t.id === treinoId) {
+        return {
+          ...t,
+          exercicios: t.exercicios.map(ex => {
+            if (ex.id === exercicioId) {
+              return {
+                ...ex,
+                series: [...ex.series, novaSerie]
+              };
+            }
+            return ex;
+          })
+        };
+      }
+      return t;
+    });
+
+    setTreinos(treinosAtualizados);
+    
+    // Atualiza o treino selecionado
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
+    setTreinoSelecionado(prev => {
+      if (prev && prev.id === treinoId) {
+        return treinoAtualizado || prev;
+      }
+      return prev;
+    });
+
+    // Salvar no AsyncStorage
+    if (treinoAtualizado) {
+      const numeroTreino = treinoId.split('-')[1];
+      AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios))
+        .catch(error => console.error('Erro ao salvar:', error));
+    }
+  };
+
+  // Função para remover uma série
+  const handleRemoverSerie = (treinoId: string, exercicioId: string, serieId: string) => {
+    const treinosAtualizados = treinos.map(t => {
+      if (t.id === treinoId) {
+        return {
+          ...t,
+          exercicios: t.exercicios.map(ex => {
+            if (ex.id === exercicioId) {
+              return {
+                ...ex,
+                series: ex.series.filter(s => s.id !== serieId)
+              };
+            }
+            return ex;
+          })
+        };
+      }
+      return t;
+    });
+
+    setTreinos(treinosAtualizados);
+    
+    // Atualiza o treino selecionado
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
+    setTreinoSelecionado(prev => {
+      if (prev && prev.id === treinoId) {
+        return treinoAtualizado || prev;
+      }
+      return prev;
+    });
+
+    if (treinoAtualizado) {
+      const numeroTreino = treinoId.split('-')[1];
+      AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios))
+        .catch(error => console.error('Erro ao salvar:', error));
+    }
+  };
+
+  // Função para atualizar uma série (incluindo o checkbox isolado)
+  const handleUpdateSerie = (
+    treinoId: string, 
+    exercicioId: string, 
+    serieId: string, 
+    campo: keyof Serie, 
+    valor: string | boolean
+  ) => {
+    const treinosAtualizados = treinos.map(t => {
+      if (t.id === treinoId) {
+        return {
+          ...t,
+          exercicios: t.exercicios.map(ex => {
+            if (ex.id === exercicioId) {
+              return {
+                ...ex,
+                series: ex.series.map(s => {
+                  if (s.id === serieId) {
+                    return { ...s, [campo]: valor };
+                  }
+                  return s;
+                })
+              };
+            }
+            return ex;
+          })
+        };
+      }
+      return t;
+    });
+
+    setTreinos(treinosAtualizados);
+    
+    // Atualiza o treino selecionado
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
+    setTreinoSelecionado(prev => {
+      if (prev && prev.id === treinoId) {
+        return treinoAtualizado || prev;
+      }
+      return prev;
+    });
+
+    if (treinoAtualizado) {
+      const numeroTreino = treinoId.split('-')[1];
+      AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios))
+        .catch(error => console.error('Erro ao salvar:', error));
+    }
+  };
+
+  // Função para atualizar exercício
+  const handleUpdateExercicio = async (
+    treinoId: string,
+    exercicioId: string,
+    campo: keyof ExercicioConfigurado,
+    valor: string | number | boolean
+  ) => {
+    const treinosAtualizados = treinos.map(t => {
+      if (t.id === treinoId) {
+        return {
+          ...t,
+          exercicios: t.exercicios.map(ex => {
+            if (ex.id === exercicioId) {
+              return { ...ex, [campo]: valor };
+            }
+            return ex;
+          })
+        };
+      }
+      return t;
+    });
+
+    setTreinos(treinosAtualizados);
+    
+    // Atualiza o treino selecionado
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
+    setTreinoSelecionado(prev => {
+      if (prev && prev.id === treinoId) {
+        return treinoAtualizado || prev;
+      }
+      return prev;
+    });
+
+    try {
+      if (treinoAtualizado) {
+        const numeroTreino = treinoId.split('-')[1];
+        await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
+      }
+    } catch (error) {
+      console.error('Erro ao salvar alterações:', error);
+      Alert.alert('Erro', 'Não foi possível salvar as alterações.');
+    }
   };
 
   const handleRemoveExercicio = async (treinoId: string, exercicioId: string) => {
@@ -425,23 +712,14 @@ export default function ConfigurarTreinoScreen() {
     
     setTreinos(treinosAtualizados);
     
+    // Atualiza o treino selecionado
+    const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
+    setTreinoSelecionado(treinoAtualizado || null);
+    
     try {
-      const treinoAtualizado = treinosAtualizados.find(t => t.id === treinoId);
       if (treinoAtualizado) {
         const numeroTreino = treinoId.split('-')[1];
         await AsyncStorage.setItem(`@treino_${numeroTreino}`, JSON.stringify(treinoAtualizado.exercicios));
-        
-        // Forçar uma atualização do estado para garantir que o modal reflita as mudanças
-        setTreinoSelecionado(prev => {
-          if (prev && prev.id === treinoId) {
-            return {
-              ...prev,
-              exercicios: treinoAtualizado.exercicios,
-              configurado: treinoAtualizado.exercicios.length > 0
-            };
-          }
-          return prev;
-        });
       }
     } catch (error) { 
       console.error('Erro ao remover exercício:', error);
@@ -568,6 +846,7 @@ export default function ConfigurarTreinoScreen() {
                           style={styles.exercicioPreviewIcon}
                         />
                         <Text style={styles.exercicioPreviewText} numberOfLines={1}>{ex.nome}</Text>
+                        <Text style={styles.seriesPreviewText}>{ex.series.length} série(s)</Text>
                       </View>
                     ))}
                     {treino.exercicios.length > 2 && (
@@ -709,7 +988,7 @@ export default function ConfigurarTreinoScreen() {
         </Animated.View>
       </Modal>
 
-      {/* MODAL - Edição do Treino */}
+      {/* MODAL - Edição do Treino - COM CHECKBOX ISOLADO POR SÉRIE */}
       <Modal visible={modalEdicaoVisible} transparent animationType="none">
         <Animated.View style={[styles.fullScreenModal, { transform: [{ translateY: slideEdicaoAnim }] }]}>
           <View style={styles.modalHeader}>
@@ -717,72 +996,143 @@ export default function ConfigurarTreinoScreen() {
               <MaterialIcons name="arrow-back" size={24} color={COLORS.primary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>{treinoSelecionado?.nome}</Text>
-            <TouchableOpacity onPress={() => { closeEdicaoModal(); openFormModal(treinoSelecionado!); }}>
+            <TouchableOpacity onPress={() => { 
+              if (treinoSelecionado) {
+                closeEdicaoModal(); 
+                setTimeout(() => openFormModal(treinoSelecionado), 300);
+              }
+            }}>
               <Feather name="plus" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 40 }}>
-            {treinoSelecionado?.exercicios.map((exercicio) => (
-              <View key={exercicio.id} style={styles.exercicioConfiguradoCard}>
-                <View style={styles.exHeader}>
-                  <View style={styles.exInfo}>
-                    <MaterialCommunityIcons 
-                      name={exercicio.iconeGrupo as any} 
-                      size={24} 
-                      color={exercicio.corGrupo} 
-                    />
-                    <View>
-                      <Text style={styles.exNome}>{exercicio.nome}</Text>
-                      <Text style={[styles.exGrupo, { color: exercicio.corGrupo }]}>{exercicio.grupoMuscular}</Text>
+            {treinoSelecionado?.exercicios && treinoSelecionado.exercicios.length > 0 ? (
+              treinoSelecionado.exercicios.map((exercicio) => (
+                <View key={exercicio.id} style={styles.exercicioConfiguradoCard}>
+                  <View style={styles.exHeader}>
+                    <View style={styles.exInfo}>
+                      <MaterialCommunityIcons 
+                        name={exercicio.iconeGrupo as any} 
+                        size={24} 
+                        color={exercicio.corGrupo} 
+                      />
+                      <View>
+                        <Text style={styles.exNome}>{exercicio.nome}</Text>
+                        <Text style={[styles.exGrupo, { color: exercicio.corGrupo }]}>{exercicio.grupoMuscular}</Text>
+                      </View>
                     </View>
+                    <TouchableOpacity onPress={() => handleRemoveExercicio(treinoSelecionado.id, exercicio.id)}>
+                      <MaterialIcons name="delete-outline" size={22} color={COLORS.primary} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => handleRemoveExercicio(treinoSelecionado.id, exercicio.id)}>
-                    <MaterialIcons name="delete-outline" size={22} color={COLORS.primary} />
-                  </TouchableOpacity>
-                </View>
 
-                <View style={styles.configGrid}>
-                  <View style={styles.configItem}>
-                    <Text style={styles.configLabel}>Séries</Text>
-                    <TextInput
-                      style={styles.configInput}
-                      value={exercicio.series.toString()}
-                      keyboardType="numeric"
-                      onChangeText={(text) => {
-                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
-                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, series: parseInt(text) || 0} : ex)} : t);
-                        setTreinos(novos);
-                      }}
-                    />
-                  </View>
-                  <View style={styles.configItem}>
-                    <Text style={styles.configLabel}>Reps</Text>
-                    <TextInput
-                      style={styles.configInput}
-                      value={exercicio.repeticoes}
-                      onChangeText={(text) => {
-                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
-                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, repeticoes: text} : ex)} : t);
-                        setTreinos(novos);
-                      }}
-                    />
-                  </View>
-                  <View style={styles.configItem}>
-                    <Text style={styles.configLabel}>Descanso</Text>
-                    <TextInput
-                      style={styles.configInput}
-                      value={exercicio.descanso}
-                      onChangeText={(text) => {
-                        const novos = treinos.map(t => t.id === treinoSelecionado.id ? 
-                          {...t, exercicios: t.exercicios.map(ex => ex.id === exercicio.id ? {...ex, descanso: text} : ex)} : t);
-                        setTreinos(novos);
-                      }}
-                    />
+                  {/* Lista de Séries com Checkbox Isolado individual */}
+                  <View style={styles.seriesContainer}>
+                    <Text style={styles.seriesTitle}>Séries:</Text>
+                    {exercicio.series && exercicio.series.map((serie, index) => (
+                      <View key={serie.id} style={styles.serieItem}>
+                        <View style={styles.serieHeader}>
+                          <Text style={styles.serieNumero}>Série {index + 1}</Text>
+                          <TouchableOpacity 
+                            onPress={() => handleRemoverSerie(treinoSelecionado.id, exercicio.id, serie.id)}
+                            disabled={exercicio.series.length <= 1}
+                          >
+                            <MaterialIcons 
+                              name="delete-outline" 
+                              size={18} 
+                              color={exercicio.series.length <= 1 ? '#CCC' : '#FF4444'} 
+                            />
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Checkbox Isolado para esta série */}
+                        <TouchableOpacity 
+                          style={styles.isoladoContainer}
+                          onPress={() => handleUpdateSerie(
+                            treinoSelecionado.id, 
+                            exercicio.id, 
+                            serie.id, 
+                            'isolado', 
+                            !serie.isolado
+                          )}
+                        >
+                          <View style={[styles.isoladoCheckbox, serie.isolado && styles.isoladoCheckboxChecked]}>
+                            {serie.isolado && <Feather name="check" size={14} color="#FFF" />}
+                          </View>
+                          <Text style={styles.isoladoText}>Série Isolada (tempo)</Text>
+                        </TouchableOpacity>
+
+                        {serie.isolado ? (
+                          // Campo de Tempo para Série Isolada
+                          <View style={styles.tempoContainer}>
+                            <View style={styles.configItemLarge}>
+                              <Text style={styles.configLabel}>Tempo (segundos)</Text>
+                              <TextInput
+                                style={styles.configInput}
+                                value={serie.tempoIsolado || '30'}
+                                keyboardType="numeric"
+                                onChangeText={(text) => {
+                                  handleUpdateSerie(treinoSelecionado.id, exercicio.id, serie.id, 'tempoIsolado', text);
+                                }}
+                              />
+                            </View>
+                          </View>
+                        ) : (
+                          // Campos de Repetições e Descanso para série normal
+                          <View style={styles.serieConfigGrid}>
+                            <View style={styles.configItem}>
+                              <Text style={styles.configLabel}>Repetições</Text>
+                              <TextInput
+                                style={styles.configInput}
+                                value={serie.repeticoes}
+                                onChangeText={(text) => {
+                                  handleUpdateSerie(treinoSelecionado.id, exercicio.id, serie.id, 'repeticoes', text);
+                                }}
+                              />
+                            </View>
+                            <View style={styles.configItem}>
+                              <Text style={styles.configLabel}>Descanso</Text>
+                              <TextInput
+                                style={styles.configInput}
+                                value={serie.descanso}
+                                onChangeText={(text) => {
+                                  handleUpdateSerie(treinoSelecionado.id, exercicio.id, serie.id, 'descanso', text);
+                                }}
+                              />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                    
+                    {/* Botão para adicionar nova série */}
+                    <TouchableOpacity 
+                      style={styles.adicionarSerieButton}
+                      onPress={() => handleAdicionarSerie(treinoSelecionado.id, exercicio.id)}
+                    >
+                      <Feather name="plus-circle" size={18} color={COLORS.primary} />
+                      <Text style={styles.adicionarSerieText}>Adicionar Série</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Nenhum exercício configurado</Text>
+                <TouchableOpacity 
+                  style={styles.emptyButton}
+                  onPress={() => {
+                    closeEdicaoModal();
+                    if (treinoSelecionado) {
+                      setTimeout(() => openFormModal(treinoSelecionado), 300);
+                    }
+                  }}
+                >
+                  <Text style={styles.emptyButtonText}>Adicionar Exercícios</Text>
+                </TouchableOpacity>
               </View>
-            ))}
+            )}
           </ScrollView>
         </Animated.View>
       </Modal>
@@ -796,7 +1146,7 @@ const styles = StyleSheet.create({
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerContainer: { paddingHorizontal: 25, paddingTop: 40, zIndex: 10 }, // Aumentei o paddingTop de 20 para 40
+  headerContainer: { paddingHorizontal: 25, paddingTop: 40, zIndex: 10 },
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 2 },
   backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: '700', marginLeft: 10 },
@@ -819,7 +1169,8 @@ const styles = StyleSheet.create({
   exerciciosPreview: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#F0F0F0', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   exercicioPreviewItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
   exercicioPreviewIcon: { marginRight: 6 },
-  exercicioPreviewText: { fontSize: 11, color: '#666', fontWeight: '600', maxWidth: 100 },
+  exercicioPreviewText: { fontSize: 11, color: '#666', fontWeight: '600', maxWidth: 80 },
+  seriesPreviewText: { fontSize: 10, color: COLORS.primary, fontWeight: '700', marginLeft: 4 },
   maisExerciciosText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
   primaryButtonWrapper: { width: '100%', alignItems: 'center' },
   primaryButton: { width: '100%', paddingVertical: 18, borderRadius: 20, alignItems: 'center', elevation: 4 },
@@ -865,8 +1216,25 @@ const styles = StyleSheet.create({
   exInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   exNome: { fontSize: 16, fontWeight: '800', color: COLORS.textMain },
   exGrupo: { fontSize: 12 },
-  configGrid: { flexDirection: 'row', gap: 10 },
-  configItem: { flex: 1, backgroundColor: '#F8F9FA', borderRadius: 12, padding: 10 },
+  seriesContainer: { marginTop: 10 },
+  seriesTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textMain, marginBottom: 10 },
+  serieItem: { backgroundColor: '#F8F9FA', borderRadius: 12, padding: 12, marginBottom: 10 },
+  serieHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  serieNumero: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  isoladoContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, paddingVertical: 5 },
+  isoladoCheckbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  isoladoCheckboxChecked: { backgroundColor: COLORS.primary },
+  isoladoText: { fontSize: 13, color: COLORS.textMain, fontWeight: '500' },
+  serieConfigGrid: { flexDirection: 'row', gap: 10 },
+  configItem: { flex: 1, backgroundColor: '#FFF', borderRadius: 8, padding: 8 },
+  configItemLarge: { flex: 1, backgroundColor: '#FFF', borderRadius: 8, padding: 8 },
+  tempoContainer: { flexDirection: 'row', gap: 10 },
   configLabel: { fontSize: 10, fontWeight: '700', color: '#AAA', marginBottom: 5, textTransform: 'uppercase' },
-  configInput: { fontSize: 15, fontWeight: '700', color: COLORS.primary, padding: 0 }
+  configInput: { fontSize: 14, fontWeight: '600', color: COLORS.primary, padding: 0 },
+  adicionarSerieButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0', borderRadius: 12, padding: 12, marginTop: 5 },
+  adicionarSerieText: { fontSize: 14, fontWeight: '600', color: COLORS.primary, marginLeft: 8 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 16, color: '#999', marginBottom: 20 },
+  emptyButton: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
+  emptyButtonText: { color: '#FFF', fontWeight: '700' }
 });
