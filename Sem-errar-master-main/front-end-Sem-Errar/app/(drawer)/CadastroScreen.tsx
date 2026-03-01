@@ -21,6 +21,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import API_URL from '../../conf/api'; // ajuste o caminho conforme a pasta
 
 // ============ INTERFACES E TIPOS ============
 interface ObjetivoCompleto {
@@ -395,11 +396,12 @@ export default function CadastroScreen() {
 
       console.log('\n📤 Enviando requisição para o servidor...');
 
-      const response = await fetch('http://10.0.2.2:3000/usuarios', {
+      // 👇 CORREÇÃO AQUI: REMOVER Content-Type
+      const response = await fetch(`${API_URL}/usuarios`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
+          // NÃO colocar Content-Type! O React Native vai setar automaticamente
         },
         body: formData,
       });
@@ -411,6 +413,7 @@ export default function CadastroScreen() {
         data = await response.json();
       } else {
         const text = await response.text();
+        console.error('Resposta não-JSON:', text);
         throw new Error(`Erro no servidor (Status: ${response.status})`);
       }
 
@@ -740,9 +743,9 @@ const styles = StyleSheet.create({
   label: { color: '#FFF', fontWeight: '600', marginBottom: 6, marginTop: 12, fontSize: 14 },
   photoContainer: { alignItems: 'center', marginVertical: 10 },
   photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#FFF' },
-  photoPlaceholder: { 
-    backgroundColor: 'rgba(255,255,255,0.2)', 
-    justifyContent: 'center', 
+  photoPlaceholder: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFF',

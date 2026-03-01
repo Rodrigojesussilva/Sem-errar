@@ -1,11 +1,16 @@
-const express = require("express");
-const router = express.Router();
-const usuarioController = require("../controllers/usuarioController");
+const express = require('express');
+const routes = express.Router();
+const usuarioController = require('../controllers/usuarioController'); // 👈 ESTE CAMINHO
+const upload = require('../config/multer');
 
-router.get("/", usuarioController.listar);
-router.get("/:id", usuarioController.buscarPorId);
-router.post("/", usuarioController.criar);
-router.delete("/:id", usuarioController.deletar);
-router.post('/logar', usuarioController.logar);  // Rota delega para controller
+// Rotas públicas
+routes.post('/login', usuarioController.logar);
+routes.post('/', upload.single('foto'), usuarioController.criar);
 
-module.exports = router;
+// Rotas protegidas
+routes.get('/', usuarioController.listar);
+routes.get('/:id', usuarioController.buscarPorId);
+routes.put('/:id', upload.single('foto'), usuarioController.atualizar);
+routes.delete('/:id', usuarioController.deletar);
+
+module.exports = routes;
