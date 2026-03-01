@@ -443,11 +443,12 @@ export default function FinalizacaoScreen() {
 
     const classificacaoBF = getClassificacaoBF(percentualGordura, sexo === 'masculino');
 
-    const calcularTMB = (): number => {
+        const calcularTMB = (): number => {
+      // Mifflin-St Jeor Equation
       if (sexo === 'feminino') {
-        return 447.593 + (9.247 * pesoEmKg) + (3.098 * alturaCm) - (4.330 * idade);
+        return (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) - 161;
       } else {
-        return 88.362 + (13.397 * pesoEmKg) + (4.799 * alturaCm) - (5.677 * idade);
+        return (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) + 5;
       }
     };
 
