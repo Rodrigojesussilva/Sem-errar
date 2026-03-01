@@ -54,13 +54,15 @@ declare global {
       DiasFixosScreen: undefined;
       SequenciaScreen: undefined;
       ContextoBFScreen: undefined;
-      QuadroCalcularBFScreen: undefined;
+      QuadroCalcularBFScreen: undefined; // Tela genérica
+      QuadroCalcularBFScreenDiasFixos: undefined;
+      QuadroCalcularBFScreenSequencia: undefined;
       PescocoScreen: undefined;
       CinturaScreen: undefined;
       QuadrilScreen: undefined;
       CalculoBFScreen: undefined;
       FinalizacaoScreen: undefined;
-      PreparandoResultadosScreen: undefined; // NOVA TELA ADICIONADA
+      PreparandoResultadosScreen: undefined;
     }
   }
 }
@@ -100,13 +102,15 @@ type RouteName =
   | 'DiasFixosScreen'
   | 'SequenciaScreen'
   | 'ContextoBFScreen'
-  | 'QuadroCalcularBFScreen'
+  | 'QuadroCalcularBFScreen' // Tela genérica
+  | 'QuadroCalcularBFScreenDiasFixos'
+  | 'QuadroCalcularBFScreenSequencia'
   | 'PescocoScreen'
   | 'CinturaScreen'
   | 'QuadrilScreen'
   | 'CalculoBFScreen'
   | 'FinalizacaoScreen'
-  | 'PreparandoResultadosScreen'; // NOVA TELA ADICIONADA
+  | 'PreparandoResultadosScreen';
 
 // Componente para redirecionamento baseado no auth
 function AuthRedirect() {
@@ -577,13 +581,15 @@ export default function DrawerLayout() {
             'DiasFixosScreen',
             'SequenciaScreen',
             'ContextoBFScreen',
-            'QuadroCalcularBFScreen',
+            'QuadroCalcularBFScreen', // Tela genérica
+            'QuadroCalcularBFScreenDiasFixos',
+            'QuadroCalcularBFScreenSequencia',
             'PescocoScreen',
             'CinturaScreen',
             'QuadrilScreen',
             'CalculoBFScreen',
             'FinalizacaoScreen',
-            'PreparandoResultadosScreen' // NOVA TELA ADICIONADA
+            'PreparandoResultadosScreen'
           ];
 
           if (hideHeaderAndDrawerRoutes.includes(route.name)) {
@@ -806,14 +812,39 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE QUADRO CALCULAR BF */}
+        {/* NOVA TELA: QUADRO CALCULAR BF GENÉRICO - SEM DRAWER */}
         <Drawer.Screen
           name="QuadroCalcularBFScreen"
           options={{
-            title: "Quando Calcular BF",
-            drawerLabel: "Calcular BF",
+            title: "Quadro Calcular BF",
+            drawerLabel: "Quadro BF",
             drawerItemStyle: { display: 'none' },
             headerShown: false,
+            swipeEnabled: false,
+          }}
+        />
+
+        {/* NOVA TELA: QUADRO CALCULAR BF DIAS FIXOS - SEM DRAWER */}
+        <Drawer.Screen
+          name="QuadroCalcularBFScreenDiasFixos"
+          options={{
+            title: "Quadro Calcular BF",
+            drawerLabel: "Quadro BF Dias Fixos",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+            swipeEnabled: false,
+          }}
+        />
+
+        {/* NOVA TELA: QUADRO CALCULAR BF SEQUÊNCIA - SEM DRAWER */}
+        <Drawer.Screen
+          name="QuadroCalcularBFScreenSequencia"
+          options={{
+            title: "Quadro Calcular BF",
+            drawerLabel: "Quadro BF Sequência",
+            drawerItemStyle: { display: 'none' },
+            headerShown: false,
+            swipeEnabled: false,
           }}
         />
 

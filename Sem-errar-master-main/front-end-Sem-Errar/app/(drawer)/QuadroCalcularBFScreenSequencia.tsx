@@ -25,7 +25,7 @@ const COLORS = {
   error: '#ff4444', // Vermelho para o "depois"
 };
 
-export default function QuandoCalcularBFScreen() {
+export default function QuadroCalcularBFScreenSequencia() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
 

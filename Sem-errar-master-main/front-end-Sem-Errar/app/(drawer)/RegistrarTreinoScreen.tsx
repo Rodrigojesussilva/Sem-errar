@@ -1,18 +1,18 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Dimensions,
   Image,
   Pressable,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
-  SafeAreaView,
-  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -51,7 +51,7 @@ export default function RegistrarTreinoScreen() {
     if (opcaoSelecionada === 'agora') {
       router.push('/EstruturaTreinosScreen');
     } else {
-      router.push('/RegistrarCardioScreen');
+      router.push('/QuadroCalcularBFScreen');
     }
   };
 
