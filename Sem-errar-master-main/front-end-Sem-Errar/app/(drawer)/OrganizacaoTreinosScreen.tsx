@@ -33,21 +33,20 @@ export default function OrganizacaoTreinosScreen() {
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Alteração das cores aqui: Azul para calendário e Laranja para sequência
   const opcoesOrganizacao = [
     {
       id: 'diasFixos',
       title: 'Dias fixos da semana',
       subtitle: 'Segunda → Quarta → Sexta',
       icon: 'calendar',
-      iconColor: '#2196F3', // Azul
+      iconColor: '#2196F3',
     },
     {
       id: 'sequenciaRepetida',
       title: 'Sequência que se repete',
       subtitle: 'Treino 1 → Treino 2 → Descanso',
       icon: 'repeat',
-      iconColor: '#FF9800', // Laranja
+      iconColor: '#FF9800',
     },
   ];
 
@@ -130,6 +129,8 @@ export default function OrganizacaoTreinosScreen() {
               resizeMode="contain"
             />
           </View>
+
+          <Text style={styles.screenTitle}>Como você prefere organizar seus treinos?</Text>
           
           <View style={styles.opcoesContainer}>
             {opcoesOrganizacao.map((opcao) => {
@@ -140,7 +141,6 @@ export default function OrganizacaoTreinosScreen() {
                   style={[styles.opcaoItem, isSelected && styles.opcaoItemSelecionado]}
                   onPress={() => setOrganizacaoSelecionada(opcao.id)}
                 >
-                  {/* Fundo do ícone agora usa a cor personalizada com opacidade */}
                   <View style={[styles.opcaoIconContainer, { backgroundColor: `${opcao.iconColor}15` }]}>
                     <FontAwesome name={opcao.icon as any} size={24} color={opcao.iconColor} />
                   </View>
@@ -221,8 +221,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40 
   },
   content: { width: '100%', zIndex: 10 },
-  logoContainer: { alignItems: 'center', marginBottom: 50 },
+  logoContainer: { alignItems: 'center', marginBottom: 20 },
   logo: { width: width * 0.45, height: 70 },
+  screenTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textMain,
+    textAlign: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 10,
+  },
   opcoesContainer: { gap: 15, marginBottom: 20 },
   opcaoItem: { flexDirection: 'row', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderRadius: 22, borderWidth: 1.5, borderColor: '#f4f4f4', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
   opcaoItemSelecionado: { borderColor: COLORS.primary, borderWidth: 2, backgroundColor: '#fcfaff' },
