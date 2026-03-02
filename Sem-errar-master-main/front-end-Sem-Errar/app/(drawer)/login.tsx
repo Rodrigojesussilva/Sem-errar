@@ -1,4 +1,4 @@
-import { AuthContext } from "@/app/(drawer)/AuthContext";
+import { AuthContext, Usuario } from "@/app/(drawer)/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -19,6 +19,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import API_URL from "../../conf/api";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -69,34 +70,78 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       
-      // Simulação de chamada API com delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // CORREÇÃO: usar /logar em vez de /login
+      const url = `${API_URL}/logar`;
+      console.log("📤 Enviando login para:", url);
+      console.log("📧 Email:", email);
       
-      // Mock de dados do usuário (EXATAMENTE COMO ESTAVA)
-      const mockUsuario = {
-        id: `user_${Date.now()}`,
-        nome: "João Silva",
-        email: email,
-        foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-        altura: undefined,
-        peso: undefined,
-        idade: undefined,
-        objetivo: undefined,
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      console.log("📥 Status da resposta:", response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erro do servidor:", errorData);
+        
+        setMensagemErro(errorData.erro || `Erro ${response.status}`);
+        setErroVisivel(true);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("📦 Resposta do servidor recebida");
+
+      if (!data.nome) {
+        console.error("❌ ERRO: Nome não veio na resposta!");
+        console.log("Dados recebidos:", data);
+        setMensagemErro("Dados incompletos do servidor");
+        setErroVisivel(true);
+        return;
+      }
+
+      console.log("✅ Dados válidos recebidos:");
+      console.log("   👤 Nome:", data.nome);
+      console.log("   📧 Email:", data.email);
+      console.log("   🆔 ID:", data.id);
+      console.log("   📸 Foto:", data.foto ? "URL recebida" : "sem foto");
+
+      // Preparar dados do usuário
+      const usuarioReal: Usuario = {
+        id: data.id.toString(),
+        nome: data.nome,
+        email: data.email,
+        foto: data.foto,
+        altura: data.altura?.toString(),
+        peso: data.pesoKg?.toString(),
+        idade: data.idade?.toString(),
+        objetivo: data.objetivo,
       };
+
+      console.log("🧹 Chamando limparTudoEAutenticar...");
+      await auth?.limparTudoEAutenticar(usuarioReal, data.token);
       
-      const mockToken = `mock-jwt-token-${Date.now()}`;
-      
-      // Atualiza o contexto
-      auth?.setUsuario(mockUsuario);
-      auth?.setToken(mockToken);
-      
-      // ÚNICA ALTERAÇÃO: redirecionamento direto para perfil
+      console.log("✅ Login concluído! Redirecionando...");
       router.replace("/(drawer)/diarias");
       
     } catch (error: any) {
-      setMensagemErro("Erro ao conectar ao servidor. Verifique sua conexão e tente novamente.");
+      console.error("❌ Erro detalhado no login:", error);
+      
+      let mensagem = "Erro ao conectar ao servidor.";
+      
+      if (error.message.includes("Network request failed")) {
+        mensagem = "Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://10.0.2.2:3000";
+      } else {
+        mensagem = error.message || "Erro desconhecido";
+      }
+      
+      setMensagemErro(mensagem);
       setErroVisivel(true);
-      console.error("Erro no login:", error);
     } finally {
       setLoading(false);
     }
@@ -109,25 +154,54 @@ export default function LoginScreen() {
   const handleEsqueciSenha = () => {
     Alert.alert(
       "Recuperar Senha",
-      "Um email de recuperação será enviado para o endereço cadastrado.",
+      "Digite seu email para receber as instruções de recuperação.",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Enviar", onPress: () => {
-          Alert.alert("Sucesso", "Email de recuperação enviado com sucesso!");
-        }}
+        { 
+          text: "Enviar", 
+          onPress: async () => {
+            if (!email) {
+              Alert.alert("Atenção", "Digite seu email primeiro");
+              return;
+            }
+            try {
+              setLoading(true);
+              const response = await fetch(`${API_URL}/recuperar-senha`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+              });
+              
+              if (response.ok) {
+                Alert.alert("Sucesso", "Email de recuperação enviado!");
+              } else {
+                Alert.alert("Erro", "Email não encontrado");
+              }
+            } catch (error) {
+              Alert.alert("Erro", "Erro ao enviar email");
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
       ]
     );
   };
 
   const handleLoginRapido = (tipo: 'demo' | 'admin') => {
     if (tipo === 'demo') {
-      setEmail("demo@fitness.com");
-      setSenha("123456");
+      setEmail("rodrigo@gmail.com");
+      setSenha("Rjs@1980");
     } else {
       setEmail("admin@fitness.com");
       setSenha("admin123");
     }
   };
+
+  // Verificar se o auth está disponível
+  if (!auth) {
+    return null;
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -264,14 +338,6 @@ export default function LoginScreen() {
                   >
                     <Ionicons name="person" size={16} color="#666" />
                     <Text style={styles.quickLoginButtonText}>Demo</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.quickLoginButton}
-                    onPress={() => handleLoginRapido('admin')}
-                    disabled={loading}
-                  >
-                    <Ionicons name="shield" size={16} color="#666" />
-                    <Text style={styles.quickLoginButtonText}>Admin</Text>
                   </TouchableOpacity>
                 </View>
               </View>

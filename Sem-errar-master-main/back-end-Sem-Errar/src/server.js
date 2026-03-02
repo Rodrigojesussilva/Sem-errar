@@ -1,4 +1,4 @@
-require("dotenv").config(); // 👈 ESSA LINHA É OBRIGATÓRIA
+require("dotenv").config();
 
 const app = require("./app");
 const sequelize = require("./config/database");

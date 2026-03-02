@@ -20,6 +20,7 @@ interface AuthContextData {
   setUsuario: (usuario: Usuario | null) => void;
   setToken: (token: string | null) => void;
   logout: () => Promise<void>;
+  limparTudoEAutenticar: (dadosReais: Usuario, novoToken: string) => Promise<void>; // NOVO MÉTODO
 }
 
 export const AuthContext = createContext<AuthContextData | undefined>(undefined);
@@ -39,12 +40,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storagedUser && storagedToken) {
           // Garante que o usuário do storage tem todos os campos obrigatórios
           const parsedUser = JSON.parse(storagedUser);
+          
+          // Verifica se é dado mockado (foto do Unsplash ou ID com user_)
+          const isMocked = parsedUser.foto?.includes('unsplash') || parsedUser.id?.startsWith('user_');
+          
+          if (isMocked) {
+            console.log('🚨 DADOS MOCKADOS DETECTADOS! Removendo...');
+            await AsyncStorage.clear();
+            setUsuario(null);
+            setToken(null);
+          } 
           // Valida se tem os campos obrigatórios
-          if (parsedUser.id && parsedUser.nome && parsedUser.email) {
+          else if (parsedUser.id && parsedUser.nome && parsedUser.email) {
+            console.log('📱 Usuário REAL carregado:', {
+              nome: parsedUser.nome,
+              email: parsedUser.email,
+              foto: parsedUser.foto ? '✅ TEM FOTO' : '❌ SEM FOTO'
+            });
             setUsuario(parsedUser);
             setToken(storagedToken);
           } else {
             // Se não tiver campos obrigatórios, limpa o storage
+            console.log('⚠️ Dados inválidos, limpando storage...');
             await AsyncStorage.clear();
           }
         }
@@ -65,6 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (usuario && token) {
           await AsyncStorage.setItem('@FitnessApp:usuario', JSON.stringify(usuario));
           await AsyncStorage.setItem('@FitnessApp:token', token);
+          console.log('💾 Dados salvos no storage:', {
+            nome: usuario.nome,
+            email: usuario.email,
+            token: token.substring(0, 20) + '...'
+          });
         } else {
           await AsyncStorage.removeItem('@FitnessApp:usuario');
           await AsyncStorage.removeItem('@FitnessApp:token');
@@ -94,11 +116,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      console.log('🚪 Fazendo logout...');
       setUsuario(null);
       setToken(null);
       await AsyncStorage.clear();
+      console.log('✅ Logout concluído');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  // NOVO MÉTODO: Limpa TUDO e autentica com dados reais
+  const limparTudoEAutenticar = async (dadosReais: Usuario, novoToken: string) => {
+    try {
+      console.log('🧹 INICIANDO LIMPEZA COMPLETA DO STORAGE...');
+      
+      // 1. Verificar se os dados reais são válidos
+      if (!dadosReais.id || !dadosReais.nome || !dadosReais.email) {
+        console.error('❌ Dados reais inválidos:', dadosReais);
+        throw new Error('Dados do usuário incompletos');
+      }
+
+      // 2. Log dos dados que serão salvos
+      console.log('📦 Dados REAIS recebidos:');
+      console.log('   👤 Nome:', dadosReais.nome);
+      console.log('   📧 Email:', dadosReais.email);
+      console.log('   🆔 ID:', dadosReais.id);
+      console.log('   📸 Foto:', dadosReais.foto ? '✅ TEM FOTO' : '❌ SEM FOTO');
+      console.log('   🎂 Idade:', dadosReais.idade);
+      console.log('   🎯 Objetivo:', dadosReais.objetivo);
+      console.log('   📏 Altura:', dadosReais.altura);
+      console.log('   ⚖️ Peso:', dadosReais.peso);
+
+      // 3. Limpar TODO o AsyncStorage
+      const todasChaves = await AsyncStorage.getAllKeys();
+      if (todasChaves.length > 0) {
+        await AsyncStorage.multiRemove(todasChaves);
+        console.log(`✅ ${todasChaves.length} chaves removidas do storage`);
+      }
+
+      // 4. Atualizar estados
+      setUsuario(dadosReais);
+      setToken(novoToken);
+
+      // 5. Salvar dados reais
+      await AsyncStorage.setItem('@FitnessApp:usuario', JSON.stringify(dadosReais));
+      await AsyncStorage.setItem('@FitnessApp:token', novoToken);
+
+      console.log('✅ LIMPEZA E AUTENTICAÇÃO CONCLUÍDAS COM SUCESSO!');
+      console.log('💾 Dados REAIS salvos:', {
+        nome: dadosReais.nome,
+        email: dadosReais.email,
+        token: novoToken.substring(0, 20) + '...'
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao limpar storage e autenticar:', error);
+      throw error;
     }
   };
 
@@ -111,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsuario: handleSetUsuario,
         setToken: handleSetToken,
         logout,
+        limparTudoEAutenticar, // EXPORTA O NOVO MÉTODO
       }}
     >
       {children}

@@ -31,13 +31,9 @@ const Usuario = sequelize.define(
       allowNull: true,
     },
     
-    // Campos do onboarding
+    // Campos do onboarding - APENAS OS QUE EXISTEM NO BANCO
     objetivo: {
       type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    objetivoCompleto: {
-      type: DataTypes.JSONB,
       allowNull: true,
     },
     sexo: {
@@ -62,14 +58,6 @@ const Usuario = sequelize.define(
       type: DataTypes.FLOAT,
       allowNull: true,
     },
-    alturaFt: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-    alturaIn: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
     alturaCm: {
       type: DataTypes.FLOAT,
       allowNull: true,
@@ -85,10 +73,6 @@ const Usuario = sequelize.define(
       allowNull: true,
     },
     pesoLb: {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-    },
-    pesoEmKg: {
       type: DataTypes.FLOAT,
       allowNull: true,
     },
@@ -118,16 +102,6 @@ const Usuario = sequelize.define(
     },
     coposAguaDia: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-    
-    // Cardio
-    frequenciaCardio: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    frequenciaCardioDescricao: {
-      type: DataTypes.TEXT,
       allowNull: true,
     },
     
