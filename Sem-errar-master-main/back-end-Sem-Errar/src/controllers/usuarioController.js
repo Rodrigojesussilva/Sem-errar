@@ -50,7 +50,7 @@ function getTransporter() {
     });
 
     transporter = nodemailer.createTransport(config);
-    
+
     // Verifica conexão (assíncrono, não bloqueante)
     transporter.verify((error, success) => {
       if (error) {
@@ -60,7 +60,7 @@ function getTransporter() {
       }
     });
   }
-  
+
   return transporter;
 }
 
@@ -71,13 +71,13 @@ function getTransporter() {
  */
 function detectarProvedorEmail(email) {
   if (!email) return 'desconhecido';
-  
+
   email = email.toLowerCase();
-  
+
   if (email.includes('@gmail.com') || email.includes('@googlemail.com')) {
     return 'gmail';
-  } else if (email.includes('@outlook.com') || email.includes('@hotmail.com') || 
-             email.includes('@live.com') || email.includes('@msn.com')) {
+  } else if (email.includes('@outlook.com') || email.includes('@hotmail.com') ||
+    email.includes('@live.com') || email.includes('@msn.com')) {
     return 'outlook';
   } else if (email.includes('@yahoo.com') || email.includes('@yahoo.com.br')) {
     return 'yahoo';
@@ -89,15 +89,15 @@ function detectarProvedorEmail(email) {
     return 'terra';
   } else if (email.includes('@globo.com') || email.includes('@globomail.com')) {
     return 'globo';
-  } else if (email.includes('@icloud.com') || email.includes('@me.com') || 
-             email.includes('@mac.com')) {
+  } else if (email.includes('@icloud.com') || email.includes('@me.com') ||
+    email.includes('@mac.com')) {
     return 'icloud';
   } else if (email.includes('@protonmail.com') || email.includes('@proton.me')) {
     return 'proton';
   } else if (email.includes('@aol.com')) {
     return 'aol';
   }
-  
+
   return 'outros';
 }
 
@@ -349,7 +349,7 @@ module.exports = {
     try {
       const transporter = getTransporter();
       await transporter.verify();
-      
+
       return res.json({
         sucesso: true,
         mensagem: 'Configuração do SendGrid está funcionando!'
@@ -363,7 +363,7 @@ module.exports = {
   },
 
   // ============ FUNÇÕES DE VERIFICAÇÃO DE E-MAIL ============
-  
+
   async enviarCodigoVerificacao(req, res) {
     try {
       const { email, nome } = req.body;
@@ -373,13 +373,13 @@ module.exports = {
       }
 
       // Verificar se email já está cadastrado
-      const usuarioExistente = await Usuario.findOne({ 
-        where: { email } 
+      const usuarioExistente = await Usuario.findOne({
+        where: { email }
       });
 
       if (usuarioExistente) {
-        return res.status(409).json({ 
-          erro: "Este e-mail já está cadastrado" 
+        return res.status(409).json({
+          erro: "Este e-mail já está cadastrado"
         });
       }
 
@@ -424,7 +424,7 @@ module.exports = {
         }
       }, 10 * 60 * 1000);
 
-      return res.json({ 
+      return res.json({
         sucesso: true,
         mensagem: 'Código enviado com sucesso',
         expira: 600 // segundos
@@ -432,9 +432,9 @@ module.exports = {
 
     } catch (error) {
       console.error("❌ Erro ao enviar código:", error);
-      
+
       let mensagemErro = "Erro ao enviar código de verificação";
-      
+
       if (error.code === 'EAUTH') {
         mensagemErro = "Erro de autenticação no SendGrid. Verifique sua API Key.";
       } else if (error.code === 'ESOCKET') {
@@ -442,8 +442,8 @@ module.exports = {
       } else if (error.message) {
         mensagemErro = error.message;
       }
-      
-      return res.status(500).json({ 
+
+      return res.status(500).json({
         erro: mensagemErro
       });
     }
@@ -454,32 +454,32 @@ module.exports = {
       const { email, codigo } = req.body;
 
       if (!email || !codigo) {
-        return res.status(400).json({ 
-          erro: "E-mail e código são obrigatórios" 
+        return res.status(400).json({
+          erro: "E-mail e código são obrigatórios"
         });
       }
 
       const dados = verificationCodes.get(email);
 
       if (!dados) {
-        return res.status(400).json({ 
-          erro: "Código expirado ou não encontrado. Solicite um novo código." 
+        return res.status(400).json({
+          erro: "Código expirado ou não encontrado. Solicite um novo código."
         });
       }
 
       // Verificar se expirou (10 minutos)
       if (Date.now() - dados.timestamp > 10 * 60 * 1000) {
         verificationCodes.delete(email);
-        return res.status(400).json({ 
-          erro: "Código expirado. Solicite um novo código." 
+        return res.status(400).json({
+          erro: "Código expirado. Solicite um novo código."
         });
       }
 
       // Verificar tentativas (máximo 5)
       if (dados.tentativas >= 5) {
         verificationCodes.delete(email);
-        return res.status(400).json({ 
-          erro: "Muitas tentativas. Solicite um novo código." 
+        return res.status(400).json({
+          erro: "Muitas tentativas. Solicite um novo código."
         });
       }
 
@@ -487,10 +487,10 @@ module.exports = {
       if (dados.codigo !== codigo) {
         dados.tentativas++;
         verificationCodes.set(email, dados);
-        
+
         console.log(`❌ Código inválido para ${email}. Tentativa ${dados.tentativas}/5`);
-        
-        return res.status(400).json({ 
+
+        return res.status(400).json({
           erro: "Código inválido",
           tentativasRestantes: 5 - dados.tentativas
         });
@@ -498,8 +498,8 @@ module.exports = {
 
       // Código válido! Gerar token temporário
       const tokenTemp = jwt.sign(
-        { 
-          email, 
+        {
+          email,
           verificado: true,
           nome: dados.nome
         },
@@ -512,7 +512,7 @@ module.exports = {
 
       console.log(`✅ E-mail verificado com sucesso: ${email}`);
 
-      return res.json({ 
+      return res.json({
         sucesso: true,
         mensagem: 'E-mail verificado com sucesso',
         token: tokenTemp
@@ -520,8 +520,8 @@ module.exports = {
 
     } catch (error) {
       console.error("❌ Erro ao verificar código:", error);
-      return res.status(500).json({ 
-        erro: "Erro ao verificar código" 
+      return res.status(500).json({
+        erro: "Erro ao verificar código"
       });
     }
   },
@@ -536,10 +536,10 @@ module.exports = {
 
       // Verificar se existe código anterior
       const dadosExistentes = verificationCodes.get(email);
-      
+
       if (!dadosExistentes) {
-        return res.status(400).json({ 
-          erro: "Nenhum código ativo encontrado. Solicite um novo código." 
+        return res.status(400).json({
+          erro: "Nenhum código ativo encontrado. Solicite um novo código."
         });
       }
 
@@ -571,15 +571,15 @@ module.exports = {
       // Enviar e-mail
       await mailTransporter.sendMail(mailOptions);
 
-      return res.json({ 
+      return res.json({
         sucesso: true,
         mensagem: 'Código reenviado com sucesso'
       });
 
     } catch (error) {
       console.error("❌ Erro ao reenviar código:", error);
-      return res.status(500).json({ 
-        erro: "Erro ao reenviar código" 
+      return res.status(500).json({
+        erro: "Erro ao reenviar código"
       });
     }
   },
@@ -591,7 +591,7 @@ module.exports = {
       const dados = verificationCodes.get(email);
 
       if (!dados) {
-        return res.json({ 
+        return res.json({
           ativo: false,
           mensagem: "Nenhum código ativo para este e-mail"
         });
@@ -622,8 +622,8 @@ module.exports = {
         });
       }
 
-      const usuario = await Usuario.findOne({ 
-        where: { email } 
+      const usuario = await Usuario.findOne({
+        where: { email }
       });
 
       if (!usuario) {
@@ -678,29 +678,29 @@ module.exports = {
 
       // Verificar token de verificação
       const tokenVerificacao = req.headers['x-verification-token'];
-      
+
       if (tokenVerificacao) {
         try {
           const decoded = jwt.verify(
-            tokenVerificacao, 
+            tokenVerificacao,
             process.env.JWT_SECRET || "CHAVE_TEMPORARIA_123"
           );
-          
+
           if (!decoded.verificado || decoded.email !== req.body.email) {
-            return res.status(401).json({ 
-              erro: "E-mail não verificado" 
+            return res.status(401).json({
+              erro: "E-mail não verificado"
             });
           }
-          
+
           console.log(`✅ Token de verificação válido`);
         } catch (error) {
-          return res.status(401).json({ 
-            erro: "Token de verificação inválido" 
+          return res.status(401).json({
+            erro: "Token de verificação inválido"
           });
         }
       } else {
-        return res.status(401).json({ 
-          erro: "Token de verificação não fornecido" 
+        return res.status(401).json({
+          erro: "Token de verificação não fornecido"
         });
       }
 
@@ -722,13 +722,13 @@ module.exports = {
       }
 
       // Verificar se email já existe
-      const emailExiste = await Usuario.findOne({ 
-        where: { email: req.body.email } 
+      const emailExiste = await Usuario.findOne({
+        where: { email: req.body.email }
       });
 
       if (emailExiste) {
         if (req.file) {
-          fs.unlink(req.file.path, () => {});
+          fs.unlink(req.file.path, () => { });
         }
         return res.status(409).json({ erro: "Email já cadastrado" });
       }
@@ -834,12 +834,13 @@ module.exports = {
     } catch (error) {
       console.error("❌ ERRO:", error);
       if (req.file) {
-        fs.unlink(req.file.path, () => {});
+        fs.unlink(req.file.path, () => { });
       }
       return res.status(500).json({ erro: error.message });
     }
   },
 
+  // ============ LISTAR TODOS OS USUÁRIOS ============
   // ============ LISTAR TODOS OS USUÁRIOS ============
   async listar(req, res) {
     try {
@@ -861,7 +862,7 @@ module.exports = {
         attributes: { exclude: ["senha"] },
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [['createdAt', 'DESC']]
+        order: [['id', 'DESC']]  // <--- CORRIGIDO: agora usa 'id' em vez de 'createdAt'
       });
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -998,7 +999,7 @@ module.exports = {
     } catch (error) {
       console.error("ERRO ATUALIZAR:", error);
       if (req.file) {
-        fs.unlink(req.file.path, () => {});
+        fs.unlink(req.file.path, () => { });
       }
       return res.status(500).json({ erro: error.message });
     }
