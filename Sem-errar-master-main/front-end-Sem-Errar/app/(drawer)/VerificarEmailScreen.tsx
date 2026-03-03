@@ -5,32 +5,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import API_URL from '../../conf/api';
 
 export default function VerificarEmailScreen() {
   const router = useRouter();
   const { email: emailParam, nome: nomeParam } = useLocalSearchParams<{ email: string; nome: string }>();
-  
+
   const [codigo, setCodigo] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState(emailParam || '');
   const [loading, setLoading] = useState(false);
   const [reenviando, setReenviando] = useState(false);
   const [tempoRestante, setTempoRestante] = useState(60);
   const [podeReenviar, setPodeReenviar] = useState(false);
-  
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -61,32 +61,43 @@ export default function VerificarEmailScreen() {
   }, [tempoRestante, podeReenviar]);
 
   const handleCodigoChange = (text: string, index: number) => {
+    const novoCodigo = [...codigo];
+
     if (text.length > 1) {
+      // Caso de colagem de código
       const codigoCompleto = text.slice(0, 6).split('');
-      const novoCodigo = [...codigo];
       codigoCompleto.forEach((char, i) => {
         if (i < 6) novoCodigo[i] = char;
       });
       setCodigo(novoCodigo);
-      
+
       if (inputRefs.current[5]) {
         inputRefs.current[5]?.focus();
       }
+
+      // Verificar se colou um código completo
+      if (codigoCompleto.length === 6 && codigoCompleto.every(d => d !== '')) {
+        setTimeout(() => verificarCodigo(), 300);
+      }
     } else {
-      const novoCodigo = [...codigo];
+      // Digitação normal
       novoCodigo[index] = text;
       setCodigo(novoCodigo);
 
+      // Avançar para o próximo input
       if (text && index < 5) {
         inputRefs.current[index + 1]?.focus();
       }
-    }
 
-    // Se completou 6 dígitos, verificar automaticamente
-    const codigoCompleto = [...codigo];
-    codigoCompleto[index] = text;
-    if (codigoCompleto.every(d => d !== '')) {
-      setTimeout(() => verificarCodigo(), 300);
+      // Voltar para o anterior com backspace
+      if (!text && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+
+      // Verificar se completou 6 dígitos
+      if (novoCodigo.every(d => d !== '')) {
+        setTimeout(() => verificarCodigo(), 300);
+      }
     }
   };
 
@@ -103,20 +114,20 @@ export default function VerificarEmailScreen() {
   const criarContaEAutenticar = async (tokenVerificacao: string) => {
     try {
       console.log('📝 Criando conta...');
-      
+
       // Recuperar dados salvos
       const dadosString = await AsyncStorage.getItem('@dadosCadastroPendente');
       const fotoTemp = await AsyncStorage.getItem('@fotoTemp');
-      
+
       if (!dadosString) {
         throw new Error('Dados do cadastro não encontrados');
       }
 
       const dadosObj = JSON.parse(dadosString);
-      
+
       // Recriar FormData
       const formData = new FormData();
-      
+
       // Adicionar todos os campos
       Object.entries(dadosObj).forEach(([key, value]) => {
         if (key !== '_photo' && value !== null && value !== undefined) {
@@ -156,44 +167,20 @@ export default function VerificarEmailScreen() {
 
       console.log('✅ Conta criada! ID:', data.usuario.id);
 
-      // Fazer login automático
-      const loginResponse = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          senha: dadosObj.senha,
-        }),
-      });
-
-      const loginData = await loginResponse.json();
-
-      if (!loginResponse.ok) {
-        throw new Error('Erro no login automático');
-      }
-
-      console.log('✅ Login automático realizado!');
-
-      // Salvar token e dados do usuário
-      await AsyncStorage.setItem('@token', loginData.token);
-      await AsyncStorage.setItem('@userLogado', JSON.stringify(loginData));
-
       // Limpar dados temporários
       await AsyncStorage.removeItem('@dadosCadastroPendente');
       await AsyncStorage.removeItem('@fotoTemp');
 
       // Feedback de sucesso
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+
       Alert.alert(
-        '🎉 Cadastro concluído!',
-        `Bem-vindo ao FitApp, ${loginData.nome || nomeParam}!`,
+        '✅ Cadastro concluído!',
+        `Conta criada com sucesso para ${dadosObj.nome || 'usuário'}! Agora faça login para continuar.`,
         [
           {
-            text: 'Continuar',
-            onPress: () => router.replace('/(drawer)/perfil'), // Redirecionar para a tela principal
+            text: 'Ir para Login',
+            onPress: () => router.replace('/login'),  // 🔥 Redireciona para o login
           },
         ]
       );
@@ -216,7 +203,7 @@ export default function VerificarEmailScreen() {
 
   const verificarCodigo = async () => {
     const codigoCompleto = codigo.join('');
-    
+
     if (codigoCompleto.length < 6) {
       Alert.alert('Código incompleto', 'Digite o código de 6 dígitos');
       return;
@@ -226,14 +213,14 @@ export default function VerificarEmailScreen() {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      const response = await fetch(`${API_URL}/verificar-email`, {
+      const response = await fetch(`${API_URL}/usuarios/verificar-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          email, 
-          codigo: codigoCompleto 
+        body: JSON.stringify({
+          email,
+          codigo: codigoCompleto
         }),
       });
 
@@ -271,7 +258,7 @@ export default function VerificarEmailScreen() {
       setReenviando(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      const response = await fetch(`${API_URL}/reenviar-codigo`, {
+      const response = await fetch(`${API_URL}/usuarios/reenviar-codigo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,10 +274,10 @@ export default function VerificarEmailScreen() {
 
       setTempoRestante(60);
       setPodeReenviar(false);
-      
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Sucesso', 'Código reenviado com sucesso!');
-      
+
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Erro', error.message);
@@ -316,11 +303,11 @@ export default function VerificarEmailScreen() {
               </View>
 
               <Text style={styles.title}>Verifique seu e-mail</Text>
-              
+
               <Text style={styles.subtitle}>
                 Enviamos um código de verificação para:
               </Text>
-              
+
               <Text style={styles.emailDestino}>{email}</Text>
 
               <Text style={styles.instrucao}>
@@ -346,7 +333,7 @@ export default function VerificarEmailScreen() {
 
               <View style={styles.reenviarContainer}>
                 {podeReenviar ? (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={reenviarCodigo}
                     disabled={reenviando}
                   >
