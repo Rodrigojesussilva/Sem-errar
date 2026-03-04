@@ -25,7 +25,7 @@ const COLORS = {
   error: '#ff4444',
 };
 
-export default function QuadroCalcularBFScreenDiasFixos() {
+export default function QuadroCalcularBFScreenSequencia() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
 
@@ -126,7 +126,7 @@ export default function QuadroCalcularBFScreenDiasFixos() {
             Vamos calcular seu percentual de gordura?
           </Text>
 
-          {/* INFOBOX AGORA FICA AQUI 👇 */}
+          {/* INFOBOX AGORA FICA AQUI */}
           <View style={styles.infoBox}>
             <FontAwesome name="info-circle" size={18} color={COLORS.dot} />
             <Text style={styles.infoText}>
@@ -217,43 +217,17 @@ export default function QuadroCalcularBFScreenDiasFixos() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-
-  visualArea: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-
-  ellipseLine: {
-    position: 'absolute',
-    borderWidth: 1.5,
-    borderColor: COLORS.line,
-    borderRadius: 999,
-  },
-
-  staticDot: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: COLORS.dot,
-    backgroundColor: '#fff',
-  },
+  visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
+  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
+  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
 
   header: {
     paddingHorizontal: 25,
-    paddingTop: StatusBar.currentHeight
-      ? StatusBar.currentHeight + 10
-      : 40,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
     zIndex: 100,
   },
 
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-  },
+  backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
 
   backIconCircle: {
     width: 32,
@@ -281,20 +255,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  content: {
-    width: '100%',
-    zIndex: 10,
-  },
+  content: { width: '100%', zIndex: 10 },
 
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
+  logoContainer: { alignItems: 'center', marginBottom: 30 },
 
-  logo: {
-    width: width * 0.45,
-    height: 60,
-  },
+  logo: { width: width * 0.45, height: 60 },
 
   title: {
     fontSize: 24,
@@ -324,10 +289,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  opcoesContainer: {
-    gap: 15,
-    marginBottom: 35,
-  },
+  opcoesContainer: { gap: 15, marginBottom: 35 },
 
   opcaoItem: {
     flexDirection: 'row',

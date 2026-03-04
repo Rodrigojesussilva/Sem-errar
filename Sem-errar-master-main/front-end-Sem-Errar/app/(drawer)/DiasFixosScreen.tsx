@@ -4,9 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, StatusBar, SafeAreaView } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
@@ -42,7 +42,6 @@ export default function DiasFixosScreen() {
   const [quantidadeTreinos, setQuantidadeTreinos] = useState(3);
   const [opcoesTreino, setOpcoesTreino] = useState<string[]>([]);
 
-  // Carregar quantidade de treinos da Tela 14
   useEffect(() => {
     carregarQuantidadeTreinos();
     carregarDiasSalvos();
@@ -54,7 +53,6 @@ export default function DiasFixosScreen() {
       if (estruturaSalva) {
         const numero = parseInt(estruturaSalva);
         setQuantidadeTreinos(numero || 3);
-
         const opcoes = [];
         for (let i = 1; i <= numero; i++) {
           opcoes.push(`Treino ${i}`);
@@ -85,16 +83,11 @@ export default function DiasFixosScreen() {
 
   const handleSelecionarTreino = (treino: string) => {
     if (!diaSelecionado) return;
-
     const cor = treino === 'Descanso' ? COLORS.descanso : obterCorTreino(treino);
     const icone = treino === 'Descanso' ? 'bed' : 'check-circle';
-
     const diasAtualizados = diasSemana.map(dia =>
-      dia.id === diaSelecionado.id
-        ? { ...dia, treino, cor, icone }
-        : dia
+      dia.id === diaSelecionado.id ? { ...dia, treino, cor, icone } : dia
     );
-
     setDiasSemana(diasAtualizados);
     setModalVisible(false);
   };
@@ -109,35 +102,22 @@ export default function DiasFixosScreen() {
     setIsLoading(true);
     try {
       await AsyncStorage.setItem('@diasFixosTreinos', JSON.stringify(diasSemana));
-
-      // Verificar se há pelo menos um treino configurado
       const temTreino = diasSemana.some(dia => dia.treino !== 'Descanso');
-
       if (!temTreino) {
         Alert.alert(
           'Atenção',
           'Você não configurou nenhum treino. Deseja continuar mesmo assim?',
           [
             { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Continuar',
-              onPress: () => {
-                console.log('Dias fixos salvos:', diasSemana);
-                router.push('/PescocoScreen');
-              }
-            }
+            { text: 'Continuar', onPress: () => router.push('/PescocoScreen') }
           ]
         );
         setIsLoading(false);
         return;
       }
-
-      console.log('Dias fixos salvos:', diasSemana);
       router.push('/QuadroCalcularBFScreenDiasFixos');
-
     } catch (error) {
       console.error('Erro ao salvar dias fixos:', error);
-      Alert.alert('Erro', 'Não foi possível salvar sua configuração. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -153,20 +133,20 @@ export default function DiasFixosScreen() {
 
   const renderBackground = () => (
     <View style={styles.visualArea}>
-      <View style={[styles.ellipseLine, { width: width * 1.5, height: 300, top: -50, right: -width * 0.2, transform: [{ rotate: '15deg' }] }]}>
-        <View style={[styles.staticDot, { bottom: '20%', left: '20%' }]} />
+      <View style={[styles.ellipseLine, { width: width * 1.5, height: height * 0.4, top: height * 0.1, left: -width * 0.3, transform: [{ rotate: '-25deg' }] }]}>
+        <View style={[styles.staticDot, { top: '20%', right: '15%' }]} />
       </View>
-      <View style={[styles.ellipseLine, { width: width * 1.7, height: 400, bottom: -100, left: -width * 0.3, transform: [{ rotate: '-10deg' }] }]}>
-        <View style={[styles.staticDot, { top: '30%', right: '25%' }]} />
+      <View style={[styles.ellipseLine, { width: width * 1.2, height: height * 0.5, top: height * 0.3, right: -width * 0.4, transform: [{ rotate: '35deg' }] }]}>
+        <View style={[styles.staticDot, { bottom: '30%', left: '10%' }]} />
       </View>
     </View>
   );
 
   return (
-    <View style={styles.background}>
+    <SafeAreaView style={styles.background}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {renderBackground()}
 
-      {/* BOTÃO VOLTAR NO TOPO - FIXO */}
       <View style={styles.headerContainer}>
         <Pressable style={styles.backButton} onPress={handleVoltar}>
           <View style={styles.backIconCircle}>
@@ -176,635 +156,141 @@ export default function DiasFixosScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* CONTAINER PRINCIPAL */}
-        <View style={styles.mainContainer}>
-          {/* IMAGEM NO TOPO */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
           <View style={styles.imageContainer}>
-            <Image
-              source={require('@/assets/images/logo-sem-fundo1.png')}
-              style={styles.topImage}
-              resizeMode="contain"
-            />
+            <Image source={require('@/assets/images/logo-sem-fundo1.png')} style={styles.topImage} resizeMode="contain" />
           </View>
 
-          {/* CONTEÚDO */}
-          <View style={styles.content}>
-            <View style={styles.headerSection}>
-              <Text style={styles.sectionTitle}>📅 Dias Fixos da Semana</Text>
-              <Text style={styles.welcomeTitle}>
-                Agora distribua seus treinos na semana
-              </Text>
-              <Text style={styles.obrigatorio}>* obrigatório</Text>
-            </View>
-
-            <Text style={styles.subtitle}>
-              Clique em cada dia para escolher qual treino será realizado
-            </Text>
-
-            {/* GRADE DE DIAS */}
-            <View style={styles.diasGrid}>
-              {diasSemana.map((dia) => (
-                <Pressable
-                  key={dia.id}
-                  style={[
-                    styles.diaCard,
-                    dia.treino !== 'Descanso' && styles.diaCardAtivo,
-                    { borderColor: dia.treino !== 'Descanso' ? dia.cor : '#E0E0E0' }
-                  ]}
-                  onPress={() => handleDiaPress(dia)}
-                >
-                  <View style={[
-                    styles.diaIconContainer,
-                    { backgroundColor: dia.treino !== 'Descanso' ? `${dia.cor}15` : '#F5F5F5' }
-                  ]}>
-                    <MaterialCommunityIcons
-                      name={getDiaIcone(dia.treino) === 'bed' ? 'bed' : 'check-circle'}
-                      size={24}
-                      color={dia.treino !== 'Descanso' ? dia.cor : '#999999'}
-                    />
-                  </View>
-
-                  <Text style={styles.diaNome}>{dia.nome}</Text>
-
-                  <View style={[
-                    styles.treinoBadge,
-                    dia.treino !== 'Descanso' && styles.treinoBadgeAtivo,
-                    { backgroundColor: dia.treino !== 'Descanso' ? dia.cor : '#F0F0F0' }
-                  ]}>
-                    <Text style={[
-                      styles.treinoBadgeText,
-                      dia.treino !== 'Descanso' && styles.treinoBadgeTextAtivo
-                    ]}>
-                      {dia.treino}
-                    </Text>
-                  </View>
-
-                  <FontAwesome
-                    name="chevron-right"
-                    size={16}
-                    color="#CCCCCC"
-                    style={styles.diaSeta}
-                  />
-                </Pressable>
-              ))}
-            </View>
-
-            {/* LEGENDA */}
-            <View style={styles.legendaContainer}>
-              <View style={styles.legendaItem}>
-                <View style={[styles.legendaCor, { backgroundColor: COLORS.treino1 }]} />
-                <Text style={styles.legendaTexto}>Treino 1</Text>
-              </View>
-              <View style={styles.legendaItem}>
-                <View style={[styles.legendaCor, { backgroundColor: COLORS.treino2 }]} />
-                <Text style={styles.legendaTexto}>Treino 2</Text>
-              </View>
-              <View style={styles.legendaItem}>
-                <View style={[styles.legendaCor, { backgroundColor: COLORS.treino3 }]} />
-                <Text style={styles.legendaTexto}>Treino 3</Text>
-              </View>
-              {quantidadeTreinos >= 4 && (
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaCor, { backgroundColor: COLORS.treino4 }]} />
-                  <Text style={styles.legendaTexto}>Treino 4</Text>
-                </View>
-              )}
-              <View style={styles.legendaItem}>
-                <View style={[styles.legendaCor, { backgroundColor: COLORS.descanso }]} />
-                <Text style={styles.legendaTexto}>Descanso</Text>
-              </View>
-            </View>
-
-            {/* DICA */}
+          <View style={styles.headerSection}>
+            <Text style={styles.welcomeTitle}>Agora estruture seus treinos na semana.</Text>
+            
             <View style={styles.dicaContainer}>
-              <Feather name="info" size={20} color={COLORS.primary} />
+              <FontAwesome name="info-circle" size={18} color={COLORS.dot} />
               <Text style={styles.dicaTexto}>
-                Toque em cada dia para escolher o treino. Dias com treino serão destacados.
-              </Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* BOTÃO PRÓXIMO - PADRONIZADO COM A TELA DE CONFIGURAR TREINO */}
-            <Pressable
-              style={styles.primaryButtonWrapper}
-              onPress={handleProximo}
-              disabled={isLoading}
-            >
-              <LinearGradient
-                colors={!isLoading ? ['#7b42d5', '#622db2', '#4b208c'] : ['#CCCCCC', '#BBBBBB']}
-                style={styles.primaryButton}
-              >
-                <Text style={[styles.primaryText, isLoading && { color: '#AAAAAA' }]}>
-                  {isLoading ? 'Salvando...' : 'Próximo'}
-                </Text>
-              </LinearGradient>
-              <Text style={styles.buttonSubtitle}>
-                Continuar para medidas corporais
-              </Text>
-            </Pressable>
-
-            {/* INFORMAÇÃO ADICIONAL */}
-            <View style={styles.infoProximoPasso}>
-              <Feather name="info" size={14} color="#999" />
-              <Text style={styles.infoProximoPassoText}>
-                Após configurar seus dias, você irá para as medidas corporais
+                Clique no dia desejado e atribua o treino. Dias programados serão destacados.
               </Text>
             </View>
           </View>
+
+          <View style={styles.diasGrid}>
+            {diasSemana.map((dia) => (
+              <Pressable
+                key={dia.id}
+                style={[
+                  styles.diaCard,
+                  dia.treino !== 'Descanso' && styles.diaCardAtivo,
+                  { borderColor: dia.treino !== 'Descanso' ? dia.cor : '#f4f4f4' }
+                ]}
+                onPress={() => handleDiaPress(dia)}
+              >
+                <View style={[styles.diaIconContainer, { backgroundColor: dia.treino !== 'Descanso' ? `${dia.cor}15` : '#F5F5F5' }]}>
+                  <MaterialCommunityIcons name={getDiaIcone(dia.treino) as any} size={24} color={dia.treino !== 'Descanso' ? dia.cor : '#999999'} />
+                </View>
+                <Text style={styles.diaNome}>{dia.nome}</Text>
+                <View style={[styles.treinoBadge, { backgroundColor: dia.treino !== 'Descanso' ? dia.cor : '#F0F0F0' }]}>
+                  <Text style={[styles.treinoBadgeText, dia.treino !== 'Descanso' && { color: '#FFF' }]}>{dia.treino}</Text>
+                </View>
+                <FontAwesome name="chevron-right" size={14} color="#CCCCCC" />
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.legendaContainer}>
+            {[1, 2, 3, 4].map(num => (
+              quantidadeTreinos >= num && (
+                <View key={num} style={styles.legendaItem}>
+                  <View style={[styles.legendaCor, { backgroundColor: (COLORS as any)[`treino${num}`] }]} />
+                  <Text style={styles.legendaTexto}>Treino {num}</Text>
+                </View>
+              )
+            ))}
+            <View style={styles.legendaItem}>
+              <View style={[styles.legendaCor, { backgroundColor: COLORS.descanso }]} />
+              <Text style={styles.legendaTexto}>Descanso</Text>
+            </View>
+          </View>
+
+          <Pressable style={styles.primaryButtonWrapper} onPress={handleProximo} disabled={isLoading}>
+            <LinearGradient
+              colors={['#4ecdc4', '#622db2', '#4b208c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryText}>{isLoading ? 'Salvando...' : 'Próximo'}</Text>
+            </LinearGradient>
+          </Pressable>
         </View>
       </ScrollView>
 
-      {/* MODAL DE SELEÇÃO DE TREINO */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitulo}>
-                {diaSelecionado?.nome}
-              </Text>
-              <Pressable
-                onPress={() => setModalVisible(false)}
-                style={styles.modalCloseButton}
-              >
+              <Text style={styles.modalTitulo}>{diaSelecionado?.nome}</Text>
+              <Pressable onPress={() => setModalVisible(false)} style={styles.modalCloseButton}>
                 <Feather name="x" size={20} color="#666" />
               </Pressable>
             </View>
-
-            <Text style={styles.modalSubtitulo}>
-              Escolha o treino para {diaSelecionado?.nome?.toLowerCase()}
-            </Text>
-
-            <View style={styles.opcoesContainer}>
+            <View style={styles.opcoesContainerModal}>
               {opcoesTreino.map((treino, index) => (
                 <Pressable
                   key={index}
-                  style={[
-                    styles.opcaoItem,
-                    diaSelecionado?.treino === treino && styles.opcaoItemSelecionado,
-                    treino === 'Descanso' && styles.opcaoDescanso
-                  ]}
+                  style={[styles.opcaoItemModal, diaSelecionado?.treino === treino && styles.opcaoItemSelecionadoModal]}
                   onPress={() => handleSelecionarTreino(treino)}
                 >
-                  <View style={[
-                    styles.opcaoIconContainer,
-                    {
-                      backgroundColor: treino === 'Descanso'
-                        ? '#F5F5F5'
-                        : `${obterCorTreino(treino)}15`
-                    }
-                  ]}>
-                    <MaterialCommunityIcons
-                      name={treino === 'Descanso' ? 'bed' : 'check-circle'}
-                      size={24}
-                      color={treino === 'Descanso' ? '#999' : obterCorTreino(treino)}
-                    />
-                  </View>
-                  <Text style={[
-                    styles.opcaoTexto,
-                    diaSelecionado?.treino === treino && styles.opcaoTextoSelecionado,
-                    treino === 'Descanso' && styles.opcaoTextoDescanso
-                  ]}>
-                    {treino}
-                  </Text>
-                  {diaSelecionado?.treino === treino && (
-                    <Feather name="check" size={18} color={COLORS.primary} />
-                  )}
+                  <Text style={styles.opcaoTextoModal}>{treino}</Text>
+                  {diaSelecionado?.treino === treino && <Feather name="check" size={18} color={COLORS.primary} />}
                 </Pressable>
               ))}
             </View>
-
-            <Pressable
-              style={styles.modalCancelButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancelar</Text>
-            </Pressable>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  visualArea: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-  ellipseLine: {
-    position: 'absolute',
-    borderWidth: 1.5,
-    borderColor: COLORS.line,
-    borderRadius: 999,
-  },
-  staticDot: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: COLORS.dot,
-    backgroundColor: '#fff',
-  },
-
-  headerContainer: {
-    paddingHorizontal: 25,
-    paddingTop: 40,
-    zIndex: 10,
-    backgroundColor: 'transparent',
-  },
-
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  backIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    elevation: 2,
-  },
-
-  backButtonText: {
-    color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginLeft: 10,
-  },
-
-  scrollView: {
-    flex: 1,
-  },
-
-  scrollContent: {
-    flexGrow: 1,
-    paddingTop: 15,
-    paddingBottom: 30,
-    paddingHorizontal: 5,
-  },
-
-  mainContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginHorizontal: 15,
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '92%',
-    marginTop: 5,
-  },
-
-  imageContainer: {
-    height: 100,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginTop: 20,
-  },
-
-  topImage: {
-    width: width * 0.4,
-    height: 60,
-  },
-
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 28,
-    alignItems: 'center',
-  },
-
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-
-  sectionTitle: {
-    color: '#666666',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-
-  welcomeTitle: {
-    color: COLORS.textMain,
-    fontSize: 26,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 32,
-  },
-
-  obrigatorio: {
-    color: '#FF5722',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 22,
-  },
-
-  subtitle: {
-    color: '#666666',
-    fontSize: 17,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-
-  // Grade de dias
-  diasGrid: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 24,
-  },
-
-  diaCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#E9ECEF',
-    gap: 12,
-  },
-
-  diaCardAtivo: {
-    backgroundColor: '#F0F9FF',
-    borderWidth: 2,
-  },
-
-  diaIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  diaNome: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#333',
-  },
-
-  treinoBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-
-  treinoBadgeAtivo: {
-    backgroundColor: COLORS.treino1,
-  },
-
-  treinoBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666',
-  },
-
-  treinoBadgeTextAtivo: {
-    color: '#FFFFFF',
-  },
-
-  diaSeta: {
-    opacity: 0.5,
-  },
-
-  // Legenda
-  legendaContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 20,
-    paddingVertical: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    width: '100%',
-  },
-
-  legendaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  legendaCor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-
-  legendaTexto: {
-    fontSize: 12,
-    color: '#666',
-  },
-
-  // Dica
-  dicaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 12,
-    marginBottom: 16,
-    width: '100%',
-  },
-
-  dicaTexto: {
-    flex: 1,
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#E0E0E0',
-    marginVertical: 22,
-  },
-
-  // Botão Próximo - Estilo padronizado com ConfigurarTreinoScreen
-  primaryButtonWrapper: {
-    width: '100%',
-    alignItems: 'center',
-  },
-
-  primaryButton: {
-    width: '100%',
-    paddingVertical: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    elevation: 4,
-  },
-
-  primaryText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-
-  buttonSubtitle: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-
-  infoProximoPasso: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    paddingHorizontal: 20,
-  },
-
-  infoProximoPassoText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#999',
-    textAlign: 'center',
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 24,
-    minHeight: 400,
-  },
-
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-
-  modalTitulo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.textMain,
-  },
-
-  modalCloseButton: {
-    padding: 8,
-  },
-
-  modalSubtitulo: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-
-  opcoesContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
-
-  opcaoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#E9ECEF',
-    gap: 16,
-  },
-
-  opcaoItemSelecionado: {
-    backgroundColor: '#F0F9FF',
-    borderColor: COLORS.primary,
-  },
-
-  opcaoDescanso: {
-    backgroundColor: '#F5F5F5',
-  },
-
-  opcaoIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  opcaoTexto: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-
-  opcaoTextoSelecionado: {
-    color: COLORS.primary,
-    fontWeight: '800',
-  },
-
-  opcaoTextoDescanso: {
-    color: '#999',
-  },
-
-  modalCancelButton: {
-    padding: 16,
-    alignItems: 'center',
-  },
-
-  modalCancelText: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
+  background: { flex: 1, backgroundColor: '#FFFFFF' },
+  visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
+  ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
+  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
+  headerContainer: { paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 10 },
+  backButton: { flexDirection: 'row', alignItems: 'center' },
+  backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
+  backButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: '700', marginLeft: 10 },
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40 },
+  content: { width: '100%', zIndex: 10 },
+  imageContainer: { alignItems: 'center', marginVertical: 20 },
+  topImage: { width: width * 0.4, height: 60 },
+  headerSection: { alignItems: 'center', marginBottom: 20 },
+  welcomeTitle: { color: COLORS.textMain, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 20, paddingHorizontal: 10 },
+  dicaContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f9ff', padding: 15, borderRadius: 18, gap: 10, width: '100%', borderWidth: 1, borderColor: `${COLORS.dot}30` },
+  dicaTexto: { flex: 1, color: COLORS.dot, fontSize: 14, fontWeight: '700' },
+  diasGrid: { gap: 12, marginBottom: 20 },
+  diaCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderRadius: 22, borderWidth: 1.5, borderColor: '#f4f4f4', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
+  diaCardAtivo: { backgroundColor: '#fcfaff' },
+  diaIconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  diaNome: { flex: 1, fontSize: 17, fontWeight: '700', color: COLORS.textMain },
+  treinoBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 8 },
+  treinoBadgeText: { fontSize: 13, fontWeight: '800', color: '#666' },
+  legendaContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 25, padding: 15, backgroundColor: '#f8f9fa', borderRadius: 18 },
+  legendaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendaCor: { width: 12, height: 12, borderRadius: 6 },
+  legendaTexto: { fontSize: 12, fontWeight: '700', color: '#666' },
+  primaryButtonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
+  primaryButton: { paddingVertical: 18, alignItems: 'center' },
+  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, minHeight: 350 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitulo: { fontSize: 22, fontWeight: '800', color: COLORS.textMain },
+  modalCloseButton: { padding: 5 },
+  opcoesContainerModal: { gap: 10 },
+  opcaoItemModal: { flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#F8F9FA', borderRadius: 18, borderWidth: 1.5, borderColor: '#E9ECEF' },
+  opcaoItemSelecionadoModal: { borderColor: COLORS.primary, backgroundColor: '#fcfaff' },
+  opcaoTextoModal: { flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.textMain },
 });
