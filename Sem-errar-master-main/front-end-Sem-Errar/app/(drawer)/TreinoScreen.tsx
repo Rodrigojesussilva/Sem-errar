@@ -21,33 +21,23 @@ const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
-  dot: '#4ecdc4', // Verde/Ciano para SIM
+  dot: '#4ecdc4',
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
-  error: '#ff4444' // Vermelho para NÃO
+  error: '#ff4444'
 };
 
 export default function TreinoScreen() {
   const router = useRouter();
   const [treinaSelecionado, setTreinaSelecionado] = useState<string | null>(null);
+  const [frequenciaSelecionada, setFrequenciaSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const opcoesTreino = [
-    {
-      id: 'sim',
-      title: 'Sim',
-      description: 'Já tenho uma rotina de treinos',
-      icon: 'dumbbell',
-      color: COLORS.dot, // Verde
-    },
-    {
-      id: 'nao',
-      title: 'Não',
-      description: 'Quero começar a treinar agora',
-      icon: 'person-running',
-      color: COLORS.error, // Vermelho
-    },
+  const opcoesFrequencia = [
+    { id: '1-3', label: '1–3 dias', value: '1-3' },
+    { id: '3-5', label: '3–5 dias', value: '3-5' },
+    { id: '6-7', label: '6–7 dias', value: '6-7' },
   ];
 
   useEffect(() => {
@@ -64,42 +54,44 @@ export default function TreinoScreen() {
   };
 
   const handleProximo = async () => {
-    if (treinaSelecionado) {
-      setIsLoading(true);
-      try {
-        await AsyncStorage.setItem('@treinaAtualmente', treinaSelecionado);
-        if (treinaSelecionado === 'sim') {
-          router.push('/FrequenciaScreen');
-        } else {
-          await AsyncStorage.setItem('@frequenciaTreino', '0');
-          router.push('/(drawer)/QuadroCalcularBFScreentreino');
+    if (!treinaSelecionado) return;
+
+    setIsLoading(true);
+
+    try {
+      await AsyncStorage.setItem('@treinaAtualmente', treinaSelecionado);
+
+      if (treinaSelecionado === 'sim') {
+        if (!frequenciaSelecionada) {
+          Alert.alert('Atenção', 'Selecione a frequência de treino');
+          setIsLoading(false);
+          return;
         }
-      } catch (error) {
-        Alert.alert('Erro', 'Não foi possível salvar.');
-      } finally {
-        setIsLoading(false);
+
+        await AsyncStorage.setItem('@frequenciaTreino', frequenciaSelecionada);
+        router.push('/(drawer)/QuadroCalcularBFScreen');
+      } else {
+        await AsyncStorage.setItem('@frequenciaTreino', '0');
+        router.push('/(drawer)/QuadroCalcularBFScreen');
       }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível salvar.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const renderStaticBackground = () => (
     <View style={styles.visualArea}>
-      <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3, transform: [{ rotate: '15deg' }] }]}>
-        <View style={[styles.staticDot, { bottom: '20%', left: '10%' }]} />
-      </View>
-      <View style={[styles.ellipseLine, { width: width * 1.0, height: width * 1.0, bottom: -width * 0.2, left: -width * 0.4, transform: [{ rotate: '-20deg' }] }]}>
-        <View style={[styles.staticDot, { top: '15%', right: '15%' }]} />
-      </View>
-      <View style={[styles.ellipseLine, { width: width * 1.5, height: width * 0.8, top: height * 0.2, transform: [{ rotate: '110deg' }] }]}>
-        <View style={[styles.staticDot, { top: '50%', right: -5 }]} />
-      </View>
+      <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3, transform: [{ rotate: '15deg' }] }]} />
+      <View style={[styles.ellipseLine, { width: width * 1.0, height: width * 1.0, bottom: -width * 0.2, left: -width * 0.4, transform: [{ rotate: '-20deg' }] }]} />
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
+
       <View style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
         {renderStaticBackground()}
@@ -114,11 +106,14 @@ export default function TreinoScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/logo-sem-fundo1.png')} 
+            <Image
+              source={require('../../assets/images/logo-sem-fundo1.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -126,66 +121,106 @@ export default function TreinoScreen() {
 
           <Text style={styles.title}>Você treina atualmente?</Text>
 
-          <View style={styles.opcoesContainer}>
-            {opcoesTreino.map((opcao) => {
-              const isSelected = treinaSelecionado === opcao.id;
-              const activeColor = opcao.color; // Pega o verde ou vermelho do objeto
+          {/* SIM */}
+          <Pressable
+            style={[
+              styles.opcaoItem,
+              treinaSelecionado === 'sim' && { borderColor: COLORS.dot, borderWidth: 2 }
+            ]}
+            onPress={() => {
+              setTreinaSelecionado('sim');
+              setFrequenciaSelecionada(null);
+            }}
+          >
+            <View style={[styles.opcaoIconContainer, { backgroundColor: `${COLORS.dot}15` }]}>
+              <FontAwesome6 name="dumbbell" size={20} color={COLORS.dot} />
+            </View>
 
-              return (
-                <Pressable
-                  key={opcao.id}
-                  style={[
-                    styles.opcaoItem, 
-                    isSelected && { borderColor: activeColor, borderWidth: 2 } // Borda colorida dinâmica
-                  ]}
-                  onPress={() => setTreinaSelecionado(opcao.id)}
-                >
-                  <View style={[styles.opcaoIconContainer, { backgroundColor: `${activeColor}15` }]}>
-                    <FontAwesome6 
-                        name={opcao.icon} 
-                        size={20} 
-                        color={activeColor} 
-                    />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.opcaoTitulo, treinaSelecionado === 'sim' && { color: COLORS.dot }]}>
+                Sim
+              </Text>
+              <Text style={styles.opcaoDescricao}>
+                Já tenho uma rotina de treinos
+              </Text>
+
+              {treinaSelecionado === 'sim' && (
+                <View style={styles.caixaInterna}>
+                  <Text style={styles.pergunta}>Quantos dias por semana?</Text>
+
+                  <View style={styles.frequenciaContainer}>
+                    {opcoesFrequencia.map((opcao) => (
+                      <Pressable
+                        key={opcao.id}
+                        style={[
+                          styles.frequenciaBotao,
+                          frequenciaSelecionada === opcao.value && styles.frequenciaSelecionada
+                        ]}
+                        onPress={() => setFrequenciaSelecionada(opcao.value)}
+                      >
+                        <Text
+                          style={[
+                            styles.frequenciaTexto,
+                            frequenciaSelecionada === opcao.value && { color: '#fff' }
+                          ]}
+                        >
+                          {opcao.label}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
+                </View>
+              )}
+            </View>
+          </Pressable>
 
-                  <View style={{ flex: 1 }}>
-                    <Text style={[
-                        styles.opcaoTitulo, 
-                        isSelected && { color: activeColor } // Texto colorido dinâmico
-                    ]}>
-                      {opcao.title}
-                    </Text>
-                    <Text style={styles.opcaoDescricao}>{opcao.description}</Text>
-                  </View>
+          {/* NÃO */}
+          <Pressable
+            style={[
+              styles.opcaoItem,
+              treinaSelecionado === 'nao' && { borderColor: COLORS.error, borderWidth: 2 }
+            ]}
+            onPress={() => {
+              setTreinaSelecionado('nao');
+              setFrequenciaSelecionada(null);
+            }}
+          >
+            <View style={[styles.opcaoIconContainer, { backgroundColor: `${COLORS.error}15` }]}>
+              <FontAwesome6 name="person-running" size={20} color={COLORS.error} />
+            </View>
 
-                  <View style={[
-                      styles.radioButton, 
-                      isSelected && { borderColor: activeColor, backgroundColor: activeColor } // Radio colorido
-                  ]}>
-                    {isSelected && <View style={styles.radioButtonInner} />}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.opcaoTitulo, treinaSelecionado === 'nao' && { color: COLORS.error }]}>
+                Não
+              </Text>
+              <Text style={styles.opcaoDescricao}>
+                Quero começar a treinar agora
+              </Text>
+            </View>
+          </Pressable>
 
+          {/* BOTÃO */}
           <Pressable
             onPress={handleProximo}
-            disabled={!treinaSelecionado || isLoading}
+            disabled={!treinaSelecionado || isLoading || (treinaSelecionado === 'sim' && !frequenciaSelecionada)}
             style={styles.buttonWrapper}
           >
-            {treinaSelecionado ? (
+            {treinaSelecionado && (treinaSelecionado === 'nao' || (treinaSelecionado === 'sim' && frequenciaSelecionada)) ? (
               <LinearGradient
                 colors={['#4ecdc4', '#622db2', '#4b208c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryButton}
               >
-                <Text style={styles.primaryText}>{isLoading ? 'Salvando...' : 'Próximo'}</Text>
+                <Text style={styles.primaryText}>
+                  {isLoading ? 'Salvando...' : 'Próximo'}
+                </Text>
               </LinearGradient>
             ) : (
               <View style={[styles.primaryButton, { backgroundColor: COLORS.disabled }]}>
-                <Text style={[styles.primaryText, { color: '#AAA' }]}>Selecione uma opção</Text>
+                <Text style={[styles.primaryText, { color: '#AAA' }]}>
+                  {!treinaSelecionado ? 'Selecione uma opção' : 'Selecione os dias'}
+                </Text>
               </View>
             )}
           </Pressable>
@@ -197,30 +232,104 @@ export default function TreinoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+
   visualArea: { ...StyleSheet.absoluteFillObject, zIndex: 0, overflow: 'hidden' },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
-  staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  header: { paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
-  backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
-  backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
-  backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 25, justifyContent: 'center', paddingBottom: 40, paddingTop: 10 },
-  content: { width: '100%', zIndex: 10 },
-  logoContainer: { alignItems: 'center', marginBottom: 20, marginTop: 5 },
-  logo: { width: width * 0.5, height: 70 },
-  title: { fontSize: 24, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 40 },
-  opcoesContainer: { gap: 15, marginBottom: 35 },
-  opcaoItem: {
-    flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1.5, borderColor: '#f4f4f4',
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5,
+
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    zIndex: 100
   },
-  // O estilo 'opcaoItemSelecionado' foi movido para o componente via style dinâmico para suportar cores diferentes
-  opcaoIconContainer: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+
+  backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+  backIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    elevation: 3
+  },
+  backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
+
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 25,
+    paddingBottom: 60
+  },
+
+  content: { width: '100%' },
+
+  logoContainer: { alignItems: 'center', marginBottom: 25 },
+  logo: { width: width * 0.5, height: 70 },
+
+  title: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.textMain,
+    textAlign: 'center',
+    marginBottom: 30
+  },
+
+  opcaoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 18,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#f4f4f4',
+    marginBottom: 20
+  },
+
+  opcaoIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15
+  },
+
   opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
   opcaoDescricao: { fontSize: 14, color: '#888', marginTop: 2 },
-  radioButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
-  radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  buttonWrapper: { width: '100%', borderRadius: 22, overflow: 'hidden', elevation: 4 },
+
+  caixaInterna: { marginTop: 15 },
+  pergunta: { fontSize: 15, fontWeight: '600', marginBottom: 10, color: COLORS.textMain },
+
+  frequenciaContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10
+  },
+
+  frequenciaBotao: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.dot,
+    backgroundColor: '#fff',
+    minWidth: 90,
+    alignItems: 'center'
+  },
+
+  frequenciaSelecionada: {
+    backgroundColor: COLORS.dot
+  },
+
+  frequenciaTexto: {
+    fontWeight: '600',
+    color: COLORS.dot,
+    fontSize: 14
+  },
+
+  buttonWrapper: { marginTop: 10, borderRadius: 22, overflow: 'hidden' },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
-  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' }
 });

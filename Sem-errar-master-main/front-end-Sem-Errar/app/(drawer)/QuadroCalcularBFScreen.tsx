@@ -57,7 +57,7 @@ export default function QuadroCalcularBFScreenDiasFixos() {
   };
 
   const handleVoltar = () => {
-    router.replace('/RegistrarTreinoScreen');
+    router.replace('/TreinoScreen');
   };
 
   const renderStaticBackground = () => (
