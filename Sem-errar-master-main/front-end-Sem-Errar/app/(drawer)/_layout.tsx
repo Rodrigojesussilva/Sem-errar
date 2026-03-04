@@ -1,9 +1,10 @@
 import { AuthContext, AuthProvider } from "@/app/(drawer)/AuthContext";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationState } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { Drawer } from "expo-router/drawer";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -54,7 +55,7 @@ declare global {
       DiasFixosScreen: undefined;
       SequenciaScreen: undefined;
       ContextoBFScreen: undefined;
-      QuadroCalcularBFScreen: undefined; // Tela genérica
+      QuadroCalcularBFScreen: undefined;
       QuadroCalcularBFScreenDiasFixos: undefined;
       QuadroCalcularBFScreenSequencia: undefined;
       PescocoScreen: undefined;
@@ -102,7 +103,7 @@ type RouteName =
   | 'DiasFixosScreen'
   | 'SequenciaScreen'
   | 'ContextoBFScreen'
-  | 'QuadroCalcularBFScreen' // Tela genérica
+  | 'QuadroCalcularBFScreen'
   | 'QuadroCalcularBFScreenDiasFixos'
   | 'QuadroCalcularBFScreenSequencia'
   | 'PescocoScreen'
@@ -126,15 +127,21 @@ function AuthRedirect() {
       console.log('AuthRedirect - Estado:', {
         isLoggedIn,
         currentRoute,
-        loading: auth?.loading
+        loading: auth?.loading,
+        usuario: auth?.usuario ? { 
+          id: auth.usuario.id,
+          nome: auth.usuario.nome,
+          email: auth.usuario.email,
+          foto: auth.usuario.foto ? '✅ tem foto' : '❌ sem foto'
+        } : null
       });
 
       // Se está logado e na tela de login/cadastro, redireciona para home
       if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) {
-        console.log('Redirecionando para home...');
+        console.log('Redirecionando para diarias...');
         (navigation as any).reset({
           index: 0,
-          routes: [{ name: 'index' }],
+          routes: [{ name: 'diarias' }],
         });
       }
 
@@ -156,6 +163,89 @@ function AuthRedirect() {
 function CustomDrawerContent(props: any) {
   const { state, navigation } = props;
   const auth = useContext(AuthContext);
+  const [fotoErro, setFotoErro] = useState(false);
+  const [imageKey, setImageKey] = useState(Date.now());
+
+  // Função para testar a imagem via fetch
+  const testarImagem = async (url: string) => {
+    try {
+      console.log('🔍 Testando imagem via fetch:', url);
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      console.log('📥 Status da imagem:', response.status);
+      console.log('📥 Content-Type:', response.headers.get('content-type'));
+      
+      if (response.ok) {
+        console.log('✅ Imagem acessível via fetch!');
+      } else {
+        console.log('❌ Imagem NÃO acessível via fetch');
+      }
+    } catch (error) {
+      console.log('❌ Erro no fetch:', error);
+    }
+  };
+
+  // 1º useEffect - Verificar storage
+  useEffect(() => {
+    const verificarELimparStorage = async () => {
+      try {
+        console.log('🧹 Verificando AsyncStorage...');
+        const usuarioStorage = await AsyncStorage.getItem('@FitnessApp:usuario');
+        
+        if (usuarioStorage) {
+          const usuario = JSON.parse(usuarioStorage);
+          console.log('📦 Usuário encontrado no storage:', {
+            id: usuario.id,
+            nome: usuario.nome,
+            email: usuario.email,
+            foto: usuario.foto ? '✅ TEM FOTO' : '❌ SEM FOTO'
+          });
+          
+          if (!usuario.foto) {
+            console.log('❌ Usuário sem foto detectado! Limpando storage...');
+            await AsyncStorage.clear();
+            console.log('✅ Storage limpo! Faça login novamente.');
+          }
+        } else {
+          console.log('📦 Nenhum usuário no storage');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar storage:', error);
+      }
+    };
+    
+    verificarELimparStorage();
+  }, []);
+
+  // 2º useEffect - Debug da foto
+  useEffect(() => {
+    if (auth?.usuario) {
+      console.log('\n🔍 ===== DEBUG COMPLETO DA FOTO =====');
+      console.log('   👤 Usuário:', auth.usuario.nome);
+      console.log('   📧 Email:', auth.usuario.email);
+      console.log('   🆔 ID:', auth.usuario.id);
+      console.log('   📸 URL completa:', JSON.stringify(auth.usuario.foto));
+      console.log('   📏 Tamanho da URL:', auth.usuario.foto?.length);
+      console.log('   🔤 Primeiros 30 chars:', auth.usuario.foto?.substring(0, 30));
+      console.log('   🔤 Últimos 30 chars:', auth.usuario.foto?.substring(auth.usuario.foto.length - 30));
+      console.log('   ✅ Contém "uploads"?', auth.usuario.foto?.includes('uploads'));
+      console.log('   ✅ Contém ".jpeg"?', auth.usuario.foto?.includes('.jpeg'));
+      console.log('   ✅ Contém "foto-"?', auth.usuario.foto?.includes('foto-'));
+      console.log('   🔗 URL encode:', encodeURI(auth.usuario.foto || ''));
+      console.log('=====================================\n');
+    }
+  }, [auth?.usuario]);
+
+  // 3º useEffect - Testar imagem quando a URL mudar
+  useEffect(() => {
+    if (auth?.usuario?.foto) {
+      testarImagem(auth.usuario.foto);
+    }
+  }, [auth?.usuario?.foto]);
 
   // Se estiver carregando, mostra loading
   if (auth?.loading) {
@@ -204,13 +294,6 @@ function CustomDrawerContent(props: any) {
 
   const loggedInScreens = [
     {
-      name: "index" as RouteName,
-      label: "Início",
-      iconName: "home",
-      iconLib: Ionicons,
-      colorScheme: { bg: "#E3F2FD", color: "#1E88E5" },
-    },
-    {
       name: "diarias" as RouteName,
       label: "Desafios Diários",
       iconName: "trophy-award",
@@ -244,6 +327,13 @@ function CustomDrawerContent(props: any) {
       iconName: "bar-chart",
       iconLib: Ionicons,
       colorScheme: { bg: "#F3E5F5", color: "#9C27B0" },
+    },
+    {
+      name: "index" as RouteName,
+      label: "Início",
+      iconName: "home",
+      iconLib: Ionicons,
+      colorScheme: { bg: "#E3F2FD", color: "#1E88E5" },
     },
   ];
 
@@ -317,6 +407,12 @@ function CustomDrawerContent(props: any) {
   const mainScreens = isLoggedIn ? loggedInScreens : loggedOutScreens;
   const currentRouteName = state.routes[state.index]?.name as RouteName;
 
+  // URL da foto
+  const fotoUrl = userData?.foto;
+  const temFoto = !!fotoUrl && !fotoErro && !fotoUrl.includes('unsplash');
+  const nomeUsuario = userData?.nome || "Usuário";
+  const primeiroNome = nomeUsuario.split(' ')[0];
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E88E5" />
@@ -324,11 +420,31 @@ function CustomDrawerContent(props: any) {
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          {isLoggedIn && userData?.foto ? (
+          {temFoto ? (
             <Image
-              source={{ uri: userData.foto }}
+              key={imageKey}
+              source={{ 
+                uri: fotoUrl,
+                cache: 'reload',
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
+                }
+              }}
               style={styles.userAvatar}
               resizeMode="cover"
+              onLoadStart={() => console.log('🔄 Começando a carregar imagem...')}
+              onLoad={() => {
+                console.log('✅ Imagem carregada com sucesso!');
+                setFotoErro(false);
+              }}
+              onError={(e) => {
+                console.log('❌ Erro ao carregar imagem:', fotoUrl);
+                console.log('   Detalhe:', e.nativeEvent);
+                setFotoErro(true);
+                setImageKey(Date.now()); // Tenta recarregar
+              }}
             />
           ) : (
             <View style={styles.avatarPlaceholder}>
@@ -337,33 +453,18 @@ function CustomDrawerContent(props: any) {
           )}
         </View>
 
-        <Text style={styles.appName}>Fitness Analytics</Text>
-
         {isLoggedIn && userData ? (
           <>
             <Text style={styles.userName}>
-              Olá, {userData?.nome?.split(" ")[0] || "Usuário"}!
+              {primeiroNome}
             </Text>
             <Text style={styles.userEmail}>{userData.email}</Text>
-
-            {/* Status dos dados biométricos */}
-            {userData.altura && userData.peso && userData.idade ? (
-              <View style={styles.dadosCompletosBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.dadosCompletosText}>Dados completos</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.dadosIncompletosBadge}
-                onPress={() => (navigation as any).navigate("dados")}
-              >
-                <Ionicons name="warning" size={16} color="#FF9800" />
-                <Text style={styles.dadosIncompletosText}>Complete seus dados</Text>
-              </TouchableOpacity>
-            )}
           </>
         ) : (
-          <Text style={styles.appSubtitle}>Faça login para continuar</Text>
+          <>
+            <Text style={styles.appName}>Fitness Analytics</Text>
+            <Text style={styles.appSubtitle}>Faça login para continuar</Text>
+          </>
         )}
       </View>
 
@@ -581,7 +682,7 @@ export default function DrawerLayout() {
             'DiasFixosScreen',
             'SequenciaScreen',
             'ContextoBFScreen',
-            'QuadroCalcularBFScreen', // Tela genérica
+            'QuadroCalcularBFScreen',
             'QuadroCalcularBFScreenDiasFixos',
             'QuadroCalcularBFScreenSequencia',
             'PescocoScreen',
@@ -601,7 +702,7 @@ export default function DrawerLayout() {
           return screenOptions;
         }}
       >
-        {/* Telas de boas-vindas (SEM aparecer no drawer) */}
+        {/* Telas de boas-vindas */}
         <Drawer.Screen
           name="BoasVindas1"
           options={{
@@ -624,7 +725,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE OBJETIVO - SEM DRAWER */}
         <Drawer.Screen
           name="ObjetivoScreen"
           options={{
@@ -635,7 +735,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE SEXO - SEM DRAWER */}
         <Drawer.Screen
           name="SexoScreen"
           options={{
@@ -646,7 +745,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE IDADE - SEM DRAWER */}
         <Drawer.Screen
           name="IdadeScreen"
           options={{
@@ -657,7 +755,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE ALTURA - SEM DRAWER */}
         <Drawer.Screen
           name="AlturaScreen"
           options={{
@@ -668,7 +765,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE PESO - SEM DRAWER */}
         <Drawer.Screen
           name="PesoScreen"
           options={{
@@ -679,7 +775,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE TREINO - SEM DRAWER */}
         <Drawer.Screen
           name="TreinoScreen"
           options={{
@@ -690,7 +785,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE FREQUÊNCIA DE TREINO - SEM DRAWER */}
         <Drawer.Screen
           name="FrequenciaScreen"
           options={{
@@ -701,7 +795,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE ÁGUA - SEM DRAWER */}
         <Drawer.Screen
           name="AguaScreen"
           options={{
@@ -712,7 +805,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE CARDIO - SEM DRAWER */}
         <Drawer.Screen
           name="CardioScreen"
           options={{
@@ -723,7 +815,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE REGISTRAR TREINO - SEM DRAWER */}
         <Drawer.Screen
           name="RegistrarTreinoScreen"
           options={{
@@ -734,7 +825,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE REGISTRAR CARDIO - SEM DRAWER */}
         <Drawer.Screen
           name="RegistrarCardioScreen"
           options={{
@@ -745,7 +835,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE ESTRUTURA DE TREINOS - SEM DRAWER */}
         <Drawer.Screen
           name="EstruturaTreinosScreen"
           options={{
@@ -756,7 +845,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE CONFIGURAR TREINO - SEM DRAWER */}
         <Drawer.Screen
           name="ConfigurarTreinoScreen"
           options={{
@@ -768,7 +856,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE ORGANIZAÇÃO DE TREINOS - SEM DRAWER */}
         <Drawer.Screen
           name="OrganizacaoTreinosScreen"
           options={{
@@ -779,7 +866,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE DIAS FIXOS - SEM DRAWER */}
         <Drawer.Screen
           name="DiasFixosScreen"
           options={{
@@ -790,7 +876,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE SEQUÊNCIA - SEM DRAWER */}
         <Drawer.Screen
           name="SequenciaScreen"
           options={{
@@ -801,7 +886,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE CONTEXTO BF - SEM DRAWER */}
         <Drawer.Screen
           name="ContextoBFScreen"
           options={{
@@ -812,7 +896,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA: QUADRO CALCULAR BF GENÉRICO - SEM DRAWER */}
         <Drawer.Screen
           name="QuadroCalcularBFScreen"
           options={{
@@ -824,7 +907,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA: QUADRO CALCULAR BF DIAS FIXOS - SEM DRAWER */}
         <Drawer.Screen
           name="QuadroCalcularBFScreenDiasFixos"
           options={{
@@ -836,7 +918,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA: QUADRO CALCULAR BF SEQUÊNCIA - SEM DRAWER */}
         <Drawer.Screen
           name="QuadroCalcularBFScreenSequencia"
           options={{
@@ -848,7 +929,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE PESCOÇO - SEM DRAWER */}
         <Drawer.Screen
           name="PescocoScreen"
           options={{
@@ -859,7 +939,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE CINTURA - SEM DRAWER */}
         <Drawer.Screen
           name="CinturaScreen"
           options={{
@@ -870,7 +949,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE QUADRIL - SEM DRAWER */}
         <Drawer.Screen
           name="QuadrilScreen"
           options={{
@@ -881,7 +959,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE CÁLCULO BF - SEM DRAWER */}
         <Drawer.Screen
           name="CalculoBFScreen"
           options={{
@@ -892,7 +969,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA DE FINALIZAÇÃO - SEM DRAWER */}
         <Drawer.Screen
           name="FinalizacaoScreen"
           options={{
@@ -903,7 +979,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* NOVA TELA DE PREPARANDO RESULTADOS - SEM DRAWER */}
         <Drawer.Screen
           name="PreparandoResultadosScreen"
           options={{
@@ -915,7 +990,6 @@ export default function DrawerLayout() {
           }}
         />
 
-        {/* TELA INICIAL - SEM DRAWER */}
         <Drawer.Screen
           name="index"
           options={{
@@ -936,7 +1010,6 @@ export default function DrawerLayout() {
           }}
         />
         
-        {/* TELA DE CADASTRO */}
         <Drawer.Screen
           name="CadastroScreen"
           options={{
@@ -1046,13 +1119,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E88E5",
     padding: 25,
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 25,
     borderBottomRightRadius: 25,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    alignItems: "center",
   },
   avatarContainer: {
     width: 80,
@@ -1085,60 +1159,29 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   appName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
+    textAlign: "center",
   },
   appSubtitle: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
     fontStyle: "italic",
+    textAlign: "center",
   },
   userName: {
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 2,
+    marginBottom: 4,
+    textAlign: "center",
   },
   userEmail: {
     fontSize: 13,
     color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 8,
-  },
-  dadosCompletosBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(76, 175, 80, 0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "rgba(76, 175, 80, 0.3)",
-  },
-  dadosCompletosText: {
-    fontSize: 12,
-    color: "#4CAF50",
-    fontWeight: "600",
-    marginLeft: 6,
-  },
-  dadosIncompletosBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 152, 0, 0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "rgba(255, 152, 0, 0.3)",
-  },
-  dadosIncompletosText: {
-    fontSize: 12,
-    color: "#FF9800",
-    fontWeight: "600",
-    marginLeft: 6,
+    textAlign: "center",
   },
   scrollContainer: {
     flex: 1,
