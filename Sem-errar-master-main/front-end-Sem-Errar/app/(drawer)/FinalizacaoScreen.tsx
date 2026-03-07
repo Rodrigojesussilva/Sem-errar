@@ -24,8 +24,8 @@ const { width } = Dimensions.get('window');
 
 // ============ CONSTANTES ============
 const COLORS = {
-  primary: '#8B5CF6',
-  secondary: '#EC4899',
+  primary: '#622db2',
+  secondary: '#4ecdc4',
   accent: '#10B981',
   dot: '#C4B5FD',
   line: 'rgba(139, 92, 246, 0.15)',
@@ -593,42 +593,45 @@ export default function AnaliseScreen() {
         backgroundColor: 'transparent'
       }}>
         <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 20,
-          paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
-          paddingBottom: 15
-        }}>
-          <Pressable onPress={handleEditar} style={{
-            flexDirection: 'row',
-            alignItems: 'center'
-          }}>
-            <View style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: '#FFFFFF',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: COLORS.line,
-              elevation: 3,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4
-            }}>
-              <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
-            </View>
-            <Text style={{
-              color: COLORS.primary,
-              marginLeft: 10,
-              fontWeight: '700',
-              fontSize: 16
-            }}>Editar</Text>
-          </Pressable>
-        </View>
+  paddingHorizontal: 25,
+  paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+  zIndex: 100,
+}}>
+  <Pressable
+    onPress={handleEditar}
+    style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start'
+    }}
+  >
+    <View style={{
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#fff',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: COLORS.line,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+    }}>
+      <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+    </View>
+
+    <Text style={{
+      color: COLORS.primary,
+      marginLeft: 10,
+      fontWeight: '700',
+      fontSize: 16
+    }}>
+      Editar
+    </Text>
+  </Pressable>
+</View>
       </SafeAreaView>
 
       <Animated.ScrollView
@@ -689,7 +692,7 @@ export default function AnaliseScreen() {
               alignItems: 'center',
               backgroundColor: 'rgba(255,255,255,0.2)',
               paddingVertical: 8,
-              paddingHorizontal: 16,
+              paddingHorizontal: 25,
               borderRadius: 30,
               gap: 8,
             }}>
@@ -1381,47 +1384,48 @@ export default function AnaliseScreen() {
 
       {/* Botão Flutuante */}
       <SafeAreaView style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 20,
-        paddingBottom: Platform.OS === 'ios' ? 70 : 60,
-        backgroundColor: 'transparent',
-        pointerEvents: 'box-none',
-        zIndex: 100
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  paddingHorizontal: 25,
+  paddingBottom: 40,
+  backgroundColor: 'transparent',
+  zIndex: 100
+}}>
+  <Pressable
+    onPress={handleComecar}
+    style={{
+      width: '100%',
+      borderRadius: 22,
+      overflow: 'hidden',
+      elevation: 4,
+    }}
+  >
+    <LinearGradient
+      colors={['#4ecdc4', '#622db2', '#4b208c']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{
+        paddingVertical: 18,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10
+      }}
+    >
+      <FontAwesome name="rocket" size={18} color="#fff" />
+
+      <Text style={{
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '800'
       }}>
-        <Pressable style={{
-          borderRadius: 30,
-          overflow: 'hidden',
-          shadowColor: COLORS.primary,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
-          elevation: 10
-        }} onPress={handleComecar}>
-          <LinearGradient
-            colors={[COLORS.secondary, COLORS.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 18,
-              gap: 12
-            }}
-          >
-            <FontAwesome name="rocket" size={20} color="#FFF" />
-            <Text style={{
-              color: '#FFFFFF',
-              fontSize: 18,
-              fontWeight: '800',
-              letterSpacing: -0.3
-            }}>Começar Jornada</Text>
-          </LinearGradient>
-        </Pressable>
-      </SafeAreaView>
+        Começar Jornada
+      </Text>
+    </LinearGradient>
+  </Pressable>
+</SafeAreaView>
     </View>
   );
 }
