@@ -59,11 +59,15 @@ const converterParaCm = (ft: number, inches: number): number =>
   (ft * 30.48) + (inches * 2.54);
 
 const getClassificacaoIMC = (imc: number) => {
-  if (imc < 18.5) return { classificacao: 'Baixo Peso', cor: '#3B82F6', descricao: 'Abaixo do peso ideal', emoji: '⚡' };
-  if (imc < 25) return { classificacao: 'Peso Saudável', cor: '#10B981', descricao: 'Peso ideal', emoji: '💚' };
-  if (imc < 30) return { classificacao: 'Sobrepeso', cor: '#F59E0B', descricao: 'Acima do peso ideal', emoji: '⚠️' };
-  if (imc < 35) return { classificacao: 'Obesidade I', cor: '#EF4444', descricao: 'Obesidade moderada', emoji: '🔴' };
-  return { classificacao: 'Obesidade II+', cor: '#DC2626', descricao: 'Obesidade severa', emoji: '⛔' };
+  if (imc < 18.5) return { classificacao: 'Abaixo do peso', cor: '#3B82F6', descricao: 'Abaixo do peso', emoji: '🍃' };
+
+  if (imc < 25) return { classificacao: 'Peso ideal', cor: '#10B981', descricao: 'Peso ideal', emoji: '✅' };
+
+  if (imc < 30) return { classificacao: 'Levemente acima do peso', cor: '#EAB308', descricao: 'Levemente acima do peso', emoji: '🟡' };
+
+  if (imc < 35) return { classificacao: 'Acima do peso', cor: '#F97316', descricao: 'Acima do peso', emoji: '🟠' };
+
+  return { classificacao: 'Obesidade', cor: '#DC2626', descricao: 'Obesidade', emoji: '🔴' };
 };
 
 const getClassificacaoBF = (bf: number, isMale: boolean) => {
@@ -211,16 +215,7 @@ const IMCMeter = ({ imc, classificacao }: any) => {
           }} />
         </View>
       </View>
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 4,
-      }}>
-        <Text style={{ fontSize: 10, color: COLORS.textLight }}>Abaixo</Text>
-        <Text style={{ fontSize: 10, color: COLORS.textLight }}>Ideal</Text>
-        <Text style={{ fontSize: 10, color: COLORS.textLight }}>Sobrepeso</Text>
-        <Text style={{ fontSize: 10, color: COLORS.textLight }}>Obesidade</Text>
-      </View>
+
     </View>
   );
 };
@@ -593,45 +588,45 @@ export default function AnaliseScreen() {
         backgroundColor: 'transparent'
       }}>
         <View style={{
-  paddingHorizontal: 25,
-  paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
-  zIndex: 100,
-}}>
-  <Pressable
-    onPress={handleEditar}
-    style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start'
-    }}
-  >
-    <View style={{
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: '#fff',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: COLORS.line,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-    }}>
-      <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
-    </View>
+          paddingHorizontal: 25,
+          paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+          zIndex: 100,
+        }}>
+          <Pressable
+            onPress={handleEditar}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              alignSelf: 'flex-start'
+            }}
+          >
+            <View style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: '#fff',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: COLORS.line,
+              elevation: 3,
+              shadowColor: '#000',
+              shadowOpacity: 0.1,
+              shadowRadius: 3,
+            }}>
+              <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+            </View>
 
-    <Text style={{
-      color: COLORS.primary,
-      marginLeft: 10,
-      fontWeight: '700',
-      fontSize: 16
-    }}>
-      Editar
-    </Text>
-  </Pressable>
-</View>
+            <Text style={{
+              color: COLORS.primary,
+              marginLeft: 10,
+              fontWeight: '700',
+              fontSize: 16
+            }}>
+              Editar
+            </Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
 
       <Animated.ScrollView
@@ -722,40 +717,24 @@ export default function AnaliseScreen() {
             shadowRadius: 8,
           }}
         >
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-            }}>
-              <FontAwesome name="balance-scale" size={20} color={COLORS.primary} />
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: COLORS.textMain,
-              }}>Índice de Massa Corporal</Text>
-            </View>
-            <View style={{
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              borderRadius: 12,
-              backgroundColor: `${metricas.classificacaoIMC.cor}15`
-            }}>
-              <Text style={{
-                fontSize: 12,
-                fontWeight: '600',
-                color: metricas.classificacaoIMC.cor
-              }}>
-                {metricas.classificacaoIMC.emoji} {metricas.classificacaoIMC.classificacao}
-              </Text>
-            </View>
-          </View>
+      <View style={{
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: 16,
+  flexDirection: 'row',
+  gap: 8
+}}>
+  <FontAwesome name="heartbeat" size={22} color={COLORS.primary} />
 
+  <Text style={{
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textMain,
+    textAlign: 'center',
+  }}>
+    Seu Índice Corporal
+  </Text>
+</View>
           <View style={{
             flexDirection: 'row',
             alignItems: 'baseline',
@@ -781,7 +760,7 @@ export default function AnaliseScreen() {
             marginBottom: 20,
             color: metricas.classificacaoIMC.cor
           }}>
-            {metricas.classificacaoIMC.descricao}
+            {metricas.classificacaoIMC.emoji} {metricas.classificacaoIMC.descricao}
           </Text>
 
           <IMCMeter imc={metricas.imc} classificacao={metricas.classificacaoIMC} />
@@ -1384,48 +1363,48 @@ export default function AnaliseScreen() {
 
       {/* Botão Flutuante */}
       <SafeAreaView style={{
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  paddingHorizontal: 25,
-  paddingBottom: 40,
-  backgroundColor: 'transparent',
-  zIndex: 100
-}}>
-  <Pressable
-    onPress={handleComecar}
-    style={{
-      width: '100%',
-      borderRadius: 22,
-      overflow: 'hidden',
-      elevation: 4,
-    }}
-  >
-    <LinearGradient
-      colors={['#4ecdc4', '#622db2', '#4b208c']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{
-        paddingVertical: 18,
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 10
-      }}
-    >
-      <FontAwesome name="rocket" size={18} color="#fff" />
-
-      <Text style={{
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '800'
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 25,
+        paddingBottom: 40,
+        backgroundColor: 'transparent',
+        zIndex: 100
       }}>
-        Começar Jornada
-      </Text>
-    </LinearGradient>
-  </Pressable>
-</SafeAreaView>
+        <Pressable
+          onPress={handleComecar}
+          style={{
+            width: '100%',
+            borderRadius: 22,
+            overflow: 'hidden',
+            elevation: 4,
+          }}
+        >
+          <LinearGradient
+            colors={['#4ecdc4', '#622db2', '#4b208c']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              paddingVertical: 18,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 10
+            }}
+          >
+            <FontAwesome name="rocket" size={18} color="#fff" />
+
+            <Text style={{
+              color: '#fff',
+              fontSize: 18,
+              fontWeight: '800'
+            }}>
+              Começar Jornada
+            </Text>
+          </LinearGradient>
+        </Pressable>
+      </SafeAreaView>
     </View>
   );
 }
