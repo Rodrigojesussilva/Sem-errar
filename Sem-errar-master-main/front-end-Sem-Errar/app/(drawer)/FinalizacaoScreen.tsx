@@ -828,18 +828,27 @@ export default function AnaliseScreen() {
           }}
         >
           <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 16,
-          }}>
-            <FontAwesome name="balance-scale" size={20} color={COLORS.primary} />
-            <Text style={{
-              fontSize: 16,
-              fontWeight: '700',
-              color: COLORS.textMain,
-            }}>Peso Ideal</Text>
-          </View>
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexDirection: 'row',
+  gap: 8,
+  marginBottom: 18,
+}}>
+  <FontAwesome
+    name="bullseye"
+    size={22}
+    color={COLORS.success}
+  />
+
+  <Text style={{
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textMain,
+    textAlign: 'center',
+  }}>
+    Seu Peso Ideal
+  </Text>
+</View>
 
           <View style={{
             alignItems: 'center',
@@ -1039,18 +1048,33 @@ export default function AnaliseScreen() {
           }}
         >
           <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 20,
-          }}>
-            <FontAwesome name="heart" size={20} color={COLORS.purple} />
-            <Text style={{
-              fontSize: 16,
-              fontWeight: '700',
-              color: COLORS.textMain,
-            }}>Composição Corporal</Text>
-          </View>
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexDirection: 'row',
+  gap: 10,
+  marginBottom: 22,
+}}>
+
+  <View style={{
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: `${COLORS.purple}15`,
+    justifyContent: 'center',
+    alignItems: 'center'
+  }}>
+    <FontAwesome name="heartbeat" size={16} color={COLORS.purple} />
+  </View>
+
+  <Text style={{
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textMain,
+  }}>
+    Seu Percentual de Gordura
+  </Text>
+
+</View>
 
           {/* Círculo de BF centralizado e maior */}
           <View style={{
