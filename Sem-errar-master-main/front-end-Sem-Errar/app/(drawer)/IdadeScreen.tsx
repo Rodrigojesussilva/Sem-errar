@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Alert,
   Pressable,
@@ -90,6 +90,16 @@ export default function IdadeScreen() {
   const [ano, setAno] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [idade, setIdade] = useState<number | null>(null);
+
+  // Reseta todos os campos quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setDia('');
+      setMes('');
+      setAno('');
+      setIdade(null);
+    }, [])
+  );
 
   const dias = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
   const meses = [
@@ -282,7 +292,7 @@ const styles = StyleSheet.create({
   modalOptionText: { fontSize: 17, color: '#555', fontWeight: '500' },
   modalOptionTextSelected: { color: COLORS.primary, fontWeight: '800' },
   feedbackCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, backgroundColor: '#F8F4FF', padding: 18, borderRadius: 20, borderWidth: 1, borderColor: COLORS.line },
-  feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700' }, // Removido a cor fixa daqui para usar inline
+  feedbackText: { marginLeft: 10, fontSize: 16, fontWeight: '700' },
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },

@@ -1,8 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Dimensions,
@@ -36,29 +36,15 @@ export default function AlturaScreen() {
   const [alturaIn, setAlturaIn] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    carregarAlturaSalva();
-  }, []);
-
-  const carregarAlturaSalva = async () => {
-    try {
-      const alturaSalva = await AsyncStorage.getItem('@altura');
-      const unidadeSalva = await AsyncStorage.getItem('@alturaUnidade');
-      
-      if (unidadeSalva === 'ft') {
-        setUnidadeSelecionada('ft');
-        const ftSalva = await AsyncStorage.getItem('@alturaFt');
-        const inSalva = await AsyncStorage.getItem('@alturaIn');
-        if (ftSalva) setAlturaFt(ftSalva);
-        if (inSalva) setAlturaIn(inSalva);
-      } else {
-        setUnidadeSelecionada('cm');
-        if (alturaSalva) setAlturaCm(alturaSalva);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar altura:', error);
-    }
-  };
+  // Reseta todos os campos quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setAlturaCm('');
+      setUnidadeSelecionada('cm');
+      setAlturaFt('');
+      setAlturaIn('');
+    }, [])
+  );
 
   const formatarAlturaVisual = (val: string) => {
     if (!val) return '';
@@ -83,9 +69,14 @@ export default function AlturaScreen() {
         await AsyncStorage.setItem('@alturaUnidade', unidadeSelecionada);
         if (unidadeSelecionada === 'cm') {
           await AsyncStorage.setItem('@altura', alturaCm);
+          // Limpa os valores antigos de ft/in se existirem
+          await AsyncStorage.removeItem('@alturaFt');
+          await AsyncStorage.removeItem('@alturaIn');
         } else {
           await AsyncStorage.setItem('@alturaFt', alturaFt || '0');
           await AsyncStorage.setItem('@alturaIn', alturaIn || '0');
+          // Limpa o valor antigo de cm se existir
+          await AsyncStorage.removeItem('@altura');
         }
         router.push('/(drawer)/PesoScreen');
       } catch (error) {

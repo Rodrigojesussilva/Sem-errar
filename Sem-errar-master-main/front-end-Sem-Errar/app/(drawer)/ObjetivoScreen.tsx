@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -30,6 +30,14 @@ export default function ObjetivoScreen() {
   const router = useRouter();
   const [objetivoSelecionado, setObjetivoSelecionado] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Limpa a seleção sempre que a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      // Reseta o estado para null quando a tela for focada
+      setObjetivoSelecionado(null);
+    }, [])
+  );
 
   const objetivos = [
     {
@@ -119,7 +127,6 @@ export default function ObjetivoScreen() {
           </View>
 
           <Text style={styles.title}>Qual é seu principal objetivo agora?</Text>
-          {/* Texto auxiliar removido conforme solicitado */}
 
           <View style={styles.opcoesContainer}>
             {objetivos.map((objetivo) => {
@@ -245,7 +252,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.textMain,
     textAlign: 'center',
-    marginBottom: 40, // Aumentado para compensar a falta do subtítulo
+    marginBottom: 40,
   },
   opcoesContainer: { gap: 15, marginBottom: 35 },
   opcaoItem: {

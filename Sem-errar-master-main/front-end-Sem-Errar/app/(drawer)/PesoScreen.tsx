@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -35,26 +35,14 @@ export default function PesoScreen() {
   const [pesoLb, setPesoLb] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    carregarPesoSalvo();
-  }, []);
-
-  const carregarPesoSalvo = async () => {
-    try {
-      const unidadeSalva = await AsyncStorage.getItem('@pesoUnidade');
-      if (unidadeSalva === 'kg') {
-        setUnidadeSelecionada('kg');
-        const pesoKgSalvo = await AsyncStorage.getItem('@pesoKg');
-        if (pesoKgSalvo) setPesoKg(pesoKgSalvo);
-      } else if (unidadeSalva === 'lb') {
-        setUnidadeSelecionada('lb');
-        const pesoLbSalvo = await AsyncStorage.getItem('@pesoLb');
-        if (pesoLbSalvo) setPesoLb(pesoLbSalvo);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar peso:', error);
-    }
-  };
+  // Reseta todos os campos quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setPesoKg('');
+      setUnidadeSelecionada('kg');
+      setPesoLb('');
+    }, [])
+  );
 
   const converterParaKg = (lb: string): string => {
     const lbNum = parseFloat(lb) || 0;
@@ -70,9 +58,13 @@ export default function PesoScreen() {
         if (unidadeSelecionada === 'kg') {
           await AsyncStorage.setItem('@pesoKg', pesoKg);
           await AsyncStorage.setItem('@pesoEmKg', pesoKg);
+          // Limpa valores antigos de lb
+          await AsyncStorage.removeItem('@pesoLb');
         } else {
           await AsyncStorage.setItem('@pesoLb', pesoLb);
           await AsyncStorage.setItem('@pesoEmKg', converterParaKg(pesoLb));
+          // Limpa valores antigos de kg
+          await AsyncStorage.removeItem('@pesoKg');
         }
         router.push('/(drawer)/TreinoScreen');
       } catch (error) {

@@ -116,7 +116,7 @@ export default function BoasVindas4() {
               >
                 <View style={styles.buttonContent}>
                   <MaterialCommunityIcons name="bolt" size={24} color="#FFFFFF" />
-                  <Text style={styles.primaryText}>Iniciar Desafio</Text>
+                  <Text style={styles.primaryText}>Vamos lá</Text>
                 </View>
               </LinearGradient>
             </Pressable>

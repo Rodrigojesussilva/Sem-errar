@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Dimensions,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
@@ -33,17 +33,12 @@ export default function PescocoScreen() {
   const [pescocoCm, setPescocoCm] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const carregarMedida = async () => {
-      try {
-        const salvo = await AsyncStorage.getItem('@pescocoCm');
-        if (salvo) setPescocoCm(salvo);
-      } catch (error) {
-        console.error('Erro ao carregar:', error);
-      }
-    };
-    carregarMedida();
-  }, []);
+  // Resetar o valor quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setPescocoCm('');
+    }, [])
+  );
 
   const handleProximo = async () => {
     // Validação básica de preenchimento
@@ -106,7 +101,10 @@ export default function PescocoScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Image 
@@ -137,7 +135,7 @@ export default function PescocoScreen() {
                 placeholder="00"
                 placeholderTextColor="#CCC"
                 keyboardType="number-pad"
-                maxLength={3} // Alterado para 3 dígitos
+                maxLength={3}
               />
               <Text style={[styles.cmLabel, { color: COLORS.dot }]}>cm</Text>
             </View>
@@ -179,6 +177,9 @@ export default function PescocoScreen() {
               )}
             </LinearGradient>
           </Pressable>
+          
+          {/* ESPAÇO EXTRA PARA ROLAGEM */}
+          <View style={styles.extraScrollSpace} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -190,13 +191,27 @@ const styles = StyleSheet.create({
   visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', zIndex: 0 },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
+  
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 25, 
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, 
+    zIndex: 100 
+  },
+  
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
   stepIndicator: { backgroundColor: 'rgba(78, 205, 196, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   stepText: { color: COLORS.dot, fontWeight: '800', fontSize: 12 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
+  
+  scrollContent: { 
+    flexGrow: 1, 
+    paddingHorizontal: 25
+  },
+  
   content: { width: '100%', zIndex: 10 },
   logoContainer: { alignItems: 'center', marginBottom: 15 },
   logo: { width: width * 0.4, height: 50 },
@@ -206,7 +221,7 @@ const styles = StyleSheet.create({
   imageIllustration: { width: '100%', height: '100%' },
   inputSection: { alignItems: 'center', marginBottom: 25 },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 25, height: 70, borderRadius: 20, borderWidth: 2.5, width: '65%', justifyContent: 'center', elevation: 4 },
-  input: { fontSize: 32, fontWeight: '800', textAlign: 'center', width: 80 }, // Largura aumentada para 3 dígitos
+  input: { fontSize: 32, fontWeight: '800', textAlign: 'center', width: 80 },
   cmLabel: { fontSize: 22, fontWeight: '900', marginLeft: 8 },
   inputHelpText: { fontSize: 14, color: '#4ecdc4', marginTop: 12, fontWeight: '700', textAlign: 'center', fontStyle: 'italic' },
   instructionsContainer: { backgroundColor: 'rgba(255,255,255,0.9)', padding: 18, borderRadius: 22, borderWidth: 2, marginBottom: 25, elevation: 2 },
@@ -218,4 +233,10 @@ const styles = StyleSheet.create({
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center', minHeight: 60, justifyContent: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  
+  // Espaço extra para rolagem
+  extraScrollSpace: {
+    height: height * 0.05, 
+    width: '100%',
+  },
 });
