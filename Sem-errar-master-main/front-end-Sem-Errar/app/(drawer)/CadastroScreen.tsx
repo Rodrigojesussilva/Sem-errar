@@ -77,7 +77,6 @@ export default function CadastroScreen() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [confirmarEmail, setConfirmarEmail] = useState('');
-  const [idade, setIdade] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
 
@@ -118,9 +117,9 @@ export default function CadastroScreen() {
   const nomeRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const confirmarEmailRef = useRef<TextInput>(null);
-  const idadeRef = useRef<TextInput>(null);
   const senhaRef = useRef<TextInput>(null);
   const confirmarSenhaRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Elementos estáticos de fundo (igual à tela LoginScreen)
   const renderStaticBackground = () => (
@@ -355,11 +354,6 @@ export default function CadastroScreen() {
         console.log('✅ userData carregado com sucesso!');
         setUserData(dadosEncontrados);
 
-        if (dadosEncontrados.idade) {
-          console.log('📅 Idade encontrada no storage:', dadosEncontrados.idade);
-          setIdade(dadosEncontrados.idade.toString());
-        }
-
         if (dadosEncontrados.nome) {
           setNome(dadosEncontrados.nome);
         }
@@ -462,7 +456,7 @@ export default function CadastroScreen() {
   // ============ FUNÇÕES DE VALIDAÇÃO ============
 
   const validarFormulario = useCallback(() => {
-    if (!nome || !email || !confirmarEmail || !idade || !senha || !confirmarSenha) {
+    if (!nome || !email || !confirmarEmail || !senha || !confirmarSenha) {
       setFeedback({
         visible: true,
         title: 'Campos obrigatórios',
@@ -493,17 +487,6 @@ export default function CadastroScreen() {
       return false;
     }
 
-    const idadeNum = parseInt(idade);
-    if (isNaN(idadeNum) || idadeNum < 14 || idadeNum > 120) {
-      setFeedback({
-        visible: true,
-        title: 'Idade inválida',
-        message: 'A idade deve ser entre 14 e 120 anos.',
-        success: false,
-      });
-      return false;
-    }
-
     const validacaoSenha = validarSenhaCompleta(senha);
     if (!validacaoSenha.valida) {
       setFeedback({
@@ -526,11 +509,9 @@ export default function CadastroScreen() {
     }
 
     return true;
-  }, [nome, email, confirmarEmail, idade, senha, confirmarSenha, validarSenhaCompleta]);
+  }, [nome, email, confirmarEmail, senha, confirmarSenha, validarSenhaCompleta]);
 
   // ============ FUNÇÃO DE ENVIO ============
-
-  // Substitua a função handleSubmit existente por esta:
 
   const handleSubmit = async () => {
     Keyboard.dismiss();
@@ -546,8 +527,7 @@ export default function CadastroScreen() {
 
       console.log('\n🚀 ===== INICIANDO PROCESSO DE CADASTRO =====');
 
-      // Primeiro, enviar e-mail de verificação
-      // Enviar e-mail de verificação - URL CORRIGIDA
+      // Enviar e-mail de verificação
       const emailResponse = await fetch(`${API_URL}/usuarios/enviar-codigo-verificacao`, {
         method: 'POST',
         headers: {
@@ -557,7 +537,7 @@ export default function CadastroScreen() {
           email,
           nome
         }),
-      });;
+      });
 
       const emailData = await emailResponse.json();
 
@@ -574,7 +554,6 @@ export default function CadastroScreen() {
       formData.append('nome', nome);
       formData.append('email', email);
       formData.append('senha', senha);
-      formData.append('idade', idade);
       formData.append('tipoUsuario', '0');
 
       // Adicionar foto se existir
@@ -696,7 +675,7 @@ export default function CadastroScreen() {
   👤 DADOS PESSOAIS
   ••••••••••••••••••
   📋 Nome: ${userDataEncontrado.nome || nome || 'Não informado'}
-  🎂 Idade: ${userDataEncontrado.idade || userDataEncontrado.faixaIdade || idade || 'Não informada'}
+  🎂 Idade: ${userDataEncontrado.idade || userDataEncontrado.faixaIdade || 'Não informada'}
   ⚥ Sexo: ${userDataEncontrado.sexo === 'M' ? 'Masculino' : userDataEncontrado.sexo === 'F' ? 'Feminino' : 'Não informado'}
 
   📏 MEDIDAS ATUAIS
@@ -827,7 +806,6 @@ export default function CadastroScreen() {
             try {
               await AsyncStorage.clear();
               setUserData(null);
-              setIdade('');
               setNome('');
               setPhoto(null);
               Alert.alert('Sucesso', 'Storage limpo com sucesso!');
@@ -880,19 +858,40 @@ export default function CadastroScreen() {
         </View>
 
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={true}
+          overScrollMode="always"
+          decelerationRate="normal"
+          scrollEventThrottle={16}
         >
           <View style={styles.content}>
-            {/* Logo */}
+            {/* Logo e botões de debug */}
             <View style={styles.logoContainer}>
               <Image
                 source={require('@/assets/images/completa-sem-fundo1.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
-              <Text style={styles.slogan}>Crie sua conta gratuitamente</Text>
+              
+              {/* Botões de debug abaixo da logo */}
+              {__DEV__ && (
+                <View style={styles.debugContainer}>
+                  <TouchableOpacity
+                    style={[styles.debugButton, styles.debugButtonVer]}
+                    onPress={visualizarDadosStorage}
+                  >
+                    <FontAwesome name="bar-chart" size={16} color="#1E88E5" />
+                    <Text style={[styles.debugButtonText, { color: '#1E88E5' }]}>Meu Relatório</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.debugButton, styles.debugButtonLimpar]} onPress={limparStorage}>
+                    <FontAwesome name="trash" size={16} color="#FF4444" />
+                    <Text style={[styles.debugButtonText, { color: '#FF4444' }]}>Limpar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             {/* Card de Cadastro */}
@@ -988,30 +987,7 @@ export default function CadastroScreen() {
                       value={confirmarEmail}
                       onChangeText={setConfirmarEmail}
                       returnKeyType="next"
-                      onSubmitEditing={() => idadeRef.current?.focus()}
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-
-                {/* Idade */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Idade *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="calendar-outline" size={20} color="#888" style={styles.inputIcon} />
-                    <TextInput
-                      ref={idadeRef}
-                      style={styles.input}
-                      placeholder="Sua idade"
-                      placeholderTextColor="#999"
-                      keyboardType="numeric"
-                      value={idade}
-                      onChangeText={setIdade}
-                      returnKeyType="next"
-                      onSubmitEditing={() => {
-                        setSenhaTocada(true);
-                        senhaRef.current?.focus();
-                      }}
+                      onSubmitEditing={() => senhaRef.current?.focus()}
                       editable={!loading}
                     />
                   </View>
@@ -1131,21 +1107,6 @@ export default function CadastroScreen() {
                   <Text style={styles.requisitosBasicosText}>• Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial</Text>
                 </View>
 
-                {/* Indicador de Dados Carregados */}
-                {userData ? (
-                  <View style={styles.dadosCarregados}>
-                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                    <Text style={styles.dadosCarregadosText}>Dados do onboarding carregados</Text>
-                  </View>
-                ) : (
-                  <View style={[styles.dadosCarregados, styles.dadosNaoCarregados]}>
-                    <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
-                    <Text style={[styles.dadosCarregadosText, { color: '#FF6B6B' }]}>
-                      Nenhum dado do onboarding encontrado
-                    </Text>
-                  </View>
-                )}
-
                 {/* Botão Cadastrar */}
                 <Pressable
                   onPress={handleSubmit}
@@ -1186,23 +1147,6 @@ export default function CadastroScreen() {
                 <Text style={styles.termsLink}>Política de Privacidade</Text>.
               </Text>
             </View>
-
-            {/* Botões de debug (apenas em desenvolvimento) */}
-            {__DEV__ && (
-              <View style={styles.debugContainer}>
-                <TouchableOpacity
-                  style={[styles.debugButton, styles.debugButtonVer]}
-                  onPress={visualizarDadosStorage}
-                >
-                  <FontAwesome name="bar-chart" size={16} color="#1E88E5" />
-                  <Text style={[styles.debugButtonText, { color: '#1E88E5' }]}>Meu Relatório</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.debugButton, styles.debugButtonLimpar]} onPress={limparStorage}>
-                  <FontAwesome name="trash" size={16} color="#FF4444" />
-                  <Text style={[styles.debugButtonText, { color: '#FF4444' }]}>Limpar</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </ScrollView>
 
@@ -1298,6 +1242,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 20,
   },
   content: {
     flex: 1,
@@ -1310,15 +1255,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: width * 0.8,
-    height: 120,
-  },
-  slogan: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
-    fontStyle: 'italic',
-    textAlign: 'center',
+    width: width * 0.9, // Aumentado de 0.8 para 0.9
+    height: 150, // Aumentado de 120 para 150
   },
   card: {
     backgroundColor: '#fff',
@@ -1585,26 +1523,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 4,
     lineHeight: 18,
-  },
-  dadosCarregados: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    padding: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-  },
-  dadosNaoCarregados: {
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
-    borderColor: '#FF6B6B',
-  },
-  dadosCarregadosText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4CAF50',
   },
   buttonWrapper: {
     width: '100%',
