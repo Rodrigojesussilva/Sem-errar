@@ -23,6 +23,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  SafeAreaView,
 } from 'react-native';
 import API_URL from '../../conf/api';
 
@@ -38,14 +39,6 @@ const COLORS = {
 };
 
 // ============ INTERFACES E TIPOS ============
-interface ObjetivoCompleto {
-  id: string;
-  title: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-}
-
 interface UserData {
   nome?: string;
   objetivo: string;
@@ -121,9 +114,9 @@ export default function CadastroScreen() {
   const confirmarSenhaRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Elementos estáticos de fundo (igual à tela LoginScreen)
+  // Elementos estáticos de fundo
   const renderStaticBackground = () => (
-    <View style={styles.visualArea}>
+    <View style={styles.visualArea} pointerEvents="none">
       <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3, transform: [{ rotate: '15deg' }] }]}>
         <View style={[styles.staticDot, { bottom: '20%', left: '10%' }]} />
       </View>
@@ -138,7 +131,6 @@ export default function CadastroScreen() {
 
   // ============ FUNÇÕES DE SENHA ============
 
-  // Função para verificar requisitos em tempo real
   const verificarRequisitosSenha = useCallback((senha: string) => {
     const novosRequisitos = {
       tamanho: senha.length >= 8,
@@ -152,13 +144,11 @@ export default function CadastroScreen() {
     return novosRequisitos;
   }, []);
 
-  // Função para atualizar requisitos (chamada apenas no onChangeText)
   const atualizarRequisitosSenha = useCallback((text: string) => {
     const novosRequisitos = verificarRequisitosSenha(text);
     setRequisitosSenha(novosRequisitos);
   }, [verificarRequisitosSenha]);
 
-  // Função para verificar a força da senha
   const getForcaSenhaInfo = useCallback((senha: string) => {
     if (!senha) return { cor: '#E0E0E0', texto: 'Digite uma senha', porcentagem: 0, nivel: 0 };
 
@@ -188,7 +178,6 @@ export default function CadastroScreen() {
     }
   }, [verificarRequisitosSenha]);
 
-  // Componente Indicador de Força da Senha
   const IndicadorForcaSenha = React.memo(() => {
     const forcaInfo = getForcaSenhaInfo(senha);
 
@@ -210,7 +199,6 @@ export default function CadastroScreen() {
     );
   });
 
-  // Componente Lista de Requisitos
   const ListaRequisitosSenha = React.memo(() => {
     const requisitos = [
       { key: 'tamanho', texto: '8+ caracteres', descricao: 'Mínimo 8 caracteres' },
@@ -262,7 +250,6 @@ export default function CadastroScreen() {
           );
         })}
 
-        {/* Barra de progresso dos requisitos */}
         {senha.length > 0 && (
           <View style={styles.progressoRequisitos}>
             <View style={styles.progressoBarraContainer}>
@@ -284,7 +271,6 @@ export default function CadastroScreen() {
     );
   });
 
-  // Função para validar senha completa
   const validarSenhaCompleta = useCallback((senha: string): { valida: boolean; mensagens: string[] } => {
     const erros: string[] = [];
     const reqs = verificarRequisitosSenha(senha);
@@ -312,18 +298,12 @@ export default function CadastroScreen() {
   // ============ FUNÇÕES DE CARREGAMENTO ============
 
   useEffect(() => {
-    console.log('🔄 Componente montado - iniciando carregamento...');
     carregarDadosStorage();
   }, []);
 
   const carregarDadosStorage = async () => {
     try {
       setCarregandoDados(true);
-      console.log('🔍 ===== INICIANDO DEBUG DO STORAGE =====');
-
-      const todasChaves = await AsyncStorage.getAllKeys();
-      console.log('📋 Todas as chaves no storage:', todasChaves);
-
       const possiveisChaves = [
         '@userDataCompleto',
         'userDataCompleto',
@@ -336,37 +316,25 @@ export default function CadastroScreen() {
       let dadosEncontrados = null;
 
       for (const chave of possiveisChaves) {
-        console.log(`🔎 Procurando na chave: ${chave}`);
         const valor = await AsyncStorage.getItem(chave);
         if (valor) {
-          console.log(`✅ Dados encontrados na chave: ${chave}`);
           try {
             dadosEncontrados = JSON.parse(valor);
-            console.log('📦 Conteúdo parseado:', dadosEncontrados);
             break;
-          } catch (e) {
-            console.log(`❌ Erro ao fazer parse da chave ${chave}:`, e);
-          }
+          } catch (e) {}
         }
       }
 
       if (dadosEncontrados) {
-        console.log('✅ userData carregado com sucesso!');
         setUserData(dadosEncontrados);
-
         if (dadosEncontrados.nome) {
           setNome(dadosEncontrados.nome);
         }
-      } else {
-        console.log('⚠️ Nenhum dado do onboarding encontrado no storage');
       }
-
-      console.log('🔍 ===== FIM DO DEBUG DO STORAGE =====');
     } catch (error) {
       console.error('❌ Erro ao carregar dados do storage:', error);
     } finally {
       setCarregandoDados(false);
-      console.log('✅ Carregamento finalizado');
     }
   };
 
@@ -396,11 +364,8 @@ export default function CadastroScreen() {
                 aspect: [1, 1],
               });
 
-              console.log('Resultado da câmera:', result);
-
               if (!result.canceled && result.assets && result.assets[0]) {
                 const uri = result.assets[0].uri;
-                console.log('URI da foto:', uri);
                 setPhoto(uri);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               }
@@ -431,11 +396,8 @@ export default function CadastroScreen() {
                 aspect: [1, 1],
               });
 
-              console.log('Resultado da galeria:', result);
-
               if (!result.canceled && result.assets && result.assets[0]) {
                 const uri = result.assets[0].uri;
-                console.log('URI da foto:', uri);
                 setPhoto(uri);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               }
@@ -525,9 +487,6 @@ export default function CadastroScreen() {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      console.log('\n🚀 ===== INICIANDO PROCESSO DE CADASTRO =====');
-
-      // Enviar e-mail de verificação
       const emailResponse = await fetch(`${API_URL}/usuarios/enviar-codigo-verificacao`, {
         method: 'POST',
         headers: {
@@ -545,18 +504,13 @@ export default function CadastroScreen() {
         throw new Error(emailData.erro || 'Erro ao enviar e-mail de verificação');
       }
 
-      console.log('✅ E-mail de verificação enviado');
-
-      // Preparar FormData com todos os dados do cadastro
       const formData = new FormData();
 
-      // Campos básicos obrigatórios
       formData.append('nome', nome);
       formData.append('email', email);
       formData.append('senha', senha);
       formData.append('tipoUsuario', '0');
 
-      // Adicionar foto se existir
       if (photo) {
         const filename = photo.split('/').pop() || 'foto.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -570,7 +524,6 @@ export default function CadastroScreen() {
         });
       }
 
-      // Adicionar dados do onboarding
       let dadosOnboarding = userData;
       if (!dadosOnboarding) {
         const chavesParaTentar = ['@userDataCompleto', 'userDataCompleto', '@userData', 'userData'];
@@ -603,10 +556,9 @@ export default function CadastroScreen() {
         });
       }
 
-      // Salvar formData para usar após verificação
       const formDataString = JSON.stringify({
         ...Object.fromEntries(formData as any),
-        _photo: photo // salvar referência da foto
+        _photo: photo
       });
 
       await AsyncStorage.setItem('@dadosCadastroPendente', formDataString);
@@ -614,7 +566,6 @@ export default function CadastroScreen() {
         await AsyncStorage.setItem('@fotoTemp', photo);
       }
 
-      // Redirecionar para verificação
       router.push({
         pathname: '/(drawer)/VerificarEmailScreen',
         params: {
@@ -638,186 +589,6 @@ export default function CadastroScreen() {
     }
   };
 
-  // ============ FUNÇÕES DE RELATÓRIO ============
-
-  const visualizarDadosStorage = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-      const todasChaves = await AsyncStorage.getAllKeys();
-      const dados = await AsyncStorage.multiGet(todasChaves);
-
-      let userDataEncontrado = null;
-
-      for (const [key, value] of dados) {
-        if (value && (key.includes('userData') || key.includes('@userData'))) {
-          try {
-            userDataEncontrado = JSON.parse(value);
-            break;
-          } catch (e) {
-            console.log('Erro ao parsear:', e);
-          }
-        }
-      }
-
-      if (!userDataEncontrado) {
-        Alert.alert(
-          'ℹ️ Nenhum dado encontrado',
-          'Complete o onboarding primeiro para ver seus dados.'
-        );
-        return;
-      }
-
-      const relatorio = `
-  📊  SEU PERFIL FITNESS  📊
-  ══════════════════════
-
-  👤 DADOS PESSOAIS
-  ••••••••••••••••••
-  📋 Nome: ${userDataEncontrado.nome || nome || 'Não informado'}
-  🎂 Idade: ${userDataEncontrado.idade || userDataEncontrado.faixaIdade || 'Não informada'}
-  ⚥ Sexo: ${userDataEncontrado.sexo === 'M' ? 'Masculino' : userDataEncontrado.sexo === 'F' ? 'Feminino' : 'Não informado'}
-
-  📏 MEDIDAS ATUAIS
-  ••••••••••••••••••
-  📈 Altura: ${formatarAltura(userDataEncontrado)}
-  ⚖️ Peso: ${formatarPeso(userDataEncontrado)}
-  📐 Pescoço: ${userDataEncontrado.pescocoCm ? `${userDataEncontrado.pescocoCm} cm` : 'Não medido'}
-  📏 Cintura: ${userDataEncontrado.cinturaCm ? `${userDataEncontrado.cinturaCm} cm` : 'Não medido'}
-  📐 Quadril: ${userDataEncontrado.quadrilCm ? `${userDataEncontrado.quadrilCm} cm` : 'Não medido'}
-
-  🎯 OBJETIVOS E TREINO
-  ••••••••••••••••••••
-  🎯 Objetivo principal: ${formatarObjetivo(userDataEncontrado.objetivo) || 'Não definido'}
-  💪 Nível de atividade: ${userDataEncontrado.nivelAtividade ? `${userDataEncontrado.nivelAtividade}/10` : 'Não definido'}
-  🏋️ Frequência de treino: ${userDataEncontrado.frequenciaTreinoDescricao || userDataEncontrado.frequenciaTreino || 'Não definida'}
-
-  💧 HÁBITOS
-  •••••••••••
-  🥤 Copos de água/dia: ${userDataEncontrado.coposAguaDia || 'Não definido'}
-  💦 Lembretes de água: ${userDataEncontrado.querLembretesAgua ? '✅ Ativo' : '❌ Inativo'}
-  🏃 Treina atualmente: ${userDataEncontrado.treinaAtualmente ? '✅ Sim' : '❌ Não'}
-
-  📱 INFORMAÇÕES DO SISTEMA
-  ••••••••••••••••••••••••
-  🆔 ID do perfil: ${userDataEncontrado.id || 'Ainda não cadastrado'}
-  📅 Dados salvos em: ${new Date().toLocaleDateString('pt-BR')}
-
-  ✨ DICA DO DIA
-  •••••••••••••
-  ${gerarDicaDoDia(userDataEncontrado)}
-
-  💪 Continue firme nos seus objetivos!
-        `;
-
-      Alert.alert(
-        '📋 Meu Relatório Fitness',
-        relatorio,
-        [
-          {
-            text: 'Compartilhar',
-            onPress: () => {
-              Alert.alert('Compartilhar', 'Funcionalidade em desenvolvimento');
-            }
-          },
-          { text: 'Fechar', style: 'cancel' }
-        ],
-        { cancelable: true }
-      );
-
-    } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      Alert.alert('Erro', 'Não foi possível gerar o relatório.');
-    }
-  };
-
-  // Funções auxiliares para formatação
-  const formatarAltura = (dados: any) => {
-    if (dados.alturaCm) {
-      const metros = (dados.alturaCm / 100).toFixed(2);
-      return `${dados.alturaCm} cm (${metros.replace('.', ',')} m)`;
-    }
-    if (dados.altura) {
-      return `${dados.altura} cm`;
-    }
-    return 'Não informada';
-  };
-
-  const formatarPeso = (dados: any) => {
-    if (dados.pesoKg) {
-      return `${dados.pesoKg} kg`;
-    }
-    if (dados.pesoLb) {
-      return `${dados.pesoLb} lb (${(dados.pesoLb * 0.453592).toFixed(1)} kg)`;
-    }
-    return 'Não informado';
-  };
-
-  const formatarObjetivo = (objetivo: string) => {
-    if (!objetivo) return null;
-
-    const icones: { [key: string]: string } = {
-      'emagrecer': '🔥',
-      'ganhar-massa': '💪',
-      'definir': '✨',
-      'saude': '❤️',
-      'resistencia': '🏃'
-    };
-
-    const icone = icones[objetivo.toLowerCase()] || '🎯';
-
-    return `${icone} ${objetivo}`;
-  };
-
-  const gerarDicaDoDia = (dados: any) => {
-    const dicas = [
-      "Beba água regularmente durante o dia! 💧",
-      "Não se esqueça de alongar antes e depois dos treinos 🧘",
-      "Durma bem para uma melhor recuperação muscular 😴",
-      "Mantenha uma alimentação balanceada 🥗",
-      "A consistência é mais importante que a intensidade ⏱️",
-      "Registre seus progressos para se motivar 📝",
-      "Descanse entre as séries de exercícios ⚡",
-      "Varie seus treinos para evitar platôs 🔄"
-    ];
-
-    if (dados.objetivo === 'emagrecer') {
-      return "Combine exercícios aeróbicos com musculação para melhores resultados! 🔥";
-    }
-    if (dados.objetivo === 'ganhar-massa') {
-      return "Foque na progressão de carga e na execução correta dos exercícios! 💪";
-    }
-
-    return dicas[Math.floor(Math.random() * dicas.length)];
-  };
-
-  // ============ FUNÇÃO DE LIMPAR STORAGE ============
-
-  const limparStorage = async () => {
-    Alert.alert(
-      'Limpar Storage',
-      'Tem certeza que deseja limpar todos os dados?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.clear();
-              setUserData(null);
-              setNome('');
-              setPhoto(null);
-              Alert.alert('Sucesso', 'Storage limpo com sucesso!');
-            } catch (error) {
-              console.error('Erro ao limpar storage:', error);
-            }
-          }
-        }
-      ]
-    );
-  };
-
   // ============ RENDER ============
 
   if (carregandoDados) {
@@ -830,307 +601,302 @@ export default function CadastroScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-      >
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-        
-        {/* Camada de fundo fixa com elipses */}
-        <View style={StyleSheet.absoluteFill}>
-          <View style={{ flex: 1, backgroundColor: '#fff' }} />
-          {renderStaticBackground()}
-        </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {/* Camada de fundo fixa com elipses */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={{ flex: 1, backgroundColor: '#fff' }} />
+        {renderStaticBackground()}
+      </View>
 
-        {/* Header com botão de voltar */}
+      {/* Header com botão de voltar */}
+      <SafeAreaView style={styles.headerSafeArea}>
         <View style={styles.header}>
           <Pressable 
-            onPress={() => router.back()} 
+            onPress={() => router.push('/(drawer)/FinalizacaoScreen')} 
             style={styles.backButton}
+            android_ripple={{ color: 'rgba(98, 45, 178, 0.1)', radius: 20 }}
           >
             <View style={styles.backIconCircle}>
-              <Ionicons name="chevron-back" size={12} color={COLORS.primary} />
+              <Ionicons name="chevron-back" size={16} color={COLORS.primary} />
             </View>
             <Text style={styles.backText}>Voltar</Text>
           </Pressable>
         </View>
+      </SafeAreaView>
 
+      {/* KeyboardAvoidingView para melhor tratamento do teclado */}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+      >
+        {/* ScrollView com propriedades melhoradas para scroll fluido */}
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContentContainer}
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={true}
           bounces={true}
           overScrollMode="always"
           decelerationRate="normal"
           scrollEventThrottle={16}
+          nestedScrollEnabled={true}
+          scrollEnabled={true}
+          alwaysBounceVertical={true}
         >
+          {/* Conteúdo */}
           <View style={styles.content}>
-            {/* Logo e botões de debug */}
+            {/* Logo */}
             <View style={styles.logoContainer}>
               <Image
                 source={require('@/assets/images/completa-sem-fundo1.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
-              
-              {/* Botões de debug abaixo da logo */}
-              {__DEV__ && (
-                <View style={styles.debugContainer}>
-                  <TouchableOpacity
-                    style={[styles.debugButton, styles.debugButtonVer]}
-                    onPress={visualizarDadosStorage}
-                  >
-                    <FontAwesome name="bar-chart" size={16} color="#1E88E5" />
-                    <Text style={[styles.debugButtonText, { color: '#1E88E5' }]}>Meu Relatório</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.debugButton, styles.debugButtonLimpar]} onPress={limparStorage}>
-                    <FontAwesome name="trash" size={16} color="#FF4444" />
-                    <Text style={[styles.debugButtonText, { color: '#FF4444' }]}>Limpar</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
 
-            {/* Card de Cadastro */}
-            <View style={styles.card}>
-              <Text style={styles.title}>Criar Conta</Text>
-              <Text style={styles.subtitle}>Preencha seus dados para começar</Text>
+            {/* Card de Cadastro com Pressable para fechar teclado */}
+            <Pressable onPress={Keyboard.dismiss}>
+              <View style={styles.card}>
+                <Text style={styles.title}>Criar Conta</Text>
+                <Text style={styles.subtitle}>Preencha seus dados para começar</Text>
 
-              {/* Seção de Foto */}
-              <View style={styles.photoSection}>
-                <Text style={styles.photoLabel}>Foto de perfil (opcional)</Text>
-                <View style={styles.photoContainer}>
-                  <TouchableOpacity onPress={pickImage} disabled={uploading} style={styles.photoWrapper}>
-                    {uploading ? (
-                      <View style={[styles.photo, styles.photoPlaceholder]}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                {/* Seção de Foto */}
+                <View style={styles.photoSection}>
+                  <Text style={styles.photoLabel}>Foto de perfil (opcional)</Text>
+                  <View style={styles.photoContainer}>
+                    <TouchableOpacity onPress={pickImage} disabled={uploading} style={styles.photoWrapper}>
+                      {uploading ? (
+                        <View style={[styles.photo, styles.photoPlaceholder]}>
+                          <ActivityIndicator size="large" color={COLORS.primary} />
+                        </View>
+                      ) : photo ? (
+                        <Image source={{ uri: photo }} style={styles.photo} />
+                      ) : (
+                        <View style={[styles.photo, styles.photoPlaceholder]}>
+                          <Ionicons name="camera-outline" size={40} color={COLORS.primary} />
+                          <Text style={styles.photoPlaceholderText}>Adicionar</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    {photo && (
+                      <TouchableOpacity
+                        style={styles.removePhotoButton}
+                        onPress={() => setPhoto(null)}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#FF6B6B" />
+                        <Text style={styles.removePhotoText}>Remover</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                {/* Formulário */}
+                <View style={styles.formContainer}>
+                  {/* Nome */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Nome completo *</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        ref={nomeRef}
+                        style={styles.input}
+                        placeholder="Seu nome completo"
+                        placeholderTextColor="#999"
+                        value={nome}
+                        onChangeText={setNome}
+                        returnKeyType="next"
+                        onSubmitEditing={() => emailRef.current?.focus()}
+                        editable={!loading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Email */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>E-mail *</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        ref={emailRef}
+                        style={styles.input}
+                        placeholder="seu@email.com"
+                        placeholderTextColor="#999"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={email}
+                        onChangeText={setEmail}
+                        returnKeyType="next"
+                        onSubmitEditing={() => confirmarEmailRef.current?.focus()}
+                        editable={!loading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Confirmar Email */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Confirmar e-mail *</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        ref={confirmarEmailRef}
+                        style={styles.input}
+                        placeholder="seu@email.com novamente"
+                        placeholderTextColor="#999"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={confirmarEmail}
+                        onChangeText={setConfirmarEmail}
+                        returnKeyType="next"
+                        onSubmitEditing={() => senhaRef.current?.focus()}
+                        editable={!loading}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Seção de Senha */}
+                  <View style={styles.senhaSection}>
+                    <Text style={styles.sectionTitle}>Senha</Text>
+
+                    {/* Campo Senha */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>Crie uma senha *</Text>
+                      <View style={styles.inputWrapper}>
+                        <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                        <TextInput
+                          ref={senhaRef}
+                          style={[styles.input, styles.inputWithIcon]}
+                          placeholder="Crie uma senha forte"
+                          placeholderTextColor="#999"
+                          secureTextEntry={!mostrarSenha}
+                          value={senha}
+                          onChangeText={(text) => {
+                            setSenha(text);
+                            atualizarRequisitosSenha(text);
+                            setSenhaTocada(true);
+                          }}
+                          onFocus={() => setSenhaTocada(true)}
+                          returnKeyType="next"
+                          onSubmitEditing={() => {
+                            setConfirmarSenhaTocada(true);
+                            confirmarSenhaRef.current?.focus();
+                          }}
+                          editable={!loading}
+                        />
+                        <TouchableOpacity
+                          style={styles.eyeButton}
+                          onPress={() => {
+                            setMostrarSenha(!mostrarSenha);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          }}
+                        >
+                          <Ionicons
+                            name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                            size={20}
+                            color="#888"
+                          />
+                        </TouchableOpacity>
                       </View>
-                    ) : photo ? (
-                      <Image source={{ uri: photo }} style={styles.photo} />
-                    ) : (
-                      <View style={[styles.photo, styles.photoPlaceholder]}>
-                        <Ionicons name="camera-outline" size={40} color={COLORS.primary} />
-                        <Text style={styles.photoPlaceholderText}>Adicionar</Text>
+                    </View>
+
+                    {/* Indicador de Força da Senha */}
+                    {senhaTocada && senha.length > 0 && (
+                      <>
+                        <IndicadorForcaSenha />
+                        <ListaRequisitosSenha />
+                      </>
+                    )}
+
+                    {/* Campo Confirmar Senha */}
+                    <View style={[styles.inputGroup, styles.confirmarSenhaGroup]}>
+                      <Text style={styles.label}>Confirmar senha *</Text>
+                      <View style={styles.inputWrapper}>
+                        <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                        <TextInput
+                          ref={confirmarSenhaRef}
+                          style={[styles.input, styles.inputWithIcon]}
+                          placeholder="Digite a senha novamente"
+                          placeholderTextColor="#999"
+                          secureTextEntry={!mostrarConfirmarSenha}
+                          value={confirmarSenha}
+                          onChangeText={(text) => {
+                            setConfirmarSenha(text);
+                            setConfirmarSenhaTocada(true);
+                          }}
+                          onFocus={() => setConfirmarSenhaTocada(true)}
+                          returnKeyType="done"
+                          onSubmitEditing={handleSubmit}
+                          editable={!loading}
+                        />
+                        <TouchableOpacity
+                          style={styles.eyeButton}
+                          onPress={() => {
+                            setMostrarConfirmarSenha(!mostrarConfirmarSenha);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          }}
+                        >
+                          <Ionicons
+                            name={mostrarConfirmarSenha ? "eye-off-outline" : "eye-outline"}
+                            size={20}
+                            color="#888"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* Indicador de Confirmação de Senha */}
+                    {confirmarSenhaTocada && confirmarSenha.length > 0 && (
+                      <View style={styles.senhasCoincidemContainer}>
+                        <Ionicons
+                          name={senha === confirmarSenha ? "checkmark-circle" : "alert-circle"}
+                          size={20}
+                          color={senha === confirmarSenha ? "#4CAF50" : "#FF6B6B"}
+                        />
+                        <Text style={[
+                          styles.senhasCoincidemTexto,
+                          { color: senha === confirmarSenha ? "#4CAF50" : "#FF6B6B" }
+                        ]}>
+                          {senha === confirmarSenha ? "Senhas coincidem" : "Senhas diferentes"}
+                        </Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </View>
 
-                  {photo && (
-                    <TouchableOpacity
-                      style={styles.removePhotoButton}
-                      onPress={() => setPhoto(null)}
-                    >
-                      <Ionicons name="close-circle" size={20} color="#FF6B6B" />
-                      <Text style={styles.removePhotoText}>Remover</Text>
-                    </TouchableOpacity>
-                  )}
+                  {/* Requisitos Básicos */}
+                  <View style={styles.requisitosBasicos}>
+                    <Text style={styles.requisitosBasicosText}>• Idade mínima: 14 anos</Text>
+                    <Text style={styles.requisitosBasicosText}>• Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial</Text>
+                  </View>
+
+                  {/* Botão Cadastrar */}
+                  <Pressable
+                    onPress={handleSubmit}
+                    disabled={loading}
+                    style={styles.buttonWrapper}
+                  >
+                    {!loading ? (
+                      <LinearGradient
+                        colors={['#4ecdc4', '#622db2', '#4b208c']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.primaryButton}
+                      >
+                        <Ionicons name="person-add-outline" size={20} color="#FFF" style={styles.buttonIcon} />
+                        <Text style={styles.primaryButtonText}>Cadastrar</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.primaryButton, { backgroundColor: COLORS.disabled }]}>
+                        <ActivityIndicator color="#FFF" />
+                      </View>
+                    )}
+                  </Pressable>
                 </View>
               </View>
-
-              {/* Formulário */}
-              <View style={styles.formContainer}>
-                {/* Nome */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Nome completo *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
-                    <TextInput
-                      ref={nomeRef}
-                      style={styles.input}
-                      placeholder="Seu nome completo"
-                      placeholderTextColor="#999"
-                      value={nome}
-                      onChangeText={setNome}
-                      returnKeyType="next"
-                      onSubmitEditing={() => emailRef.current?.focus()}
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-
-                {/* Email */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>E-mail *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
-                    <TextInput
-                      ref={emailRef}
-                      style={styles.input}
-                      placeholder="seu@email.com"
-                      placeholderTextColor="#999"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      value={email}
-                      onChangeText={setEmail}
-                      returnKeyType="next"
-                      onSubmitEditing={() => confirmarEmailRef.current?.focus()}
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-
-                {/* Confirmar Email */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Confirmar e-mail *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
-                    <TextInput
-                      ref={confirmarEmailRef}
-                      style={styles.input}
-                      placeholder="seu@email.com novamente"
-                      placeholderTextColor="#999"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      value={confirmarEmail}
-                      onChangeText={setConfirmarEmail}
-                      returnKeyType="next"
-                      onSubmitEditing={() => senhaRef.current?.focus()}
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-
-                {/* Seção de Senha */}
-                <View style={styles.senhaSection}>
-                  <Text style={styles.sectionTitle}>Senha</Text>
-
-                  {/* Campo Senha */}
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Crie uma senha *</Text>
-                    <View style={styles.inputWrapper}>
-                      <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
-                      <TextInput
-                        ref={senhaRef}
-                        style={[styles.input, styles.inputWithIcon]}
-                        placeholder="Crie uma senha forte"
-                        placeholderTextColor="#999"
-                        secureTextEntry={!mostrarSenha}
-                        value={senha}
-                        onChangeText={(text) => {
-                          setSenha(text);
-                          atualizarRequisitosSenha(text);
-                          setSenhaTocada(true);
-                        }}
-                        onFocus={() => setSenhaTocada(true)}
-                        returnKeyType="next"
-                        onSubmitEditing={() => {
-                          setConfirmarSenhaTocada(true);
-                          confirmarSenhaRef.current?.focus();
-                        }}
-                        editable={!loading}
-                      />
-                      <TouchableOpacity
-                        style={styles.eyeButton}
-                        onPress={() => {
-                          setMostrarSenha(!mostrarSenha);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
-                      >
-                        <Ionicons
-                          name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
-                          size={20}
-                          color="#888"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {/* Indicador de Força da Senha */}
-                  {senhaTocada && senha.length > 0 && (
-                    <>
-                      <IndicadorForcaSenha />
-                      <ListaRequisitosSenha />
-                    </>
-                  )}
-
-                  {/* Campo Confirmar Senha */}
-                  <View style={[styles.inputGroup, styles.confirmarSenhaGroup]}>
-                    <Text style={styles.label}>Confirmar senha *</Text>
-                    <View style={styles.inputWrapper}>
-                      <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
-                      <TextInput
-                        ref={confirmarSenhaRef}
-                        style={[styles.input, styles.inputWithIcon]}
-                        placeholder="Digite a senha novamente"
-                        placeholderTextColor="#999"
-                        secureTextEntry={!mostrarConfirmarSenha}
-                        value={confirmarSenha}
-                        onChangeText={(text) => {
-                          setConfirmarSenha(text);
-                          setConfirmarSenhaTocada(true);
-                        }}
-                        onFocus={() => setConfirmarSenhaTocada(true)}
-                        returnKeyType="done"
-                        onSubmitEditing={handleSubmit}
-                        editable={!loading}
-                      />
-                      <TouchableOpacity
-                        style={styles.eyeButton}
-                        onPress={() => {
-                          setMostrarConfirmarSenha(!mostrarConfirmarSenha);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
-                      >
-                        <Ionicons
-                          name={mostrarConfirmarSenha ? "eye-off-outline" : "eye-outline"}
-                          size={20}
-                          color="#888"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {/* Indicador de Confirmação de Senha */}
-                  {confirmarSenhaTocada && confirmarSenha.length > 0 && (
-                    <View style={styles.senhasCoincidemContainer}>
-                      <Ionicons
-                        name={senha === confirmarSenha ? "checkmark-circle" : "alert-circle"}
-                        size={20}
-                        color={senha === confirmarSenha ? "#4CAF50" : "#FF6B6B"}
-                      />
-                      <Text style={[
-                        styles.senhasCoincidemTexto,
-                        { color: senha === confirmarSenha ? "#4CAF50" : "#FF6B6B" }
-                      ]}>
-                        {senha === confirmarSenha ? "Senhas coincidem" : "Senhas diferentes"}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Requisitos Básicos */}
-                <View style={styles.requisitosBasicos}>
-                  <Text style={styles.requisitosBasicosText}>• Idade mínima: 14 anos</Text>
-                  <Text style={styles.requisitosBasicosText}>• Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial</Text>
-                </View>
-
-                {/* Botão Cadastrar */}
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={loading}
-                  style={styles.buttonWrapper}
-                >
-                  {!loading ? (
-                    <LinearGradient
-                      colors={['#4ecdc4', '#622db2', '#4b208c']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.primaryButton}
-                    >
-                      <Ionicons name="person-add-outline" size={20} color="#FFF" style={styles.buttonIcon} />
-                      <Text style={styles.primaryButtonText}>Cadastrar</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={[styles.primaryButton, { backgroundColor: COLORS.disabled }]}>
-                      <ActivityIndicator color="#FFF" />
-                    </View>
-                  )}
-                </Pressable>
-              </View>
-            </View>
+            </Pressable>
 
             {/* Link para Login */}
             <View style={styles.footer}>
@@ -1149,41 +915,41 @@ export default function CadastroScreen() {
             </View>
           </View>
         </ScrollView>
-
-        {/* Modal de Feedback */}
-        {feedback.visible && (
-          <View style={styles.overlay}>
-            <TouchableWithoutFeedback onPress={() => setFeedback({ ...feedback, visible: false })}>
-              <View style={styles.overlayBackground}>
-                <View style={styles.modal}>
-                  <View style={styles.modalHeader}>
-                    <Ionicons
-                      name={feedback.success ? "checkmark-circle" : "alert-circle"}
-                      size={48}
-                      color={feedback.success ? "#4CAF50" : "#FF6B6B"}
-                    />
-                    <Text style={styles.modalTitle}>{feedback.title}</Text>
-                  </View>
-                  <Text style={styles.modalMessage}>{feedback.message}</Text>
-                  <TouchableOpacity
-                    style={styles.modalButton}
-                    onPress={() => {
-                      setFeedback({ ...feedback, visible: false });
-                      if (feedback.success) router.replace('/login');
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.modalButtonText}>
-                      {feedback.success ? 'Ir para Login' : 'Tentar Novamente'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        )}
       </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+
+      {/* Modal de Feedback */}
+      {feedback.visible && (
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={() => setFeedback({ ...feedback, visible: false })}>
+            <View style={styles.overlayBackground}>
+              <View style={styles.modal}>
+                <View style={styles.modalHeader}>
+                  <Ionicons
+                    name={feedback.success ? "checkmark-circle" : "alert-circle"}
+                    size={48}
+                    color={feedback.success ? "#4CAF50" : "#FF6B6B"}
+                  />
+                  <Text style={styles.modalTitle}>{feedback.title}</Text>
+                </View>
+                <Text style={styles.modalMessage}>{feedback.message}</Text>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setFeedback({ ...feedback, visible: false });
+                    if (feedback.success) router.replace('/login');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalButtonText}>
+                    {feedback.success ? 'Ir para Login' : 'Tentar Novamente'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -1192,6 +958,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#fff',
+    position: 'relative',
   },
   visualArea: {
     ...StyleSheet.absoluteFillObject,
@@ -1213,15 +980,22 @@ const styles = StyleSheet.create({
     borderColor: COLORS.dot,
     backgroundColor: '#fff',
   },
+  headerSafeArea: {
+    backgroundColor: 'transparent',
+    zIndex: 10,
+  },
   header: {
-    paddingHorizontal: 25,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
-    zIndex: 100,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 20 : 10,
+    paddingBottom: 10,
+    backgroundColor: 'transparent',
   },
   backButton: { 
     flexDirection: 'row', 
-    alignItems: 'center', 
-    alignSelf: 'flex-start' 
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   backIconCircle: { 
     width: 32, 
@@ -1233,6 +1007,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: COLORS.line,
     elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   backText: { 
     color: COLORS.primary, 
@@ -1240,14 +1018,22 @@ const styles = StyleSheet.create({
     fontWeight: '700', 
     fontSize: 16 
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 20,
-  },
-  content: {
+  keyboardView: {
     flex: 1,
+    width: '100%',
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
     paddingHorizontal: 25,
     paddingBottom: 30,
+    paddingTop: 10,
+  },
+  content: {
+    width: '100%',
   },
   logoContainer: {
     alignItems: 'center',
@@ -1255,8 +1041,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: width * 0.9, // Aumentado de 0.8 para 0.9
-    height: 150, // Aumentado de 120 para 150
+    width: width * 0.9,
+    height: 150,
   },
   card: {
     backgroundColor: '#fff',
@@ -1569,32 +1355,6 @@ const styles = StyleSheet.create({
   termsLink: {
     color: COLORS.primary,
     fontWeight: '600',
-  },
-  debugContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    marginTop: 10,
-  },
-  debugButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 20,
-    gap: 8,
-  },
-  debugButtonVer: {
-    backgroundColor: '#E3F2FD',
-    borderWidth: 1,
-    borderColor: '#1E88E5',
-  },
-  debugButtonLimpar: {
-    backgroundColor: '#FFE5E5',
-  },
-  debugButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   overlay: {
     position: 'absolute',
