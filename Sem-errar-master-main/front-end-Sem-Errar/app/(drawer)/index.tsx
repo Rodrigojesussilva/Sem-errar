@@ -122,7 +122,7 @@ export default function BoasVindas4() {
             </Pressable>
 
             <Pressable style={styles.secondaryButton} onPress={() => router.push('/(drawer)/login')}>
-              <Text style={styles.secondaryButtonText}>Já tenho uma conta</Text>
+              <Text style={styles.secondaryButtonText}>Já possuo um cadastro</Text>
             </Pressable>
           </View>
         </Animated.View>
