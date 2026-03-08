@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Alert,
   Dimensions,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
@@ -26,40 +26,60 @@ const COLORS = {
   line: 'rgba(112, 82, 230, 0.15)',
   textMain: '#1A1A1A',
   disabled: '#F0F0F0',
+  error: '#ff4444',
 };
 
 export default function QuadrilScreen() {
   const router = useRouter();
   const [quadrilCm, setQuadrilCm] = useState<string>('');
+  const [sexo, setSexo] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
+  // Carregar sexo ao iniciar e verificar se é feminino
   useEffect(() => {
-    const verificarAcesso = async () => {
+    const carregarDados = async () => {
       try {
-        setIsVerifying(true);
+        setIsLoadingInitial(true);
         const sexoSalvo = await AsyncStorage.getItem('@sexo');
         
-        // Proteção: apenas mulheres usam a medida do quadril na fórmula
-        if (!sexoSalvo || sexoSalvo !== 'feminino') {
-          router.replace('/(drawer)/QuadroCalcularBFScreen');
-          return;
+        if (sexoSalvo) {
+          setSexo(sexoSalvo);
+          
+          // Se for masculino, redireciona direto para resultados
+          if (sexoSalvo === 'masculino') {
+            Alert.alert(
+              'Atenção', 
+              'Para homens, não é necessário medir o quadril. Redirecionando...',
+              [{ text: 'OK', onPress: () => router.replace('/PreparandoResultadosScreen') }]
+            );
+            return;
+          }
+        } else {
+          Alert.alert('Atenção', 'Selecione o sexo primeiro.', [
+            { text: 'OK', onPress: () => router.push('/SexoScreen') }
+          ]);
         }
-
-        const salvo = await AsyncStorage.getItem('@quadrilCm');
-        if (salvo) setQuadrilCm(salvo);
       } catch (error) {
-        console.error('Erro ao verificar acesso:', error);
+        console.error('Erro ao carregar:', error);
       } finally {
-        setIsVerifying(false);
+        setIsLoadingInitial(false);
       }
     };
-    verificarAcesso();
+    
+    carregarDados();
   }, []);
+
+  // Resetar o valor quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setQuadrilCm('');
+    }, [])
+  );
 
   const handleProximo = async () => {
     if (!quadrilCm || Number(quadrilCm) <= 0) {
-      Alert.alert('Atenção', 'Insira uma medida válida para o quadril.');
+      Alert.alert('Atenção', 'Digite uma medida válida do quadril');
       return;
     }
     
@@ -68,18 +88,16 @@ export default function QuadrilScreen() {
       await AsyncStorage.setItem('@quadrilCm', quadrilCm);
       router.push('/PreparandoResultadosScreen');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível guardar a medida.');
+      Alert.alert('Erro', 'Não foi possível salvar a medida.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // LÓGICA DE TRAVA: APENAS NÚMEROS INTEIROS, MÁXIMO 4 DÍGITOS
+  // APENAS NÚMEROS INTEIROS, LIMITE DE 4 DÍGITOS
   const handleCmChange = (text: string) => {
-    // Remove qualquer caractere que não seja número
     const onlyNums = text.replace(/[^0-9]/g, '');
     
-    // Limita estritamente a 4 caracteres
     if (onlyNums.length <= 4) {
       setQuadrilCm(onlyNums);
     }
@@ -96,12 +114,17 @@ export default function QuadrilScreen() {
     </View>
   );
 
-  if (isVerifying) {
+  if (isLoadingInitial) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
+  }
+
+  // Se for masculino, não renderiza nada (já vai redirecionar)
+  if (sexo === 'masculino') {
+    return null;
   }
 
   return (
@@ -125,7 +148,10 @@ export default function QuadrilScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Image 
@@ -166,10 +192,10 @@ export default function QuadrilScreen() {
           <View style={[styles.instructionsContainer, { borderColor: COLORS.primary }]}>
               <Text style={[styles.instructionsTitle, { color: COLORS.primary }]}>Como medir corretamente:</Text>
               {[
-                "Posicione a fita métrica ao redor do quadril, na parte mais larga.",
-                "Segure firme, mantendo a fita rente ao corpo, sem espaços.",
-                "Não puxe demais; apenas o suficiente para obter a medida real.",
-                "Certifique-se de que a fita esteja reta e não inclinada."
+                "Meça a circunferência do quadril na parte mais larga, geralmente na altura dos glúteos.",
+                "Mantenha a fita métrica nivelada e paralela ao chão.",
+                "Não aperte demais a fita; ela deve estar rente à pele.",
+                "Fique em pé, com os pés juntos e os músculos relaxados."
               ].map((item, index) => (
                 <View key={index} style={styles.instructionItem}>
                   <View style={[styles.instructionNumber, { backgroundColor: COLORS.primary }]}><Text style={styles.numberText}>{index + 1}</Text></View>
@@ -193,11 +219,14 @@ export default function QuadrilScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={[styles.primaryText, !quadrilCm && { color: '#AAA' }]}>
-                  Proximo
+                  Próximo
                 </Text>
               )}
             </LinearGradient>
           </Pressable>
+
+          {/* ESPAÇO EXTRA PARA ROLAGEM */}
+          <View style={styles.extraScrollSpace} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -209,13 +238,27 @@ const styles = StyleSheet.create({
   visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', zIndex: 0 },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
+  
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 25, 
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, 
+    zIndex: 100 
+  },
+  
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
   stepIndicator: { backgroundColor: 'rgba(78, 205, 196, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   stepText: { color: COLORS.dot, fontWeight: '800', fontSize: 12 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
+  
+  scrollContent: { 
+    flexGrow: 1, 
+    paddingHorizontal: 25
+  },
+  
   content: { width: '100%', zIndex: 10 },
   logoContainer: { alignItems: 'center', marginBottom: 15 },
   logo: { width: width * 0.4, height: 50 },
@@ -237,4 +280,10 @@ const styles = StyleSheet.create({
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center', minHeight: 60, justifyContent: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  
+  // Espaço extra para rolagem
+  extraScrollSpace: {
+    height: height * 0.05,
+    width: '100%',
+  },
 });

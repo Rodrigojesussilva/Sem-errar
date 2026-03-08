@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Alert,
   Dimensions,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#622db2',
@@ -31,15 +31,18 @@ const COLORS = {
 export default function CinturaScreen() {
   const router = useRouter();
   const [cinturaCm, setCinturaCm] = useState<string>('');
-  const [sexo, setSexo] = useState<string>('masculino');
+  const [sexo, setSexo] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
+  // Carregar sexo ao iniciar
   useEffect(() => {
-    const carregarDados = async () => {
+    const carregarSexo = async () => {
       try {
         setIsLoadingInitial(true);
         const sexoSalvo = await AsyncStorage.getItem('@sexo');
+        console.log('Sexo carregado:', sexoSalvo); // DEBUG
+        
         if (sexoSalvo) {
           setSexo(sexoSalvo);
         } else {
@@ -47,17 +50,22 @@ export default function CinturaScreen() {
             { text: 'OK', onPress: () => router.push('/SexoScreen') }
           ]);
         }
-
-        const salvo = await AsyncStorage.getItem('@cinturaCm');
-        if (salvo) setCinturaCm(salvo);
       } catch (error) {
         console.error('Erro ao carregar:', error);
       } finally {
         setIsLoadingInitial(false);
       }
     };
-    carregarDados();
+    
+    carregarSexo();
   }, []);
+
+  // Resetar o valor quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setCinturaCm('');
+    }, [])
+  );
 
   const handleProximo = async () => {
     if (!cinturaCm || Number(cinturaCm) <= 0) {
@@ -67,11 +75,18 @@ export default function CinturaScreen() {
     
     setIsLoading(true);
     try {
+      // SALVAR a medida da cintura
       await AsyncStorage.setItem('@cinturaCm', cinturaCm);
       
-      if (sexo === 'feminino') {
+      // VERIFICAR o sexo e redirecionar
+      const sexoAtual = await AsyncStorage.getItem('@sexo');
+      console.log('Sexo atual no momento do clique:', sexoAtual); // DEBUG
+      
+      if (sexoAtual === 'feminino') {
+        // Se for MULHER, vai para QUADRIL
         router.push('/QuadrilScreen');
       } else {
+        // Se for HOMEM, vai direto para RESULTADOS
         router.push('/PreparandoResultadosScreen');
       }
     } catch (error) {
@@ -126,11 +141,14 @@ export default function CinturaScreen() {
           <Text style={styles.backText}>Voltar</Text>
         </Pressable>
         <View style={styles.stepIndicator}>
-            <Text style={styles.stepText}>Passo 2 de 3</Text>
+            <Text style={styles.stepText}>Passo 2 de {sexo === 'feminino' ? '3' : '2'}</Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Image 
@@ -198,11 +216,14 @@ export default function CinturaScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={[styles.primaryText, !cinturaCm && { color: '#AAA' }]}>
-                  {sexo === 'feminino' ? 'Próximo' : 'Próximo'}
+                  Próximo
                 </Text>
               )}
             </LinearGradient>
           </Pressable>
+
+          {/* ESPAÇO EXTRA PARA ROLAGEM */}
+          <View style={styles.extraScrollSpace} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -214,13 +235,27 @@ const styles = StyleSheet.create({
   visualArea: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', zIndex: 0 },
   ellipseLine: { position: 'absolute', borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 999 },
   staticDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.dot, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 25, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, zIndex: 100 },
+  
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 25, 
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40, 
+    zIndex: 100 
+  },
+  
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
   stepIndicator: { backgroundColor: 'rgba(78, 205, 196, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   stepText: { color: COLORS.dot, fontWeight: '800', fontSize: 12 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
+  
+  scrollContent: { 
+    flexGrow: 1, 
+    paddingHorizontal: 25
+  },
+  
   content: { width: '100%', zIndex: 10 },
   logoContainer: { alignItems: 'center', marginBottom: 15 },
   logo: { width: width * 0.4, height: 50 },
@@ -242,4 +277,10 @@ const styles = StyleSheet.create({
   buttonWrapper: { borderRadius: 22, overflow: 'hidden', elevation: 4 },
   primaryButton: { paddingVertical: 18, alignItems: 'center', minHeight: 60, justifyContent: 'center' },
   primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  
+  // Espaço extra para rolagem
+  extraScrollSpace: {
+    height: height * 0.05,
+    width: '100%',
+  },
 });

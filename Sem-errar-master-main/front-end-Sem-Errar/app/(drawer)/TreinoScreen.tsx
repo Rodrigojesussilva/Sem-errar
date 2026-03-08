@@ -1,8 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -34,24 +34,19 @@ export default function TreinoScreen() {
   const [frequenciaSelecionada, setFrequenciaSelecionada] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Resetar TUDO quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setTreinaSelecionado(null);
+      setFrequenciaSelecionada(null);
+    }, [])
+  );
+
   const opcoesFrequencia = [
     { id: '1-3', label: '1–3 dias', value: '1-3' },
     { id: '3-5', label: '3–5 dias', value: '3-5' },
     { id: '6-7', label: '6–7 dias', value: '6-7' },
   ];
-
-  useEffect(() => {
-    carregarTreinoSalvo();
-  }, []);
-
-  const carregarTreinoSalvo = async () => {
-    try {
-      const treinaAtualmente = await AsyncStorage.getItem('@treinaAtualmente');
-      if (treinaAtualmente) setTreinaSelecionado(treinaAtualmente);
-    } catch (error) {
-      console.error('Erro ao carregar:', error);
-    }
-  };
 
   const handleProximo = async () => {
     if (!treinaSelecionado) return;

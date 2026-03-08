@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -31,6 +31,14 @@ export default function SexoScreen() {
   const [sexoSelecionado, setSexoSelecionado] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Limpa a seleção sempre que a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      // Reseta o estado para null quando a tela for focada
+      setSexoSelecionado(null);
+    }, [])
+  );
+
   const opcoesSexo = [
     {
       id: 'masculino',
@@ -46,25 +54,13 @@ export default function SexoScreen() {
     },
   ];
 
-  useEffect(() => {
-    carregarSexoSalvo();
-  }, []);
-
-  const carregarSexoSalvo = async () => {
-    try {
-      const sexoSalvo = await AsyncStorage.getItem('@sexo');
-      if (sexoSalvo) setSexoSelecionado(sexoSalvo);
-    } catch (error) {
-      console.error('Erro ao carregar sexo:', error);
-    }
-  };
-
   const handleProximo = async () => {
     if (sexoSelecionado) {
       setIsLoading(true);
       try {
+        // Salva o novo valor, sobrescrevendo o anterior
         await AsyncStorage.setItem('@sexo', sexoSelecionado);
-        router.push('/(drawer)/IdadeScreen'); // Ajustado para o caminho correto na drawer
+        router.push('/(drawer)/IdadeScreen');
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível salvar.');
       } finally {
