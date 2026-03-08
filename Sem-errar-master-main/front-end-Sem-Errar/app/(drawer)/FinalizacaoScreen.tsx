@@ -76,7 +76,13 @@ const getClassificacaoBF = (bf: number, isMale: boolean) => {
     : [14, 21, 25, 32];
 
   const labels = ['Essencial', 'Atleta', 'Fitness', 'Aceitável', 'Elevado'];
-  const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
+  const colors = [
+    '#3B82F6', // Azul - muito baixo
+    '#22C55E', // Verde - atleta
+    '#10B981', // Verde - fitness
+    '#F59E0B', // Laranja - médio
+    '#EF4444'  // Vermelho - alto
+  ];
   const descricoes = ['Muito baixo', 'Excelente', 'Bom', 'Médio', 'Alto'];
   const emojis = ['💪', '🏆', '👍', '👌', '⚠️'];
 
@@ -143,11 +149,15 @@ const ProgressCircle = ({ value, max, color, label, sublabel }: any) => {
             fontWeight: '800',
             color: color,
           }}>{value.toFixed(1)}%</Text>
-          <Text style={{
-            fontSize: 16,
-            color: COLORS.textLight,
-            marginTop: 4,
-          }}>{label}</Text>
+          {label && (
+  <Text style={{
+    fontSize: 16,
+    color: COLORS.textLight,
+    marginTop: 4,
+  }}>
+    {label}
+  </Text>
+)}
           {sublabel && <Text style={{
             fontSize: 14,
             color: COLORS.textSub,
@@ -717,24 +727,33 @@ export default function AnaliseScreen() {
             shadowRadius: 8,
           }}
         >
-      <View style={{
-  alignItems: 'center',
+          <View style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            flexDirection: 'row',
+            gap: 8
+          }}>
+            <View style={{
+  width: 34,
+  height: 34,
+  borderRadius: 17,
+  backgroundColor: `${COLORS.primary}15`,
   justifyContent: 'center',
-  marginBottom: 16,
-  flexDirection: 'row',
-  gap: 8
+  alignItems: 'center'
 }}>
-  <FontAwesome name="heartbeat" size={22} color={COLORS.primary} />
-
-  <Text style={{
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.textMain,
-    textAlign: 'center',
-  }}>
-    Seu Índice Corporal
-  </Text>
+  <FontAwesome name="bullseye" size={16} color={COLORS.primary} />
 </View>
+
+            <Text style={{
+              fontSize: 20,
+              fontWeight: '800',
+              color: COLORS.textMain,
+              textAlign: 'center',
+            }}>
+              Seu Índice Corporal
+            </Text>
+          </View>
           <View style={{
             flexDirection: 'row',
             alignItems: 'baseline',
@@ -828,27 +847,32 @@ export default function AnaliseScreen() {
           }}
         >
           <View style={{
-  alignItems: 'center',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 8,
+            marginBottom: 18,
+          }}>
+           <View style={{
+  width: 34,
+  height: 34,
+  borderRadius: 17,
+  backgroundColor: `${COLORS.success}15`,
   justifyContent: 'center',
-  flexDirection: 'row',
-  gap: 8,
-  marginBottom: 18,
+  alignItems: 'center'
 }}>
-  <FontAwesome
-    name="bullseye"
-    size={22}
-    color={COLORS.success}
-  />
-
-  <Text style={{
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textMain,
-    textAlign: 'center',
-  }}>
-    Seu Peso Ideal
-  </Text>
+  <FontAwesome name="balance-scale" size={16} color={COLORS.success} />
 </View>
+
+            <Text style={{
+              fontSize: 22,
+              fontWeight: '800',
+              color: COLORS.textMain,
+              textAlign: 'center',
+            }}>
+              Seu Peso Ideal
+            </Text>
+          </View>
 
           <View style={{
             alignItems: 'center',
@@ -860,6 +884,7 @@ export default function AnaliseScreen() {
               color: COLORS.textMain,
               marginBottom: 8,
             }}>{metricas.pesoAtual.toFixed(1)} kg</Text>
+            
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -886,8 +911,8 @@ export default function AnaliseScreen() {
                   metricas.pesoAtual < metricas.pesoIdealMin ? COLORS.info :
                     COLORS.success
               }}>
-                {metricas.pesoAtual > metricas.pesoIdealMax ? `${(metricas.pesoAtual - metricas.pesoIdealMax).toFixed(1)}kg acima` :
-                  metricas.pesoAtual < metricas.pesoIdealMin ? `${(metricas.pesoIdealMin - metricas.pesoAtual).toFixed(1)}kg abaixo` :
+                {metricas.pesoAtual > metricas.pesoIdealMax ? `${(metricas.pesoAtual - metricas.pesoIdealMax).toFixed(1)}kg acima do ideal máximo` :
+                  metricas.pesoAtual < metricas.pesoIdealMin ? `${(metricas.pesoIdealMin - metricas.pesoAtual).toFixed(1)}kg abaixo do ideal mínimo` :
                     'Peso ideal'}
               </Text>
             </View>
@@ -1048,33 +1073,33 @@ export default function AnaliseScreen() {
           }}
         >
           <View style={{
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexDirection: 'row',
-  gap: 10,
-  marginBottom: 22,
-}}>
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 10,
+            marginBottom: 22,
+          }}>
 
-  <View style={{
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: `${COLORS.purple}15`,
-    justifyContent: 'center',
-    alignItems: 'center'
-  }}>
-    <FontAwesome name="heartbeat" size={16} color={COLORS.purple} />
-  </View>
+            <View style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: `${COLORS.purple}15`,
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <FontAwesome name="heartbeat" size={16} color={COLORS.purple} />
+            </View>
 
-  <Text style={{
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textMain,
-  }}>
-    Seu Percentual de Gordura
-  </Text>
+            <Text style={{
+              fontSize: 22,
+              fontWeight: '800',
+              color: COLORS.textMain,
+            }}>
+              Seu Percentual de Gordura
+            </Text>
 
-</View>
+          </View>
 
           {/* Círculo de BF centralizado e maior */}
           <View style={{
@@ -1085,7 +1110,6 @@ export default function AnaliseScreen() {
               value={metricas.percentualGordura}
               max={metricas.sexo === 'masculino' ? 35 : 45}
               color={metricas.classificacaoBF.cor}
-              label="BF"
               sublabel={metricas.classificacaoBF.classificacao}
             />
           </View>
@@ -1112,7 +1136,7 @@ export default function AnaliseScreen() {
                   fontSize: 14,
                   color: COLORS.textLight,
                   marginBottom: 4,
-                }}>Massa Magra</Text>
+                }}>Massa Magra (músculos, ossos e órgãos)</Text>
                 <Text style={{
                   fontSize: 16,
                   fontWeight: '600',
@@ -1153,7 +1177,7 @@ export default function AnaliseScreen() {
                   fontSize: 14,
                   color: COLORS.textLight,
                   marginBottom: 4,
-                }}>Massa Gorda</Text>
+                }}>Gordura Corporal Total</Text>
                 <Text style={{
                   fontSize: 16,
                   fontWeight: '600',
@@ -1178,173 +1202,143 @@ export default function AnaliseScreen() {
           </View>
         </LinearGradient>
 
-        {/* Metabolismo */}
-        <LinearGradient
-          colors={['#FFFFFF', '#F9FAFB']}
-          style={{
-            borderRadius: 24,
-            padding: 20,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: COLORS.line,
-            elevation: 2,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 8,
-          }}
-        >
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 20,
-          }}>
-            <FontAwesome name="flash" size={20} color={COLORS.accent} />
-            <Text style={{
-              fontSize: 16,
-              fontWeight: '700',
-              color: COLORS.textMain,
-            }}>Metabolismo</Text>
-          </View>
+{/* Seu Gasto Calórico */}
+<LinearGradient
+  colors={['#FFFFFF', '#F9FAFB']}
+  style={{
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  }}
+>
+  <View style={{
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 22,
+  }}>
+    <View style={{
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: `${COLORS.accent}15`,
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
+      <FontAwesome name="bolt" size={16} color={COLORS.accent} />
+    </View>
 
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-            marginBottom: 20,
-          }}>
-            <View style={{
-              flex: 1,
-              alignItems: 'center',
-              padding: 16,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: COLORS.line,
-            }}>
-              <View style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginBottom: 12,
-                backgroundColor: `${COLORS.purple}15`
-              }}>
-                <FontAwesome name="moon-o" size={20} color={COLORS.purple} />
-              </View>
-              <Text style={{
-                fontSize: 13,
-                color: COLORS.textLight,
-                fontWeight: '600',
-                marginBottom: 4,
-              }}>TMB</Text>
-              <Text style={{
-                fontSize: 24,
-                fontWeight: '800',
-                color: COLORS.textMain,
-              }}>{metricas.tmbFormatado}</Text>
-              <Text style={{
-                fontSize: 11,
-                color: COLORS.textLight,
-                marginBottom: 4,
-              }}>kcal/dia</Text>
-              <Text style={{
-                fontSize: 11,
-                color: COLORS.textSub,
-              }}>Repouso</Text>
-            </View>
+    <Text style={{
+      fontSize: 22,
+      fontWeight: '800',
+      color: COLORS.textMain,
+    }}>
+      Seu Gasto Calórico
+    </Text>
+  </View>
 
-            <View style={{
-              flex: 1,
-              alignItems: 'center',
-              padding: 16,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: COLORS.line,
-            }}>
-              <View style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginBottom: 12,
-                backgroundColor: `${COLORS.pink}15`
-              }}>
-                <FontAwesome name="bicycle" size={20} color={COLORS.pink} />
-              </View>
-              <Text style={{
-                fontSize: 13,
-                color: COLORS.textLight,
-                fontWeight: '600',
-                marginBottom: 4,
-              }}>TDEE</Text>
-              <Text style={{
-                fontSize: 24,
-                fontWeight: '800',
-                color: COLORS.textMain,
-              }}>{metricas.tdeeFormatado}</Text>
-              <Text style={{
-                fontSize: 11,
-                color: COLORS.textLight,
-                marginBottom: 4,
-              }}>kcal/dia</Text>
-              <Text style={{
-                fontSize: 11,
-                color: COLORS.textSub,
-              }}>{metricas.nivelAtividadeDescricao}</Text>
-            </View>
-          </View>
+  {/* TMB e TDEE em coluna (um em cima do outro) */}
+  <View style={{
+    gap: 12,
+    marginBottom: 20,
+  }}>
+    {/* TMB */}
+    <View style={{
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: COLORS.line,
+      flexDirection: 'row',
+    }}>
+      <View style={{
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+        backgroundColor: `${COLORS.purple}15`
+      }}>
+        <FontAwesome name="moon-o" size={20} color={COLORS.purple} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{
+          fontSize: 13,
+          color: COLORS.textLight,
+          fontWeight: '600',
+          marginBottom: 4,
+        }}>TMB - Taxa Metabólica Basal</Text>
+        <Text style={{
+          fontSize: 24,
+          fontWeight: '800',
+          color: COLORS.textMain,
+        }}>{metricas.tmbFormatado} <Text style={{
+          fontSize: 13,
+          fontWeight: '400',
+          color: COLORS.textLight,
+        }}>kcal/dia</Text></Text>
+        <Text style={{
+          fontSize: 12,
+          color: COLORS.textSub,
+          marginTop: 2,
+        }}>Calorias em repouso</Text>
+      </View>
+    </View>
 
-          <LinearGradient
-            colors={[`${metricas.calorias.cor}10`, `${metricas.calorias.cor}05`]}
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: COLORS.line,
-            }}
-          >
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: COLORS.textLight,
-              marginBottom: 8,
-            }}>{metricas.calorias.meta}</Text>
-            <Text style={{
-              fontSize: 36,
-              fontWeight: '800',
-              marginBottom: 4,
-              color: metricas.calorias.cor
-            }}>
-              {metricas.calorias.objetivo.toFixed(0)}
-            </Text>
-            <Text style={{
-              fontSize: 13,
-              color: COLORS.textLight,
-              marginBottom: 12,
-            }}>kcal/dia</Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              paddingTop: 12,
-              borderTopWidth: 1,
-              borderTopColor: COLORS.line,
-            }}>
-              <Text style={{
-                fontSize: 13,
-                color: COLORS.textLight,
-              }}>Manutenção:</Text>
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: COLORS.textMain,
-              }}>{metricas.calorias.manutencao.toFixed(0)} kcal</Text>
-            </View>
-          </LinearGradient>
-        </LinearGradient>
+    {/* TDEE */}
+    <View style={{
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: COLORS.line,
+      flexDirection: 'row',
+    }}>
+      <View style={{
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+        backgroundColor: `${COLORS.pink}15`
+      }}>
+        <FontAwesome name="bicycle" size={20} color={COLORS.pink} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{
+          fontSize: 13,
+          color: COLORS.textLight,
+          fontWeight: '600',
+          marginBottom: 4,
+        }}>TDEE - Gasto Energético Total</Text>
+        <Text style={{
+          fontSize: 24,
+          fontWeight: '800',
+          color: COLORS.textMain,
+        }}>{metricas.tdeeFormatado} <Text style={{
+          fontSize: 13,
+          fontWeight: '400',
+          color: COLORS.textLight,
+        }}>kcal/dia</Text></Text>
+        <Text style={{
+          fontSize: 12,
+          color: COLORS.textSub,
+          marginTop: 2,
+        }}>{metricas.nivelAtividadeDescricao}</Text>
+      </View>
+    </View>
+  </View>
+</LinearGradient>
 
         {/* Mensagem Motivacional */}
         <LinearGradient
@@ -1424,7 +1418,7 @@ export default function AnaliseScreen() {
               fontSize: 18,
               fontWeight: '800'
             }}>
-              Começar Jornada
+              Criar Desafio
             </Text>
           </LinearGradient>
         </Pressable>
