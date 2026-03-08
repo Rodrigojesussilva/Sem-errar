@@ -1,4 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,7 +14,9 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -22,6 +25,17 @@ import {
   View,
 } from 'react-native';
 import API_URL from '../../conf/api';
+
+const { width, height } = Dimensions.get("window");
+
+const COLORS = {
+  primary: '#622db2',
+  dot: '#4ecdc4',
+  line: 'rgba(112, 82, 230, 0.15)',
+  textMain: '#1A1A1A',
+  disabled: '#F0F0F0',
+  inputBg: '#F8F9FA',
+};
 
 // ============ INTERFACES E TIPOS ============
 interface ObjetivoCompleto {
@@ -58,7 +72,6 @@ interface UserData {
 
 export default function CadastroScreen() {
   const router = useRouter();
-  const { height } = Dimensions.get('window');
 
   // Estados dos campos
   const [nome, setNome] = useState('');
@@ -108,6 +121,21 @@ export default function CadastroScreen() {
   const idadeRef = useRef<TextInput>(null);
   const senhaRef = useRef<TextInput>(null);
   const confirmarSenhaRef = useRef<TextInput>(null);
+
+  // Elementos estáticos de fundo (igual à tela LoginScreen)
+  const renderStaticBackground = () => (
+    <View style={styles.visualArea}>
+      <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, top: -width * 0.4, right: -width * 0.3, transform: [{ rotate: '15deg' }] }]}>
+        <View style={[styles.staticDot, { bottom: '20%', left: '10%' }]} />
+      </View>
+      <View style={[styles.ellipseLine, { width: width * 1.0, height: width * 1.0, bottom: -width * 0.2, left: -width * 0.4, transform: [{ rotate: '-20deg' }] }]}>
+        <View style={[styles.staticDot, { top: '15%', right: '15%' }]} />
+      </View>
+      <View style={[styles.ellipseLine, { width: width * 1.5, height: width * 0.8, top: height * 0.2, transform: [{ rotate: '110deg' }] }]}>
+        <View style={[styles.staticDot, { top: '50%', right: -5 }]} />
+      </View>
+    </View>
+  );
 
   // ============ FUNÇÕES DE SENHA ============
 
@@ -171,7 +199,7 @@ export default function CadastroScreen() {
           <View style={[
             styles.barraForca,
             {
-              width: forcaInfo.porcentagem,
+              width: `${forcaInfo.porcentagem}%`,
               backgroundColor: forcaInfo.cor
             }
           ]} />
@@ -817,386 +845,656 @@ export default function CadastroScreen() {
   if (carregandoDados) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E88E5" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Carregando seus dados...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Camada de fundo fixa com elipses */}
+        <View style={StyleSheet.absoluteFill}>
+          <View style={{ flex: 1, backgroundColor: '#fff' }} />
+          {renderStaticBackground()}
+        </View>
+
+        {/* Header com botão de voltar */}
+        <View style={styles.header}>
+          <Pressable 
+            onPress={() => router.back()} 
+            style={styles.backButton}
           >
-            {/* LOGO */}
+            <View style={styles.backIconCircle}>
+              <Ionicons name="chevron-back" size={12} color={COLORS.primary} />
+            </View>
+            <Text style={styles.backText}>Voltar</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Logo */}
             <View style={styles.logoContainer}>
               <Image
-                source={require('@/assets/images/logo.png')}
-                style={[styles.logo, height < 700 && { width: 200, height: 110 }]}
+                source={require('@/assets/images/completa-sem-fundo1.png')}
+                style={styles.logo}
                 resizeMode="contain"
               />
               <Text style={styles.slogan}>Crie sua conta gratuitamente</Text>
-
-              {__DEV__ && (
-                <View style={styles.debugContainer}>
-                  <TouchableOpacity
-                    style={[styles.debugButton, styles.debugButtonVer]}
-                    onPress={visualizarDadosStorage}
-                  >
-                    <FontAwesome name="bar-chart" size={16} color="#1E88E5" />
-                    <Text style={[styles.debugButtonText, { color: '#1E88E5' }]}>Meu Relatório</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.debugButton, styles.debugButtonLimpar]} onPress={limparStorage}>
-                    <FontAwesome name="trash" size={16} color="#FF4444" />
-                    <Text style={[styles.debugButtonText, { color: '#FF4444' }]}>Limpar</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
 
-            {/* CARD */}
-            <LinearGradient colors={['#1E88E5', '#8E44AD']} style={styles.card}>
-              <Text style={styles.title}>Crie sua conta</Text>
-              <Text style={styles.subtitle}>Informe seus dados para continuar</Text>
+            {/* Card de Cadastro */}
+            <View style={styles.card}>
+              <Text style={styles.title}>Criar Conta</Text>
+              <Text style={styles.subtitle}>Preencha seus dados para começar</Text>
 
-              {/* SEÇÃO DE FOTO */}
-              <Text style={{ textAlign: 'center', marginBottom: 8, color: '#FFF' }}>
-                Clique para adicionar foto de perfil
-              </Text>
-
-              <View style={styles.photoContainer}>
-                <TouchableOpacity onPress={pickImage} disabled={uploading}>
-                  {uploading ? (
-                    <View style={[styles.photo, styles.photoPlaceholder]}>
-                      <ActivityIndicator size="large" color="#FFF" />
-                    </View>
-                  ) : photo ? (
-                    <Image source={{ uri: photo }} style={styles.photo} />
-                  ) : (
-                    <View style={[styles.photo, styles.photoPlaceholder]}>
-                      <FontAwesome name="camera" size={40} color="#FFF" />
-                      <Text style={styles.photoPlaceholderText}>Adicionar</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {photo && (
-                  <TouchableOpacity
-                    style={styles.removePhotoButton}
-                    onPress={() => setPhoto(null)}
-                  >
-                    <FontAwesome name="times-circle" size={20} color="#FF4444" />
-                    <Text style={styles.removePhotoText}>Remover Foto</Text>
+              {/* Seção de Foto */}
+              <View style={styles.photoSection}>
+                <Text style={styles.photoLabel}>Foto de perfil (opcional)</Text>
+                <View style={styles.photoContainer}>
+                  <TouchableOpacity onPress={pickImage} disabled={uploading} style={styles.photoWrapper}>
+                    {uploading ? (
+                      <View style={[styles.photo, styles.photoPlaceholder]}>
+                        <ActivityIndicator size="large" color={COLORS.primary} />
+                      </View>
+                    ) : photo ? (
+                      <Image source={{ uri: photo }} style={styles.photo} />
+                    ) : (
+                      <View style={[styles.photo, styles.photoPlaceholder]}>
+                        <Ionicons name="camera-outline" size={40} color={COLORS.primary} />
+                        <Text style={styles.photoPlaceholderText}>Adicionar</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
-                )}
+
+                  {photo && (
+                    <TouchableOpacity
+                      style={styles.removePhotoButton}
+                      onPress={() => setPhoto(null)}
+                    >
+                      <Ionicons name="close-circle" size={20} color="#FF6B6B" />
+                      <Text style={styles.removePhotoText}>Remover</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
-              {/* CAMPOS DO FORMULÁRIO */}
-              <Text style={styles.label}>Nome completo *</Text>
-              <TextInput
-                ref={nomeRef}
-                style={styles.input}
-                placeholder="Seu nome completo"
-                placeholderTextColor="#757575"
-                value={nome}
-                onChangeText={setNome}
-                returnKeyType="next"
-                onSubmitEditing={() => emailRef.current?.focus()}
-              />
-
-              <Text style={styles.label}>E-mail *</Text>
-              <TextInput
-                ref={emailRef}
-                style={styles.input}
-                placeholder="seu@email.com"
-                placeholderTextColor="#757575"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                returnKeyType="next"
-                onSubmitEditing={() => confirmarEmailRef.current?.focus()}
-              />
-
-              <Text style={styles.label}>Confirmar e-mail *</Text>
-              <TextInput
-                ref={confirmarEmailRef}
-                style={styles.input}
-                placeholder="seu@email.com novamente"
-                placeholderTextColor="#757575"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={confirmarEmail}
-                onChangeText={setConfirmarEmail}
-                returnKeyType="next"
-                onSubmitEditing={() => idadeRef.current?.focus()}
-              />
-
-              <Text style={styles.label}>Idade *</Text>
-              <TextInput
-                ref={idadeRef}
-                style={styles.input}
-                placeholder="Sua idade"
-                placeholderTextColor="#757575"
-                keyboardType="numeric"
-                value={idade}
-                onChangeText={setIdade}
-                returnKeyType="next"
-                onSubmitEditing={() => {
-                  setSenhaTocada(true);
-                  senhaRef.current?.focus();
-                }}
-              />
-
-              {/* SEÇÃO DE SENHA - CAMPOS JUNTOS */}
-              <View style={styles.senhaSection}>
-                <Text style={styles.sectionTitle}>Senha</Text>
-
-                {/* CAMPO SENHA COM VISUALIZAÇÃO */}
-                <View style={styles.senhaContainer}>
-                  <TextInput
-                    ref={senhaRef}
-                    style={[styles.input, styles.inputSenha]}
-                    placeholder="Crie uma senha forte"
-                    placeholderTextColor="#757575"
-                    secureTextEntry={!mostrarSenha}
-                    value={senha}
-                    onChangeText={(text) => {
-                      setSenha(text);
-                      atualizarRequisitosSenha(text);
-                      setSenhaTocada(true);
-                    }}
-                    onFocus={() => setSenhaTocada(true)}
-                    returnKeyType="next"
-                    onSubmitEditing={() => {
-                      setConfirmarSenhaTocada(true);
-                      confirmarSenhaRef.current?.focus();
-                    }}
-                  />
-                  <TouchableOpacity
-                    style={styles.iconeSenha}
-                    onPress={() => {
-                      setMostrarSenha(!mostrarSenha);
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}
-                  >
-                    <FontAwesome
-                      name={mostrarSenha ? "eye-slash" : "eye"}
-                      size={22}
-                      color="#666"
+              {/* Formulário */}
+              <View style={styles.formContainer}>
+                {/* Nome */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Nome completo *</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                      ref={nomeRef}
+                      style={styles.input}
+                      placeholder="Seu nome completo"
+                      placeholderTextColor="#999"
+                      value={nome}
+                      onChangeText={setNome}
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
+                      editable={!loading}
                     />
-                  </TouchableOpacity>
+                  </View>
                 </View>
 
-                {/* CAMPO CONFIRMAR SENHA COM VISUALIZAÇÃO */}
-                <View style={[styles.senhaContainer, styles.confirmarSenhaContainer]}>
-                  <TextInput
-                    ref={confirmarSenhaRef}
-                    style={[styles.input, styles.inputSenha]}
-                    placeholder="Digite a senha novamente"
-                    placeholderTextColor="#757575"
-                    secureTextEntry={!mostrarConfirmarSenha}
-                    value={confirmarSenha}
-                    onChangeText={(text) => {
-                      setConfirmarSenha(text);
-                      setConfirmarSenhaTocada(true);
-                    }}
-                    onFocus={() => setConfirmarSenhaTocada(true)}
-                    returnKeyType="done"
-                    onSubmitEditing={handleSubmit}
-                  />
-                  <TouchableOpacity
-                    style={styles.iconeSenha}
-                    onPress={() => {
-                      setMostrarConfirmarSenha(!mostrarConfirmarSenha);
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}
-                  >
-                    <FontAwesome
-                      name={mostrarConfirmarSenha ? "eye-slash" : "eye"}
-                      size={22}
-                      color="#666"
+                {/* Email */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>E-mail *</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                      ref={emailRef}
+                      style={styles.input}
+                      placeholder="seu@email.com"
+                      placeholderTextColor="#999"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                      returnKeyType="next"
+                      onSubmitEditing={() => confirmarEmailRef.current?.focus()}
+                      editable={!loading}
                     />
-                  </TouchableOpacity>
+                  </View>
                 </View>
 
-                {/* INDICADOR DE FORÇA DA SENHA */}
-                {senhaTocada && senha.length > 0 && (
-                  <>
-                    <IndicadorForcaSenha />
-                    <ListaRequisitosSenha />
-                  </>
-                )}
-
-                {/* INDICADOR DE CONFIRMAÇÃO DE SENHA */}
-                {confirmarSenhaTocada && confirmarSenha.length > 0 && (
-                  <View style={styles.senhasCoincidemContainer}>
-                    <FontAwesome
-                      name={senha === confirmarSenha ? "check-circle" : "exclamation-circle"}
-                      size={16}
-                      color={senha === confirmarSenha ? "#4CAF50" : "#FF4444"}
+                {/* Confirmar Email */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Confirmar e-mail *</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                      ref={confirmarEmailRef}
+                      style={styles.input}
+                      placeholder="seu@email.com novamente"
+                      placeholderTextColor="#999"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={confirmarEmail}
+                      onChangeText={setConfirmarEmail}
+                      returnKeyType="next"
+                      onSubmitEditing={() => idadeRef.current?.focus()}
+                      editable={!loading}
                     />
-                    <Text style={[
-                      styles.senhasCoincidemTexto,
-                      { color: senha === confirmarSenha ? "#4CAF50" : "#FF4444" }
-                    ]}>
-                      {senha === confirmarSenha ? "Senhas coincidem ✓" : "Senhas diferentes ✗"}
+                  </View>
+                </View>
+
+                {/* Idade */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Idade *</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="calendar-outline" size={20} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                      ref={idadeRef}
+                      style={styles.input}
+                      placeholder="Sua idade"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={idade}
+                      onChangeText={setIdade}
+                      returnKeyType="next"
+                      onSubmitEditing={() => {
+                        setSenhaTocada(true);
+                        senhaRef.current?.focus();
+                      }}
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {/* Seção de Senha */}
+                <View style={styles.senhaSection}>
+                  <Text style={styles.sectionTitle}>Senha</Text>
+
+                  {/* Campo Senha */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Crie uma senha *</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        ref={senhaRef}
+                        style={[styles.input, styles.inputWithIcon]}
+                        placeholder="Crie uma senha forte"
+                        placeholderTextColor="#999"
+                        secureTextEntry={!mostrarSenha}
+                        value={senha}
+                        onChangeText={(text) => {
+                          setSenha(text);
+                          atualizarRequisitosSenha(text);
+                          setSenhaTocada(true);
+                        }}
+                        onFocus={() => setSenhaTocada(true)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => {
+                          setConfirmarSenhaTocada(true);
+                          confirmarSenhaRef.current?.focus();
+                        }}
+                        editable={!loading}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeButton}
+                        onPress={() => {
+                          setMostrarSenha(!mostrarSenha);
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                      >
+                        <Ionicons
+                          name={mostrarSenha ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color="#888"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Indicador de Força da Senha */}
+                  {senhaTocada && senha.length > 0 && (
+                    <>
+                      <IndicadorForcaSenha />
+                      <ListaRequisitosSenha />
+                    </>
+                  )}
+
+                  {/* Campo Confirmar Senha */}
+                  <View style={[styles.inputGroup, styles.confirmarSenhaGroup]}>
+                    <Text style={styles.label}>Confirmar senha *</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        ref={confirmarSenhaRef}
+                        style={[styles.input, styles.inputWithIcon]}
+                        placeholder="Digite a senha novamente"
+                        placeholderTextColor="#999"
+                        secureTextEntry={!mostrarConfirmarSenha}
+                        value={confirmarSenha}
+                        onChangeText={(text) => {
+                          setConfirmarSenha(text);
+                          setConfirmarSenhaTocada(true);
+                        }}
+                        onFocus={() => setConfirmarSenhaTocada(true)}
+                        returnKeyType="done"
+                        onSubmitEditing={handleSubmit}
+                        editable={!loading}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeButton}
+                        onPress={() => {
+                          setMostrarConfirmarSenha(!mostrarConfirmarSenha);
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                      >
+                        <Ionicons
+                          name={mostrarConfirmarSenha ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color="#888"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Indicador de Confirmação de Senha */}
+                  {confirmarSenhaTocada && confirmarSenha.length > 0 && (
+                    <View style={styles.senhasCoincidemContainer}>
+                      <Ionicons
+                        name={senha === confirmarSenha ? "checkmark-circle" : "alert-circle"}
+                        size={20}
+                        color={senha === confirmarSenha ? "#4CAF50" : "#FF6B6B"}
+                      />
+                      <Text style={[
+                        styles.senhasCoincidemTexto,
+                        { color: senha === confirmarSenha ? "#4CAF50" : "#FF6B6B" }
+                      ]}>
+                        {senha === confirmarSenha ? "Senhas coincidem" : "Senhas diferentes"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Requisitos Básicos */}
+                <View style={styles.requisitosBasicos}>
+                  <Text style={styles.requisitosBasicosText}>• Idade mínima: 14 anos</Text>
+                  <Text style={styles.requisitosBasicosText}>• Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial</Text>
+                </View>
+
+                {/* Indicador de Dados Carregados */}
+                {userData ? (
+                  <View style={styles.dadosCarregados}>
+                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                    <Text style={styles.dadosCarregadosText}>Dados do onboarding carregados</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.dadosCarregados, styles.dadosNaoCarregados]}>
+                    <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
+                    <Text style={[styles.dadosCarregadosText, { color: '#FF6B6B' }]}>
+                      Nenhum dado do onboarding encontrado
                     </Text>
                   </View>
                 )}
+
+                {/* Botão Cadastrar */}
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={loading}
+                  style={styles.buttonWrapper}
+                >
+                  {!loading ? (
+                    <LinearGradient
+                      colors={['#4ecdc4', '#622db2', '#4b208c']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.primaryButton}
+                    >
+                      <Ionicons name="person-add-outline" size={20} color="#FFF" style={styles.buttonIcon} />
+                      <Text style={styles.primaryButtonText}>Cadastrar</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.primaryButton, { backgroundColor: COLORS.disabled }]}>
+                      <ActivityIndicator color="#FFF" />
+                    </View>
+                  )}
+                </Pressable>
               </View>
+            </View>
 
-              {/* REQUISITOS BÁSICOS */}
-              <View style={styles.requisitosBasicos}>
-                <Text style={styles.requisitosBasicosText}>• Idade mínima: 14 anos</Text>
-                <Text style={styles.requisitosBasicosText}>• Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial</Text>
-              </View>
-
-              {/* INDICADOR DE DADOS CARREGADOS */}
-              {userData ? (
-                <View style={styles.dadosCarregados}>
-                  <FontAwesome name="check-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.dadosCarregadosText}>Dados do onboarding carregados ✓</Text>
-                </View>
-              ) : (
-                <View style={[styles.dadosCarregados, { backgroundColor: 'rgba(255, 68, 68, 0.2)' }]}>
-                  <FontAwesome name="exclamation-circle" size={16} color="#FF4444" />
-                  <Text style={[styles.dadosCarregadosText, { color: '#FF4444' }]}>
-                    Nenhum dado do onboarding encontrado
-                  </Text>
-                </View>
-              )}
-
-              {/* BOTÃO DE CADASTRO */}
-              <TouchableOpacity
-                style={[styles.button, loading && { opacity: 0.7 }]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Cadastrar</Text>}
+            {/* Link para Login */}
+            <View style={styles.footer}>
+              <TouchableOpacity onPress={() => router.push('/login')}>
+                <Text style={styles.footerLinkText}>Já tem uma conta? Faça login</Text>
               </TouchableOpacity>
+            </View>
 
-              {/* LINK PARA LOGIN */}
-              <View style={styles.footer}>
-                <TouchableOpacity onPress={() => router.push('/login')}>
-                  <Text style={styles.footerLinkText}>Já tem uma conta? Faça login</Text>
+            {/* Termos de uso */}
+            <View style={styles.termsContainer}>
+              <Text style={styles.termsText}>
+                Ao se cadastrar, você concorda com nossos{" "}
+                <Text style={styles.termsLink}>Termos de Serviço</Text> e{" "}
+                <Text style={styles.termsLink}>Política de Privacidade</Text>.
+              </Text>
+            </View>
+
+            {/* Botões de debug (apenas em desenvolvimento) */}
+            {__DEV__ && (
+              <View style={styles.debugContainer}>
+                <TouchableOpacity
+                  style={[styles.debugButton, styles.debugButtonVer]}
+                  onPress={visualizarDadosStorage}
+                >
+                  <FontAwesome name="bar-chart" size={16} color="#1E88E5" />
+                  <Text style={[styles.debugButtonText, { color: '#1E88E5' }]}>Meu Relatório</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.debugButton, styles.debugButtonLimpar]} onPress={limparStorage}>
+                  <FontAwesome name="trash" size={16} color="#FF4444" />
+                  <Text style={[styles.debugButtonText, { color: '#FF4444' }]}>Limpar</Text>
                 </TouchableOpacity>
               </View>
-            </LinearGradient>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-
-      {/* MODAL DE FEEDBACK */}
-      {feedback.visible && (
-        <View style={styles.overlay}>
-          <View style={styles.modal}>
-            <Text style={[styles.modalTitle, feedback.success ? styles.modalTitleSuccess : styles.modalTitleError]}>
-              {feedback.title}
-            </Text>
-            <Text style={styles.modalMessage}>{feedback.message}</Text>
-            <TouchableOpacity
-              style={[styles.modalButton, feedback.success ? styles.modalButtonSuccess : styles.modalButtonError]}
-              onPress={() => {
-                setFeedback({ ...feedback, visible: false });
-                if (feedback.success) router.replace('/login');
-              }}
-            >
-              <Text style={styles.modalButtonText}>
-                {feedback.success ? 'Ir para Login' : 'Tentar Novamente'}
-              </Text>
-            </TouchableOpacity>
+            )}
           </View>
-        </View>
-      )}
-    </View>
+        </ScrollView>
+
+        {/* Modal de Feedback */}
+        {feedback.visible && (
+          <View style={styles.overlay}>
+            <TouchableWithoutFeedback onPress={() => setFeedback({ ...feedback, visible: false })}>
+              <View style={styles.overlayBackground}>
+                <View style={styles.modal}>
+                  <View style={styles.modalHeader}>
+                    <Ionicons
+                      name={feedback.success ? "checkmark-circle" : "alert-circle"}
+                      size={48}
+                      color={feedback.success ? "#4CAF50" : "#FF6B6B"}
+                    />
+                    <Text style={styles.modalTitle}>{feedback.title}</Text>
+                  </View>
+                  <Text style={styles.modalMessage}>{feedback.message}</Text>
+                  <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={() => {
+                      setFeedback({ ...feedback, visible: false });
+                      if (feedback.success) router.replace('/login');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.modalButtonText}>
+                      {feedback.success ? 'Ir para Login' : 'Tentar Novamente'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
 // ============ STYLES ============
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
-  scrollContent: { flexGrow: 1, padding: 20, justifyContent: 'center' },
-  logoContainer: { alignItems: 'center', marginBottom: 30 },
-  logo: { width: 240, height: 130 },
-  slogan: { fontSize: 16, color: '#666', marginTop: 10, fontStyle: 'italic', textAlign: 'center' },
-  debugContainer: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },
-  debugButton: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: '#F0F0F0', borderRadius: 20, gap: 8 },
-  debugButtonVer: { backgroundColor: '#E3F2FD', borderWidth: 1, borderColor: '#1E88E5' },
-  debugButtonLimpar: { backgroundColor: '#FFE5E5' },
-  debugButtonText: { fontSize: 12, color: '#666' },
-  card: { borderRadius: 24, padding: 24, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, elevation: 6 },
-  title: { fontSize: 22, color: '#FFF', fontWeight: '600', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#E0E0E0', textAlign: 'center', marginBottom: 20 },
-  label: { color: '#FFF', fontWeight: '600', marginBottom: 6, marginTop: 12, fontSize: 14 },
-  photoContainer: { alignItems: 'center', marginVertical: 10 },
-  photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#FFF' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff',
+  },
+  visualArea: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+    overflow: 'hidden',
+  },
+  ellipseLine: {
+    position: 'absolute',
+    borderWidth: 1.5,
+    borderColor: COLORS.line,
+    borderRadius: 999,
+  },
+  staticDot: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLORS.dot,
+    backgroundColor: '#fff',
+  },
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    zIndex: 100,
+  },
+  backButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    alignSelf: 'flex-start' 
+  },
+  backIconCircle: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.line,
+    elevation: 3,
+  },
+  backText: { 
+    color: COLORS.primary, 
+    marginLeft: 10, 
+    fontWeight: '700', 
+    fontSize: 16 
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 25,
+    paddingBottom: 30,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  logo: {
+    width: width * 0.8,
+    height: 120,
+  },
+  slogan: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#f4f4f4',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.textMain,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  photoSection: {
+    marginBottom: 20,
+  },
+  photoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textMain,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  photoContainer: {
+    alignItems: 'center',
+  },
+  photoWrapper: {
+    marginBottom: 10,
+  },
+  photo: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+  },
   photoPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: COLORS.line,
     borderStyle: 'dashed',
   },
-  photoPlaceholderText: { color: '#FFF', fontSize: 12, marginTop: 5, textAlign: 'center' },
-  removePhotoButton: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 },
-  removePhotoText: { color: '#FFF', fontSize: 14 },
-  input: { backgroundColor: '#FFF', borderRadius: 14, height: 52, paddingHorizontal: 16, fontSize: 16, borderWidth: 1, borderColor: '#DDD' },
-
-  // SEÇÃO DE SENHA
-  senhaSection: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
+  photoPlaceholderText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    marginTop: 5,
+    textAlign: 'center',
   },
-  sectionTitle: {
-    color: '#FFF',
-    fontSize: 16,
+  removePhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 8,
+    backgroundColor: '#FEE',
+    borderRadius: 20,
+  },
+  removePhotoText: {
+    color: '#FF6B6B',
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 12,
   },
-
-  // Estilos para senha
-  senhaContainer: { position: 'relative', width: '100%' },
-  confirmarSenhaContainer: { marginTop: 12 },
-  inputSenha: { paddingRight: 50 },
-  iconeSenha: { position: 'absolute', right: 16, top: 14, zIndex: 1, padding: 5 },
-  forcaSenhaContainer: { marginTop: 8, marginBottom: 12 },
-  barraForcaContainer: { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden' },
-  barraForca: { height: '100%', borderRadius: 3 },
-  textoForca: { fontSize: 12, fontWeight: '600', marginTop: 4, textAlign: 'right' },
-
-  // Estilos para lista de requisitos
-  requisitosListaContainer: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
+  formContainer: {
+    gap: 16,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textMain,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    paddingHorizontal: 12,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    fontSize: 15,
+    color: COLORS.textMain,
+  },
+  inputWithIcon: {
+    paddingRight: 40,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  senhaSection: {
+    backgroundColor: '#F8F9FA',
     borderRadius: 16,
     padding: 16,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textMain,
+    marginBottom: 12,
+  },
+  confirmarSenhaGroup: {
+    marginTop: 8,
+  },
+  forcaSenhaContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  barraForcaContainer: {
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  barraForca: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  textoForca: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  requisitosListaContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   requisitosTitulo: {
-    color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
+    color: COLORS.textMain,
     marginBottom: 12,
   },
   requisitoItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 10,
+    marginBottom: 10,
+    padding: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
   },
   requisitoIcone: {
     width: 20,
@@ -1216,9 +1514,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   requisitoItemTexto: {
-    color: '#FFF',
     fontSize: 14,
     fontWeight: '500',
+    color: COLORS.textMain,
     marginBottom: 2,
   },
   requisitoItemTextoOk: {
@@ -1226,33 +1524,31 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   requisitoItemDescricao: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#888',
     fontSize: 11,
   },
   requisitoCheck: {
     marginLeft: 'auto',
     paddingLeft: 8,
   },
-
-  // Estilos para barra de progresso
   progressoRequisitos: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: '#f0f0f0',
   },
   progressoBarraContainer: {
     width: '100%',
   },
   progressoBarraTexto: {
-    color: '#FFF',
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 8,
+    color: COLORS.textMain,
   },
   progressoBarraBackground: {
     height: 8,
-    backgroundColor: '#FFF',
+    backgroundColor: '#E0E0E0',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -1261,157 +1557,197 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     borderRadius: 4,
   },
-
-  // Estilos para confirmação de senha
   senhasCoincidemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginTop: 8,
-    marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: '#FFF',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   senhasCoincidemTexto: {
     fontSize: 13,
     fontWeight: '500',
   },
-
-  // Estilos para requisitos básicos
   requisitosBasicos: {
-    marginTop: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   requisitosBasicosText: {
-    color: '#E0E0E0',
+    color: '#666',
     fontSize: 12,
     marginBottom: 4,
     lineHeight: 18,
   },
-
-  // Outros estilos
   dadosCarregados: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
     gap: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
     padding: 12,
-    borderRadius: 20
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  dadosNaoCarregados: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderColor: '#FF6B6B',
   },
   dadosCarregadosText: {
-    color: '#FFF',
     fontSize: 13,
-    fontWeight: '500'
+    fontWeight: '500',
+    color: '#4CAF50',
   },
-  button: {
-    backgroundColor: '#27AE60',
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 4,
+    marginTop: 8,
+  },
+  primaryButton: {
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
-  buttonText: {
-    color: '#FFF',
+  primaryButtonText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: '600'
+    fontWeight: '800',
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   footer: {
-    marginTop: 22,
-    alignItems: 'center'
+    marginBottom: 15,
+    alignItems: 'center',
   },
   footerLinkText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFF',
+    color: COLORS.primary,
     textAlign: 'center',
-    textDecorationLine: 'underline'
   },
-
-  // Modal
+  termsContainer: {
+    marginTop: 5,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  debugContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  debugButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    gap: 8,
+  },
+  debugButtonVer: {
+    backgroundColor: '#E3F2FD',
+    borderWidth: 1,
+    borderColor: '#1E88E5',
+  },
+  debugButtonLimpar: {
+    backgroundColor: '#FFE5E5',
+  },
+  debugButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    zIndex: 1000,
+  },
+  overlayBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000
+    padding: 20,
   },
   modal: {
     backgroundColor: '#FFF',
-    width: '85%',
-    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
     padding: 24,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f4f4f4',
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 10
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 15,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'center'
-  },
-  modalTitleSuccess: {
-    color: '#27AE60'
-  },
-  modalTitleError: {
-    color: '#E74C3C'
+    marginTop: 10,
+    color: COLORS.textMain,
+    textAlign: 'center',
   },
   modalMessage: {
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 25,
     color: '#555',
-    lineHeight: 22
+    lineHeight: 22,
   },
   modalButton: {
-    paddingHorizontal: 32,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 40,
     paddingVertical: 14,
-    borderRadius: 14,
-    minWidth: 150
-  },
-  modalButtonSuccess: {
-    backgroundColor: '#27AE60'
-  },
-  modalButtonError: {
-    backgroundColor: '#1E88E5'
+    borderRadius: 20,
+    minWidth: 120,
   },
   modalButtonText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 16,
-    textAlign: 'center'
+    textAlign: 'center',
   },
-
-  // Loading
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF'
+    backgroundColor: '#FFF',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666'
+    color: '#666',
   },
 });
