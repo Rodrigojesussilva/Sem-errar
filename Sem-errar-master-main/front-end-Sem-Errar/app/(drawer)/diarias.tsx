@@ -1,18 +1,15 @@
-// app/(drawer)/diaria.tsx - Versão com copos reais
-import {
-  FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons
-} from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+// app/(drawer)/treino.tsx - CARD ROTINA DO DIA COM NOME DO EXERCÍCIO CONTROLADO
+import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
+  Animated,
+  Easing,
+  FlatList,
   Modal,
-  SafeAreaView,
+  Platform,
   ScrollView,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -22,2126 +19,1098 @@ import {
   View
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
+// Mapeamento completo da tabela de treinos
+const TABELA_TREINOS = {
+  1: [
+    { id: '1-1', diasSemana: 1, dia: 1, tipo: 'Full Body', exercicios: ['Agachamento', 'Flexão', 'Remada com elástico', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Corpo todo' },
+    { id: '1-2', diasSemana: 1, dia: 2, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '1-3', diasSemana: 1, dia: 3, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '1-4', diasSemana: 1, dia: 4, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '1-5', diasSemana: 1, dia: 5, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '1-6', diasSemana: 1, dia: 6, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '1-7', diasSemana: 1, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  2: [
+    { id: '2-1', diasSemana: 2, dia: 1, tipo: 'Upper Body', exercicios: ['Flexão', 'Remada com elástico', 'Elevação lateral', 'Prancha lateral'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Parte superior' },
+    { id: '2-2', diasSemana: 2, dia: 2, tipo: 'Lower Body', exercicios: ['Agachamento', 'Avanço (lunge)', 'Elevação de quadril', 'Abdominal bicicleta'], series: ['3x15', '3x12', '3x15', '3x20'], observacao: 'Parte inferior' },
+    { id: '2-3', diasSemana: 2, dia: 3, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '2-4', diasSemana: 2, dia: 4, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '2-5', diasSemana: 2, dia: 5, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '2-6', diasSemana: 2, dia: 6, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '2-7', diasSemana: 2, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  3: [
+    { id: '3-1', diasSemana: 3, dia: 1, tipo: 'Full Body (Força)', exercicios: ['Agachamento', 'Flexão', 'Remada', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Intensidade alta' },
+    { id: '3-2', diasSemana: 3, dia: 2, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '3-3', diasSemana: 3, dia: 3, tipo: 'Core + Resistência', exercicios: ['Abdominal bicicleta', 'Prancha lateral', 'Elevação de quadril', 'Flexão'], series: ['3x20', '3x30s', '3x15', '3x10'], observacao: 'Corpo todo leve' },
+    { id: '3-4', diasSemana: 3, dia: 4, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '3-5', diasSemana: 3, dia: 5, tipo: 'Full Body (Resistência)', exercicios: ['Agachamento com salto leve', 'Flexão', 'Remada com elástico', 'Prancha lateral'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Corpo todo leve' },
+    { id: '3-6', diasSemana: 3, dia: 6, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '3-7', diasSemana: 3, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  4: [
+    { id: '4-1', diasSemana: 4, dia: 1, tipo: 'Upper Body', exercicios: ['Flexão', 'Remada', 'Elevação lateral', 'Prancha'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Parte superior' },
+    { id: '4-2', diasSemana: 4, dia: 2, tipo: 'Lower Body', exercicios: ['Agachamento', 'Avanço', 'Elevação de quadril', 'Abdominal bicicleta'], series: ['3x15', '3x12', '3x15', '3x20'], observacao: 'Parte inferior' },
+    { id: '4-3', diasSemana: 4, dia: 3, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '4-4', diasSemana: 4, dia: 4, tipo: 'Upper Body (variação)', exercicios: ['Flexão diamante', 'Remada invertida', 'Elevação frontal', 'Prancha lateral'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Intensidade diferente' },
+    { id: '4-5', diasSemana: 4, dia: 5, tipo: 'Lower Body (variação)', exercicios: ['Agachamento sumô', 'Avanço lateral', 'Elevação de quadril com bola', 'Abdominal bicicleta'], series: ['3x15', '3x12', '3x15', '3x20'], observacao: 'Intensidade diferente' },
+    { id: '4-6', diasSemana: 4, dia: 6, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '4-7', diasSemana: 4, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  5: [
+    { id: '5-1', diasSemana: 5, dia: 1, tipo: 'Peito + Tríceps', exercicios: ['Flexão', 'Tríceps no banco', 'Crucifixo com halteres', 'Prancha'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Foco superior' },
+    { id: '5-2', diasSemana: 5, dia: 2, tipo: 'Costas + Bíceps', exercicios: ['Remada', 'Rosca bíceps', 'Pull-over', 'Prancha lateral'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Foco superior' },
+    { id: '5-3', diasSemana: 5, dia: 3, tipo: 'Pernas', exercicios: ['Agachamento', 'Avanço', 'Elevação de quadril', 'Panturrilha'], series: ['3x15', '3x12', '3x15', '3x20'], observacao: 'Foco inferior' },
+    { id: '5-4', diasSemana: 5, dia: 4, tipo: 'Ombros + Core', exercicios: ['Elevação lateral', 'Elevação frontal', 'Prancha', 'Abdominal bicicleta'], series: ['3x12', '3x12', '3x30s', '3x20'], observacao: 'Parte superior e core' },
+    { id: '5-5', diasSemana: 5, dia: 5, tipo: 'Full Body leve', exercicios: ['Agachamento leve', 'Flexão leve', 'Remada leve', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Recuperação ativa' },
+    { id: '5-6', diasSemana: 5, dia: 6, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' },
+    { id: '5-7', diasSemana: 5, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  6: [
+    { id: '6-1', diasSemana: 6, dia: 1, tipo: 'Peito', exercicios: ['Flexão', 'Crucifixo', 'Tríceps banco', 'Prancha'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Foco superior' },
+    { id: '6-2', diasSemana: 6, dia: 2, tipo: 'Costas', exercicios: ['Remada', 'Pull-over', 'Elevação lateral', 'Prancha lateral'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Foco superior' },
+    { id: '6-3', diasSemana: 6, dia: 3, tipo: 'Pernas', exercicios: ['Agachamento', 'Avanço', 'Elevação de quadril', 'Panturrilha'], series: ['3x15', '3x12', '3x15', '3x20'], observacao: 'Foco inferior' },
+    { id: '6-4', diasSemana: 6, dia: 4, tipo: 'Ombros', exercicios: ['Elevação lateral', 'Elevação frontal', 'Remada alta', 'Prancha'], series: ['3x12', '3x12', '3x12', '3x30s'], observacao: 'Foco superior' },
+    { id: '6-5', diasSemana: 6, dia: 5, tipo: 'Braços', exercicios: ['Rosca bíceps', 'Tríceps banco', 'Bíceps martelo', 'Flexão diamante'], series: ['3x12', '3x12', '3x12', '3x12'], observacao: 'Foco braços' },
+    { id: '6-6', diasSemana: 6, dia: 6, tipo: 'Core', exercicios: ['Prancha frontal', 'Prancha lateral', 'Elevação de quadril', 'Abdominal bicicleta'], series: ['3x30s', '3x30s', '3x15', '3x20'], observacao: 'Foco core' },
+    { id: '6-7', diasSemana: 6, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ],
+  7: [
+    { id: '7-1', diasSemana: 7, dia: 1, tipo: 'Full Body pesado', exercicios: ['Agachamento', 'Flexão', 'Remada', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Corpo todo' },
+    { id: '7-2', diasSemana: 7, dia: 2, tipo: 'Core', exercicios: ['Prancha', 'Abdominal bicicleta', 'Elevação de quadril', 'Prancha lateral'], series: ['3x30s', '3x20', '3x15', '3x30s'], observacao: 'Corpo todo leve' },
+    { id: '7-3', diasSemana: 7, dia: 3, tipo: 'Full Body pesado', exercicios: ['Agachamento', 'Flexão', 'Remada', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Corpo todo' },
+    { id: '7-4', diasSemana: 7, dia: 4, tipo: 'Core', exercicios: ['Prancha', 'Abdominal bicicleta', 'Elevação de quadril', 'Prancha lateral'], series: ['3x30s', '3x20', '3x15', '3x30s'], observacao: 'Corpo todo leve' },
+    { id: '7-5', diasSemana: 7, dia: 5, tipo: 'Full Body leve', exercicios: ['Agachamento leve', 'Flexão leve', 'Remada leve', 'Prancha'], series: ['3x12', '3x10', '3x12', '3x30s'], observacao: 'Corpo todo leve' },
+    { id: '7-6', diasSemana: 7, dia: 6, tipo: 'Alongamento / Mobilidade', exercicios: ['Alongamento de corpo todo', 'Yoga leve', 'Prancha leve'], series: ['3x30s', '3x30s', '3x30s'], observacao: 'Recuperação ativa' },
+    { id: '7-7', diasSemana: 7, dia: 7, tipo: 'Descanso', exercicios: [], series: [], observacao: 'Recuperação' }
+  ]
+};
 
-// Definindo interfaces para tipagem
-interface Measurement {
-  type: string;
-  value: string;
-  unit: string;
-  target: string;
-  change: string;
-}
+// Treino padrão: Full Body (Resistência) - 3 dias, dia 5
+const TREINO_PADRAO = { diasSemana: 3, dia: 5 };
 
-interface Task {
+// Interface para o treino
+interface Treino {
   id: string;
-  title: string;
-  time: string;
-  duration: string;
-  completed: boolean;
-  icon: string;
-  type: string;
-  color: string;
-  description: string;
-  measurement?: Measurement;
+  diasSemana: number;
+  dia: number;
+  tipo: string;
+  exercicios: string[];
+  series: string[];
+  observacao: string;
 }
 
-// Adicione esta interface para o treino do dia
-interface DailyWorkout {
-  id: string;
-  name: string;
-  duration: string;
-  exercises: number;
-  calories: number;
-  type: string;
-  color: string;
+// Interface para registro de exercício
+interface ExercicioRegistro {
+  nome: string;
+  series: {
+    numero: number;
+    kg: string;
+    repeticoes: string;
+  }[];
 }
 
-export default function DiariaScreen() {
+export default function TreinoScreen() {
   const router = useRouter();
-  const [selectedDay, setSelectedDay] = useState(15);
-  const [currentTime, setCurrentTime] = useState('12:30');
-
-  // Estados para os modais
-  const [weightModalVisible, setWeightModalVisible] = useState(false);
-  const [waistModalVisible, setWaistModalVisible] = useState(false);
-  const [waterInfoModalVisible, setWaterInfoModalVisible] = useState(false);
-
-  // Estados para os valores editáveis
-  const [editingWeight, setEditingWeight] = useState('102.8');
-  const [editingWaist, setEditingWaist] = useState('109');
-  const [weightTarget, setWeightTarget] = useState('95.0');
-  const [waistTarget, setWaistTarget] = useState('95');
-
-  // Estado para o treino do dia
-  const [dailyWorkout, setDailyWorkout] = useState<DailyWorkout>({
-    id: '1',
-    name: 'Treino de Peito e Tríceps',
-    duration: '60 min',
-    exercises: 8,
-    calories: 450,
-    type: 'musculação',
-    color: '#EA4335'
+  
+  // Estado para o treino atual (começa com o padrão)
+  const [treinoAtual, setTreinoAtual] = useState<Treino>(() => {
+    return TABELA_TREINOS[TREINO_PADRAO.diasSemana as keyof typeof TABELA_TREINOS][TREINO_PADRAO.dia - 1];
   });
 
-  // Estado para o consumo de água
-  const [waterIntake, setWaterIntake] = useState({
-    consumed: 300, // ml
-    target: 2205, // ml
-    percentage: 13 // 300 ÷ 2205 × 100 ≈ 13%
+  // Estado para o modal de seleção
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  // Estado para o modal de registro de treino
+  const [registroModalVisible, setRegistroModalVisible] = useState(false);
+  
+  // Estado para o treino temporariamente selecionado no modal
+  const [tempTreino, setTempTreino] = useState<Treino | null>(null);
+  
+  // Estado para os registros dos exercícios
+  const [registros, setRegistros] = useState<ExercicioRegistro[]>([]);
+  
+  // Lista plana de todos os treinos para o modal
+  const [todosTreinos, setTodosTreinos] = useState(() => {
+    const treinos: any[] = [];
+    Object.keys(TABELA_TREINOS).forEach(dias => {
+      const treinosDia = TABELA_TREINOS[parseInt(dias) as keyof typeof TABELA_TREINOS];
+      treinosDia.forEach(treino => {
+        if (treino.tipo !== 'Descanso') {
+          treinos.push({
+            ...treino,
+            titulo: `${treino.tipo} (${treino.diasSemana} dias, dia ${treino.dia})`
+          });
+        }
+      });
+    });
+    return treinos;
   });
 
-  // Dados das tarefas diárias com tipagem correta
-  const [dailyTasks, setDailyTasks] = useState<Task[]>([
-    {
-      id: '7',
-      title: 'Treino Cardio',
-      time: '16:00',
-      duration: '45 min',
-      completed: false,
-      icon: 'running',
-      type: 'workout',
-      color: '#8E44AD',
-      description: 'Esteira ou corrida ao ar livre'
-    },
-  ]);
+  // Inicializa os registros quando o treino muda
+  useEffect(() => {
+    const novosRegistros = treinoAtual.exercicios.map((exercicio, index) => {
+      // Extrai número de séries do formato "3x12" ou "3x30s"
+      const seriesCount = parseInt(treinoAtual.series[index].split('x')[0]) || 3;
+      
+      return {
+        nome: exercicio,
+        series: Array.from({ length: seriesCount }, (_, i) => ({
+          numero: i + 1,
+          kg: '',
+          repeticoes: ''
+        }))
+      };
+    });
+    setRegistros(novosRegistros);
+  }, [treinoAtual]);
 
-  // Dados de medições resumo
-  interface MeasurementSummary {
-    current: string;
-    unit: string;
-    target: string;
-    change: string;
-    progress: number;
-  }
+  // Animações
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(20))[0];
 
-  const [measurementsSummary, setMeasurementsSummary] = useState<{
-    weight: MeasurementSummary;
-    waist: MeasurementSummary;
-  }>({
-    weight: {
-      current: editingWeight,
-      unit: 'kg',
-      target: weightTarget,
-      change: '-2.2',
-      progress: 65
-    },
-    waist: {
-      current: editingWaist,
-      unit: 'cm',
-      target: waistTarget,
-      change: '-3',
-      progress: 45
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const shareResults = async () => {
+    try {
+      let message = '';
+      
+      if (treinoAtual.tipo === 'Descanso') {
+        message = `📅 Hoje é dia de DESCANSO!`;
+      } else {
+        const exerciciosLista = treinoAtual.exercicios.map((ex: string, index: number) => 
+          `${index + 1}. ${ex} - ${treinoAtual.series[index]}`
+        ).join('\n');
+        
+        message = `💪 *ROTINA DO DIA* 💪\n\n` +
+                  `🏋️ ${treinoAtual.tipo}\n` +
+                  `📊 ${treinoAtual.exercicios.length} exercícios\n` +
+                  `⏱️ 60 min\n` +
+                  `🔥 450 kcal\n\n` +
+                  `📋 *EXERCÍCIOS:*\n${exerciciosLista}`;
+      }
+
+      await Share.share({
+        message,
+        title: 'Minha Rotina de Hoje',
+      });
+    } catch (error) {
+      console.log(error);
     }
-  });
-
-  // Dados dos dias da semana
-  const weekDays = [
-    { day: 'Dom', date: 10 },
-    { day: 'Seg', date: 11 },
-    { day: 'Ter', date: 12 },
-    { day: 'Qua', date: 13 },
-    { day: 'Qui', date: 14 },
-    { day: 'Sex', date: 15, today: true },
-    { day: 'Sáb', date: 16 },
-  ];
-
-  // Macros nutricionais
-  const nutritionData = {
-    calories: { current: 1250, target: 2500 },
-    protein: { current: 75, target: 150 },
-    carbs: { current: 138, target: 275 },
-    fat: { current: 35, target: 70 }
   };
 
-  // Alternar estado de completude da tarefa
-  const toggleTaskCompletion = (taskId: string) => {
-    setDailyTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const selecionarTreinoTemp = (treino: any) => {
+    setTempTreino(treino);
   };
 
-  // Calcular progresso do dia
-  const calculateDayProgress = () => {
-    const completedTasks = dailyTasks.filter(task => task.completed).length;
-    return (completedTasks / dailyTasks.length) * 100;
+  const aplicarTreinoSelecionado = () => {
+    if (tempTreino) {
+      setTreinoAtual(tempTreino);
+      setModalVisible(false);
+      setTempTreino(null);
+    }
   };
 
-  // Atualizar tarefas com novos valores - CORRIGIDO
-  const updateTasksWithMeasurements = () => {
-    setDailyTasks(prevTasks =>
-      prevTasks.map(task => {
-        if (task.id === '2' && task.measurement) { // Medir Peso
-          return {
-            ...task,
-            description: `Peso atual: ${editingWeight} kg`,
-            measurement: {
-              ...task.measurement,
-              value: editingWeight,
-              target: weightTarget
-            }
-          };
-        }
-        if (task.id === '1' && task.measurement) { // Medir Cintura
-          return {
-            ...task,
-            description: `Cintura atual: ${editingWaist} cm`,
-            measurement: {
-              ...task.measurement,
-              value: editingWaist,
-              target: waistTarget
-            }
-          };
-        }
-        return task;
-      })
-    );
+  // Função para atualizar o registro de um exercício
+  const atualizarRegistro = (exercicioIndex: number, serieIndex: number, campo: 'kg' | 'repeticoes', valor: string) => {
+    const novosRegistros = [...registros];
+    novosRegistros[exercicioIndex].series[serieIndex][campo] = valor;
+    setRegistros(novosRegistros);
   };
 
-  // Salvar peso
-  const handleSaveWeight = () => {
-    const current = parseFloat(editingWeight);
-    const target = parseFloat(weightTarget);
-
-    // Calcular progresso (simplificado)
-    const progress = Math.max(0, Math.min(100, ((target - current) / (target - 85)) * 100));
-
-    setMeasurementsSummary(prev => ({
-      ...prev,
-      weight: {
-        ...prev.weight,
-        current: editingWeight,
-        target: weightTarget,
-        progress: Math.round(progress)
-      }
-    }));
-
-    updateTasksWithMeasurements();
-    setWeightModalVisible(false);
-  };
-
-  // Salvar cintura
-  const handleSaveWaist = () => {
-    const current = parseInt(editingWaist);
-    const target = parseInt(waistTarget);
-
-    // Calcular progresso (simplificado)
-    const progress = Math.max(0, Math.min(100, ((115 - current) / (115 - target)) * 100));
-
-    setMeasurementsSummary(prev => ({
-      ...prev,
-      waist: {
-        ...prev.waist,
-        current: editingWaist,
-        target: waistTarget,
-        progress: Math.round(progress)
-      }
-    }));
-
-    updateTasksWithMeasurements();
-    setWaistModalVisible(false);
-  };
-
-  // Gerenciar consumo de água
-  const handleWaterConsumption = (amount: number) => {
-    const newConsumed = waterIntake.consumed + amount;
-    const newPercentage = Math.min((newConsumed / waterIntake.target) * 100, 100);
+  // Função para obter ícone baseado no nome do exercício
+  const getExerciseIcon = (exercicio: string) => {
+    const nome = exercicio.toLowerCase();
     
-    setWaterIntake({
-      ...waterIntake,
-      consumed: newConsumed,
-      percentage: Math.round(newPercentage)
-    });
+    if (nome.includes('agachamento')) return { name: 'arm-flex', color: '#FF6B6B' };
+    if (nome.includes('flexão')) return { name: 'arm-flex', color: '#4ECDC4' };
+    if (nome.includes('remada')) return { name: 'arm-flex', color: '#45B7D1' };
+    if (nome.includes('prancha')) return { name: 'human-handsup', color: '#96CEB4' };
+    if (nome.includes('abdominal')) return { name: 'human-male', color: '#FFEEAD' };
+    if (nome.includes('elevação')) return { name: 'arm-flex', color: '#D4A5A5' };
+    if (nome.includes('tríceps')) return { name: 'arm-flex', color: '#9B59B6' };
+    if (nome.includes('bíceps')) return { name: 'arm-flex', color: '#3498DB' };
+    if (nome.includes('corrida')) return { name: 'run', color: '#E67E22' };
+    if (nome.includes('crucifixo')) return { name: 'arm-flex', color: '#EA4335' };
+    if (nome.includes('puxada')) return { name: 'arm-flex', color: '#8E44AD' };
+    return { name: 'dumbbell', color: '#1E88E5' };
   };
 
-  // Resetar consumo de água
-  const handleResetWater = () => {
-    setWaterIntake({
-      consumed: 0,
-      target: 2205,
-      percentage: 0
-    });
+  // Função para renderizar o ícone do exercício
+  const renderExerciseIcon = (exercicio: string, size: number = 18) => {
+    const icon = getExerciseIcon(exercicio);
+    return <MaterialCommunityIcons name={icon.name as any} size={size} color={icon.color} />;
   };
 
-  // Renderizar item da lista de tarefas
-  const renderTaskItem = ({ item }: { item: Task }) => (
-    <TouchableOpacity
-      style={[
-        styles.taskCard,
-        item.completed && styles.taskCardCompleted
-      ]}
-      onPress={() => {
-        if (item.type === 'measurement' && item.measurement) {
-          if (item.measurement.type === 'weight') {
-            setWeightModalVisible(true);
-          } else {
-            setWaistModalVisible(true);
-          }
-        } else {
-          toggleTaskCompletion(item.id);
-        }
-      }}
-      activeOpacity={0.7}
-    >
-      <View style={styles.taskLeftContainer}>
-        <View style={[styles.taskIconContainer, { backgroundColor: `${item.color}15` }]}>
-          {item.icon === 'dumbbell' && (
-            <FontAwesome5 name="dumbbell" size={20} color={item.color} />
-          )}
-          {item.icon === 'scale-bathroom' && (
-            <MaterialCommunityIcons name="scale-bathroom" size={20} color={item.color} />
-          )}
-          {item.icon === 'coffee' && (
-            <MaterialCommunityIcons name="coffee" size={20} color={item.color} />
-          )}
-          {item.icon === 'briefcase' && (
-            <MaterialCommunityIcons name="briefcase" size={20} color={item.color} />
-          )}
-          {item.icon === 'tape-measure' && (
-            <MaterialCommunityIcons name="tape-measure" size={20} color={item.color} />
-          )}
-          {item.icon === 'food' && (
-            <MaterialCommunityIcons name="food" size={20} color={item.color} />
-          )}
-          {item.icon === 'running' && (
-            <FontAwesome5 name="running" size={20} color={item.color} />
-          )}
-          {item.icon === 'food-fork-drink' && (
-            <MaterialCommunityIcons name="food-fork-drink" size={20} color={item.color} />
-          )}
-          {item.icon === 'meditation' && (
-            <MaterialCommunityIcons name="meditation" size={20} color={item.color} />
-          )}
-        </View>
-
-        <View style={styles.taskInfo}>
-          <Text style={[
-            styles.taskTitle,
-            item.completed && styles.taskTitleCompleted
-          ]}>
-            {item.title}
-          </Text>
-          <Text style={styles.taskDescription}>{item.description}</Text>
-
-          {/* Mostrar progresso da medição se for uma tarefa de medida */}
-          {item.measurement && (
-            <View style={styles.measurementProgress}>
-              <View style={styles.measurementValues}>
-                <Text style={styles.measurementCurrent}>
-                  {item.measurement.value} {item.measurement.unit}
-                </Text>
-                <Text style={styles.measurementTarget}>
-                  Meta: {item.measurement.target} {item.measurement.unit}
-                </Text>
-              </View>
-              <View style={styles.measurementChange}>
-                <Text style={[
-                  styles.changeText,
-                  item.measurement.change.startsWith('-') ? styles.changeNegative : styles.changePositive
-                ]}>
-                  {item.measurement.change} {item.measurement.unit}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          <View style={styles.taskMeta}>
-            <View style={styles.taskTime}>
-              <MaterialIcons name="access-time" size={14} color="#64748B" />
-              <Text style={styles.taskMetaText}>{item.time}</Text>
-              <Text style={styles.taskMetaText}> • {item.duration}</Text>
-            </View>
-            <View style={[
-              styles.taskTypeBadge,
-              { backgroundColor: `${item.color}15` }
-            ]}>
-              <Text style={[styles.taskTypeText, { color: item.color }]}>
-                {item.type === 'workout' ? 'Treino' :
-                  item.type === 'nutrition' ? 'Nutrição' :
-                    item.type === 'work' ? 'Trabalho' :
-                      item.type === 'measurement' ? 'Medição' : 'Bem-estar'}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {item.type === 'measurement' ? (
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => {
-            if (item.measurement?.type === 'weight') {
-              setWeightModalVisible(true);
-            } else if (item.measurement?.type === 'waist') {
-              setWaistModalVisible(true);
-            }
-          }}
-        >
-          <MaterialIcons name="edit" size={20} color="#1E88E5" />
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={[
-            styles.completionCircle,
-            item.completed && styles.completionCircleCompleted
-          ]}
-          onPress={() => toggleTaskCompletion(item.id)}
-        >
-          {item.completed && (
-            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
-
-  // Renderizar card de medição
-  const renderMeasurementCard = (type: 'weight' | 'waist', data: MeasurementSummary) => {
-    const icon = type === 'weight' ? 'scale-bathroom' : 'tape-measure';
-    const label = type === 'weight' ? 'Peso' : 'Cintura';
-    const color = type === 'weight' ? '#EA4335' : '#FBBC04';
-
-    return (
-      <TouchableOpacity
-        style={styles.measurementCard}
-        onPress={() => {
-          if (type === 'weight') {
-            setWeightModalVisible(true);
-          } else {
-            setWaistModalVisible(true);
-          }
-        }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.measurementHeader}>
-          <View style={[styles.measurementIcon, { backgroundColor: `${color}15` }]}>
-            <MaterialCommunityIcons name={icon} size={24} color={color} />
-          </View>
-          <View style={styles.measurementTitleContainer}>
-            <Text style={styles.measurementTitle}>{label}</Text>
-            <Text style={styles.measurementSubtitle}>Medição Diária</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.cardEditButton}
-            onPress={() => {
-              if (type === 'weight') {
-                setWeightModalVisible(true);
-              } else {
-                setWaistModalVisible(true);
-              }
-            }}
-          >
-            <MaterialIcons name="edit" size={18} color={color} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.measurementValuesCard}>
-          <View style={styles.currentMeasurement}>
-            <Text style={styles.currentValue}>{data.current}</Text>
-            <Text style={styles.currentUnit}>{data.unit}</Text>
-          </View>
-
-          <View style={styles.measurementProgressCard}>
-            <Text style={styles.progressLabel}>Progresso</Text>
-            <View style={styles.progressBarSmall}>
-              <View
-                style={[
-                  styles.progressBarFillSmall,
-                  { width: `${data.progress}%`, backgroundColor: color }
-                ]}
-              />
-            </View>
-            <View style={styles.targetContainer}>
-              <Text style={styles.targetLabel}>Meta: {data.target} {data.unit}</Text>
-              <Text style={[
-                styles.changeTextCard,
-                data.change.startsWith('-') ? styles.changeNegative : styles.changePositive
-              ]}>
-                {data.change} {data.unit}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  // Componente de copo de água
-  const WaterGlass = ({ amount, size, onPress }: { amount: number, size: 'small' | 'medium' | 'large', onPress: () => void }) => {
-    const getGlassHeight = () => {
-      switch(size) {
-        case 'small': return 60;
-        case 'medium': return 80;
-        case 'large': return 100;
-        default: return 70;
-      }
-    };
-
-    const getGlassWidth = () => {
-      switch(size) {
-        case 'small': return 40;
-        case 'medium': return 50;
-        case 'large': return 60;
-        default: return 45;
-      }
-    };
-
-    const getWaterColor = () => {
-      switch(size) {
-        case 'small': return '#E3F2FD'; // Azul muito claro
-        case 'medium': return '#BBDEFB'; // Azul claro
-        case 'large': return '#90CAF9'; // Azul médio
-        default: return '#BBDEFB';
-      }
-    };
-
-    const getGlassColor = () => {
-      switch(size) {
-        case 'small': return '#1E88E5'; // Azul principal
-        case 'medium': return '#1565C0'; // Azul mais escuro
-        case 'large': return '#0D47A1'; // Azul mais escuro ainda
-        default: return '#1E88E5';
-      }
-    };
-
-    return (
-      <TouchableOpacity 
-        style={styles.glassContainer}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        {/* Recipiente do copo */}
-        <View style={[
-          styles.glassShape,
-          { 
-            height: getGlassHeight(),
-            width: getGlassWidth(),
-            borderColor: getGlassColor(),
-            backgroundColor: '#F8FAFC'
-          }
-        ]}>
-          {/* Água dentro do copo */}
-          <View style={[
-            styles.waterFill,
-            { 
-              backgroundColor: getWaterColor(),
-              height: getGlassHeight() * 0.7 // 70% cheio
-            }
-          ]}>
-            {/* Bolhas de ar */}
-            <View style={styles.bubbleContainer}>
-              <View style={[styles.bubble, { top: 10, left: 8, width: 6, height: 6 }]} />
-              <View style={[styles.bubble, { top: 15, left: 25, width: 8, height: 8 }]} />
-              <View style={[styles.bubble, { top: 25, left: 12, width: 5, height: 5 }]} />
-              <View style={[styles.bubble, { top: 35, left: 20, width: 7, height: 7 }]} />
-            </View>
-          </View>
-          
-          {/* Linha de nível da água */}
-          <View style={styles.waterLevelLine} />
-          
-          {/* Refração da luz na água */}
-          <View style={styles.waterLightReflection} />
-        </View>
-        
-        {/* Base do copo */}
-        <View style={[
-          styles.glassBase,
-          { 
-            width: getGlassWidth() + 10,
-            backgroundColor: getGlassColor()
-          }
-        ]} />
-        
-        {/* Quantidade abaixo do copo */}
-        <Text style={styles.glassAmount}>+{amount} ml</Text>
-        
-        {/* Ícone de gota dentro do copo (opcional) */}
-        <View style={styles.waterDropIcon}>
-          <MaterialCommunityIcons name="water" size={size === 'large' ? 20 : size === 'medium' ? 16 : 12} color="#1E88E5" />
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  // Calcula progresso
+  const isDescanso = treinoAtual.tipo === 'Descanso';
+  const totalExercicios = treinoAtual.exercicios?.length || 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-      {/* Cabeçalho */}
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#F8FAFC" barStyle="dark-content" />
+      
+      {/* HEADER COM NOME "ROTINA DO DIA" */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <LinearGradient
-              colors={['#1E88E5', '#8E44AD']}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.logoText}>D</Text>
-            </LinearGradient>
-          </View>
-          <View>
-            <Text style={styles.appName}>Diária</Text>
-            <Text style={styles.headerSubtitle}>Seu dia, sem errar!</Text>
-          </View>
-        </View>
-
-        <View style={styles.timeContainer}>
-          <Text style={styles.currentTime}>{currentTime}</Text>
-          <Text style={styles.dateText}>Sex, 15 Dez</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push('/dados')}
+        >
+          <Ionicons name="arrow-back" size={22} color="#1E88E5" />
+        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Rotina do Dia</Text>
+        
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={shareResults}
+        >
+          <Feather name="share-2" size={20} color="#1E88E5" />
+        </TouchableOpacity>
       </View>
 
-      {/* Seção: Calendário Semanal */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Esta Semana</Text>
-
-        <View style={styles.weekCalendar}>
-          {weekDays.map((day, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.dayCard,
-                selectedDay === day.date && styles.dayCardSelected,
-                day.today && styles.dayCardToday
-              ]}
-              onPress={() => setSelectedDay(day.date)}
-            >
-              <Text style={[
-                styles.dayName,
-                selectedDay === day.date && styles.dayNameSelected
-              ]}>
-                {day.day}
-              </Text>
-              <View style={[
-                styles.dateCircle,
-                selectedDay === day.date && styles.dateCircleSelected,
-                day.today && styles.dateCircleToday
-              ]}>
-                <Text style={[
-                  styles.dateNumber,
-                  selectedDay === day.date && styles.dateNumberSelected
-                ]}>
-                  {day.date}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
+      {/* CONTEÚDO PRINCIPAL */}
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Seção: Progresso do Dia */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Progresso do Dia</Text>
-            <Text style={styles.progressPercentage}>
-              {Math.round(calculateDayProgress())}%
-            </Text>
+        {/* CARD PRINCIPAL DO TREINO COM TÍTULO "TREINO HOJE" DENTRO */}
+        <Animated.View
+          style={[
+            styles.mainCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          {/* BADGE "TREINO HOJE" DENTRO DO CARD */}
+          <View style={styles.treinoHojeBadge}>
+            <MaterialCommunityIcons name="dumbbell" size={14} color="#1E88E5" />
+            <Text style={styles.treinoHojeText}>Treino Hoje</Text>
           </View>
 
-          <View style={styles.dayProgressContainer}>
-            <View style={styles.dayProgressBar}>
-              <View
-                style={[
-                  styles.dayProgressFill,
-                  { width: `${calculateDayProgress()}%` }
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>
-              {dailyTasks.filter(t => t.completed).length} de {dailyTasks.length} tarefas completadas
-            </Text>
-          </View>
-        </View>
-
-        {/* Seção: Consumo de Água */}
-        <View style={styles.waterSection}>
-          <View style={styles.waterSectionHeader}>
-            <View style={styles.waterTitleContainer}>
-              <MaterialCommunityIcons name="water" size={24} color="#1E88E5" />
-              <Text style={styles.sectionTitle}>Hidratação</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.infoButton}
-              onPress={() => setWaterInfoModalVisible(true)}
-            >
-              <MaterialIcons name="info-outline" size={20} color="#64748B" />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.waterTip}>
-            Evite beber água durante as refeições
-          </Text>
-
-          <View style={styles.waterProgressContainer}>
-            <View style={styles.waterPercentageCircle}>
-              <Text style={styles.waterPercentageText}>
-                {waterIntake.percentage}%
+          {/* TÍTULO E BOTÕES - AGORA COM FLEX PRA NÃO EMPURRAR */}
+          <View style={styles.cardHeader}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+                {treinoAtual.tipo}
+              </Text>
+              <Text style={styles.cardDescription} numberOfLines={1} ellipsizeMode="tail">
+                {treinoAtual.observacao}
               </Text>
             </View>
-
-            <View style={styles.waterStats}>
-              <View style={styles.waterStat}>
-                <Text style={styles.waterStatLabel}>CONSUMO</Text>
-                <Text style={styles.waterStatValue}>{waterIntake.consumed} ml</Text>
-              </View>
-
-              <View style={styles.waterStatDivider} />
-
-              <View style={styles.waterStat}>
-                <Text style={styles.waterStatLabel}>META</Text>
-                <Text style={styles.waterStatValue}>{waterIntake.target} ml</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.waterControls}>
-            <Text style={styles.waterControlsTitle}>Adicionar água:</Text>
             
-            <View style={styles.glassesContainer}>
-              <WaterGlass 
-                amount={150} 
-                size="small" 
-                onPress={() => handleWaterConsumption(150)} 
-              />
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.preconfigButton}
+                onPress={() => {
+                  setTempTreino(null);
+                  setModalVisible(true);
+                }}
+              >
+                <Feather name="settings" size={14} color="#1E88E5" />
+                <Text style={styles.preconfigButtonText}>Preconfig.</Text>
+              </TouchableOpacity>
               
-              <WaterGlass 
-                amount={250} 
-                size="medium" 
-                onPress={() => handleWaterConsumption(250)} 
-              />
-              
-              <WaterGlass 
-                amount={500} 
-                size="large" 
-                onPress={() => handleWaterConsumption(500)} 
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={styles.resetButton}
-              onPress={handleResetWater}
-            >
-              <MaterialIcons name="refresh" size={20} color="#EA4335" />
-              <Text style={styles.resetButtonText}>Resetar consumo</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Seção: Medições Diárias */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Medições Diárias</Text>
-
-          <View style={styles.measurementsGrid}>
-            {renderMeasurementCard('weight', measurementsSummary.weight)}
-            {renderMeasurementCard('waist', measurementsSummary.waist)}
-          </View>
-        </View>
-
-        {/* Seção: Nutrição */}
-        <TouchableOpacity
-          style={styles.nutritionSection}
-          onPress={() => router.push('/refeicoes')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.nutritionSectionHeader}>
-            <Text style={styles.sectionTitle}>Nutrição Hoje</Text>
-            <View style={styles.caloriesContainer}>
-              <View style={styles.caloriesValueContainer}>
-                <Text style={styles.caloriesCurrent}>{nutritionData.calories.current}</Text>
-                <View style={styles.caloriesDividerLine} />
-                <Text style={styles.caloriesTotal}>{nutritionData.calories.target}</Text>
-              </View>
-              <Text style={styles.caloriesLabel}>Calories eaten</Text>
-              <View style={styles.arrowContainer}>
-                <MaterialIcons name="arrow-forward-ios" size={16} color="#1E88E5" />
-              </View>
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={() => setRegistroModalVisible(true)}
+              >
+                <Feather name="check-square" size={14} color="#FFFFFF" />
+                <Text style={styles.registerButtonText}>Registrar</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.macrosContainer}>
-            <View style={styles.macroRow}>
-              <View style={styles.macroItemCompact}>
-                <Text style={styles.macroLabelCompact}>Proteína</Text>
-                <Text style={styles.macroValueCompact}>
-                  {nutritionData.protein.current}/{nutritionData.protein.target}g
+          {/* ESTATÍSTICAS EM LINHA */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons name="dumbbell" size={18} color="#1E88E5" />
+              <Text style={styles.statValue}>{totalExercicios}</Text>
+              <Text style={styles.statLabel}>ex</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons name="clock-outline" size={18} color="#4CAF50" />
+              <Text style={styles.statValue}>60</Text>
+              <Text style={styles.statLabel}>min</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons name="fire" size={18} color="#FF9800" />
+              <Text style={styles.statValue}>450</Text>
+              <Text style={styles.statLabel}>kcal</Text>
+            </View>
+          </View>
+
+          {/* EXERCÍCIOS PRINCIPAIS COM ÍCONES */}
+          <View style={styles.exercisesContainer}>
+            <Text style={styles.exercisesTitle}>Exercícios principais</Text>
+            
+            <View style={styles.exercisesGrid}>
+              {treinoAtual.exercicios.slice(0, 4).map((exercicio: string, index: number) => (
+                <View key={index} style={styles.exerciseChip}>
+                  <View style={[styles.exerciseChipIcon, { backgroundColor: getExerciseIcon(exercicio).color + '15' }]}>
+                    {renderExerciseIcon(exercicio, 14)}
+                  </View>
+                  <Text style={styles.exerciseChipText} numberOfLines={1} ellipsizeMode="tail">
+                    {exercicio}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {treinoAtual.exercicios.length > 4 && (
+              <TouchableOpacity style={styles.moreButton}>
+                <Text style={styles.moreButtonText}>
+                  + {treinoAtual.exercicios.length - 4} exercícios
                 </Text>
-                <View style={styles.macroProgressBarCompact}>
-                  <View
-                    style={[
-                      styles.macroProgressFillCompact,
-                      {
-                        width: `${Math.min((nutritionData.protein.current / nutritionData.protein.target) * 100, 100)}%`,
-                        backgroundColor: '#27AE60'
-                      }
-                    ]}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.macroItemCompact}>
-                <Text style={styles.macroLabelCompact}>Carbs</Text>
-                <Text style={styles.macroValueCompact}>
-                  {nutritionData.carbs.current}/{nutritionData.carbs.target}g
-                </Text>
-                <View style={styles.macroProgressBarCompact}>
-                  <View
-                    style={[
-                      styles.macroProgressFillCompact,
-                      {
-                        width: `${Math.min((nutritionData.carbs.current / nutritionData.carbs.target) * 100, 100)}%`,
-                        backgroundColor: '#1E88E5'
-                      }
-                    ]}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.macroItemCompact}>
-                <Text style={styles.macroLabelCompact}>Gorduras</Text>
-                <Text style={styles.macroValueCompact}>
-                  {nutritionData.fat.current}/{nutritionData.fat.target}g
-                </Text>
-                <View style={styles.macroProgressBarCompact}>
-                  <View
-                    style={[
-                      styles.macroProgressFillCompact,
-                      {
-                        width: `${Math.min((nutritionData.fat.current / nutritionData.fat.target) * 100, 100)}%`,
-                        backgroundColor: '#F39C12'
-                      }
-                    ]}
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Seção: Treino do Dia */}
-        <TouchableOpacity
-          style={styles.workoutSection}
-          onPress={() => router.push('/treino')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.workoutSectionHeader}>
-            <Text style={styles.sectionTitle}>Treino Hoje</Text>
-            <View style={styles.workoutInfoContainer}>
-              <View style={styles.workoutStats}>
-                <View style={styles.workoutStat}>
-                  <Text style={styles.workoutStatValue}>{dailyWorkout.exercises}</Text>
-                  <Text style={styles.workoutStatLabel}>Exercícios</Text>
-                </View>
-                <View style={styles.workoutStat}>
-                  <Text style={styles.workoutStatValue}>{dailyWorkout.duration}</Text>
-                  <Text style={styles.workoutStatLabel}>Duração</Text>
-                </View>
-                <View style={styles.workoutStat}>
-                  <Text style={styles.workoutStatValue}>{dailyWorkout.calories}</Text>
-                  <Text style={styles.workoutStatLabel}>Calorias</Text>
-                </View>
-              </View>
-              <View style={styles.arrowContainer}>
-                <MaterialIcons name="arrow-forward-ios" size={16} color="#1E88E5" />
-              </View>
-            </View>
+                <Feather name="chevron-right" size={14} color="#1E88E5" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <View style={styles.workoutDetails}>
-            <View style={styles.workoutNameContainer}>
-              <View style={[styles.workoutIcon, { backgroundColor: `${dailyWorkout.color}15` }]}>
-                <MaterialCommunityIcons name="dumbbell" size={24} color={dailyWorkout.color} />
-              </View>
-              <View>
-                <Text style={styles.workoutName}>{dailyWorkout.name}</Text>
-                <Text style={styles.workoutType}>{dailyWorkout.type}</Text>
-              </View>
-            </View>
-
-            <View style={styles.exercisesPreview}>
-              <Text style={styles.exercisesPreviewTitle}>Exercícios principais:</Text>
-              <View style={styles.exerciseTags}>
-                <View style={[styles.exerciseTag, { backgroundColor: '#EA433515' }]}>
-                  <Text style={[styles.exerciseTagText, { color: '#EA4335' }]}>Supino</Text>
-                </View>
-                <View style={[styles.exerciseTag, { backgroundColor: '#1E88E515' }]}>
-                  <Text style={[styles.exerciseTagText, { color: '#1E88E5' }]}>Crucifixo</Text>
-                </View>
-                <View style={[styles.exerciseTag, { backgroundColor: '#8E44AD15' }]}>
-                  <Text style={[styles.exerciseTagText, { color: '#8E44AD' }]}>Tríceps</Text>
-                </View>
-                <View style={[styles.exerciseTag, { backgroundColor: '#27AE6015' }]}>
-                  <Text style={[styles.exerciseTagText, { color: '#27AE60' }]}>Abdominal</Text>
-                </View>
-              </View>
-            </View>
+          {/* DICA RÁPIDA */}
+          <View style={styles.tipContainer}>
+            <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#FFC107" />
+            <Text style={styles.tipText} numberOfLines={1}>
+              Beba água a cada 15min
+            </Text>
           </View>
-        </TouchableOpacity>
+        </Animated.View>
 
-        {/* Seção: Cardio do Dia */}
-        <TouchableOpacity
-          style={styles.cardioSection}
-          onPress={() => router.push('/cardio')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.cardioSectionHeader}>
-            <Text style={styles.sectionTitle}>Cardio Hoje</Text>
-            <View style={styles.cardioInfoContainer}>
-              <View style={styles.cardioStats}>
-                <View style={styles.cardioStat}>
-                  <Text style={styles.cardioStatValue}>30 min</Text>
-                  <Text style={styles.cardioStatLabel}>Duração</Text>
-                </View>
-                <View style={styles.cardioStat}>
-                  <Text style={styles.cardioStatValue}>300</Text>
-                  <Text style={styles.cardioStatLabel}>Calorias</Text>
-                </View>
-                <View style={styles.cardioStat}>
-                  <Text style={styles.cardioStatValue}>Alta</Text>
-                  <Text style={styles.cardioStatLabel}>Intensidade</Text>
-                </View>
-              </View>
-              <View style={styles.arrowContainer}>
-                <MaterialIcons name="arrow-forward-ios" size={16} color="#1E88E5" />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.cardioDetails}>
-            <View style={styles.cardioNameContainer}>
-              <View style={[styles.cardioIcon, { backgroundColor: '#EA433515' }]}>
-                <MaterialCommunityIcons name="run-fast" size={24} color="#EA4335" />
-              </View>
-              <View>
-                <Text style={styles.cardioName}>Corrida na Esteira</Text>
-                <Text style={styles.cardioType}>Cardiovascular</Text>
-              </View>
-            </View>
-
-            <View style={styles.cardioInfoRow}>
-              <View style={styles.cardioInfoItem}>
-                <MaterialCommunityIcons name="map-marker-distance" size={16} color="#64748B" />
-                <Text style={styles.cardioInfoText}>5 km</Text>
-              </View>
-              <View style={styles.cardioInfoItem}>
-                <MaterialCommunityIcons name="heart-pulse" size={16} color="#64748B" />
-                <Text style={styles.cardioInfoText}>150-165 bpm</Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Seção: Tarefas de Hoje */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tarefas de Hoje</Text>
-          
-          {dailyTasks.map((task, index) => (
-            <View key={task.id} style={[
-              index === dailyTasks.length - 1 ? null : styles.taskSeparator
-            ]}>
-              {renderTaskItem({ item: task })}
-            </View>
-          ))}
+        {/* ESPAÇO PARA OUTROS CARDS */}
+        <View style={styles.otherCardsSpace}>
+          <Text style={styles.placeholderText}>Outros cards virão aqui...</Text>
         </View>
-
-        {/* Espaço final */}
-        <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Modal para informações sobre água */}
+      {/* MODAL DE SELEÇÃO DE TREINO (TABELA) */}
       <Modal
         animationType="slide"
         transparent={true}
-        visible={waterInfoModalVisible}
-        onRequestClose={() => setWaterInfoModalVisible(false)}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setWaterInfoModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                  <MaterialCommunityIcons name="water" size={28} color="#1E88E5" />
-                  <Text style={styles.modalTitle}>Sobre Hidratação</Text>
-                </View>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>Escolha seu treino</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Feather name="x" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
 
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Por que beber água?</Text>
-                  <Text style={styles.modalText}>
-                    • Ajuda na digestão e metabolismo{"\n"}
-                    • Melhora a performance física{"\n"}
-                    • Mantém a pele saudável{"\n"}
-                    • Regula a temperatura corporal{"\n"}
-                    • Transporta nutrientes
-                  </Text>
-                </View>
-
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Dica Importante</Text>
-                  <Text style={styles.modalText}>
-                    Beber água durante as refeições pode diluir o suco gástrico, 
-                    dificultando a digestão. Recomenda-se beber água 30 minutos 
-                    antes ou após as refeições.
-                  </Text>
-                </View>
-
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Meta Diária</Text>
-                  <Text style={styles.modalText}>
-                    A meta de 2.2L é baseada na recomendação padrão para adultos. 
-                    Ajuste conforme sua atividade física, clima e peso corporal.
-                  </Text>
-                </View>
-
+            <FlatList
+              data={todosTreinos}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.saveButton]}
-                  onPress={() => setWaterInfoModalVisible(false)}
+                  style={[
+                    styles.treinoItem,
+                    tempTreino?.id === item.id && styles.treinoItemSelecionado
+                  ]}
+                  onPress={() => selecionarTreinoTemp(item)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.saveButtonText}>Entendi</Text>
+                  <View style={styles.treinoItemHeader}>
+                    <FontAwesome5 name="dumbbell" size={14} color="#1E88E5" />
+                    <Text style={styles.treinoItemTipo}>{item.tipo}</Text>
+                    <View style={styles.treinoItemBadge}>
+                      <Text style={styles.treinoItemBadgeTexto}>{item.diasSemana}d • dia {item.dia}</Text>
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.treinoItemObs}>{item.observacao}</Text>
+                  
+                  <View style={styles.treinoItemExercicios}>
+                    {item.exercicios.slice(0, 3).map((ex: string, idx: number) => (
+                      <Text key={idx} style={styles.treinoItemExercicio}>• {ex}</Text>
+                    ))}
+                    {item.exercicios.length > 3 && (
+                      <Text style={styles.treinoItemMais}>+{item.exercicios.length - 3}</Text>
+                    )}
+                  </View>
+
+                  {tempTreino?.id === item.id && (
+                    <View style={styles.treinoItemCheck}>
+                      <Feather name="check-circle" size={18} color="#4CAF50" />
+                    </View>
+                  )}
                 </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
+              )}
+              contentContainerStyle={styles.modalLista}
+            />
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[
+                  styles.aplicarButton,
+                  !tempTreino && styles.aplicarButtonDisabled
+                ]}
+                onPress={aplicarTreinoSelecionado}
+                disabled={!tempTreino}
+              >
+                <Text style={styles.aplicarButtonTexto}>
+                  {tempTreino ? 'Carregar Treino' : 'Selecione um treino'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
 
-      {/* Modal para Editar Peso */}
+      {/* MODAL DE REGISTRO DE TREINO */}
       <Modal
         animationType="slide"
         transparent={true}
-        visible={weightModalVisible}
-        onRequestClose={() => setWeightModalVisible(false)}
+        visible={registroModalVisible}
+        onRequestClose={() => setRegistroModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setWeightModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setRegistroModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                  <MaterialCommunityIcons name="scale-bathroom" size={28} color="#EA4335" />
-                  <Text style={styles.modalTitle}>Editar Peso</Text>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Peso Atual (kg)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editingWeight}
-                    onChangeText={setEditingWeight}
-                    keyboardType="decimal-pad"
-                    placeholder="Ex: 85.5"
-                    placeholderTextColor="#94A3B8"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Meta de Peso (kg)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={weightTarget}
-                    onChangeText={setWeightTarget}
-                    keyboardType="decimal-pad"
-                    placeholder="Ex: 75.0"
-                    placeholderTextColor="#94A3B8"
-                  />
-                </View>
-
-                <View style={styles.modalButtons}>
+              <View style={styles.registroModalContainer}>
+                <View style={styles.registroModalHeader}>
+                  <View style={styles.registroModalTitleContainer}>
+                    <MaterialCommunityIcons name="clipboard-text" size={24} color="#1E88E5" />
+                    <Text style={styles.registroModalTitle}>Registrar Treino</Text>
+                  </View>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setWeightModalVisible(false)}
+                    onPress={() => setRegistroModalVisible(false)}
+                    style={styles.registroModalCloseButton}
                   >
-                    <Text style={styles.cancelButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.saveButton]}
-                    onPress={handleSaveWeight}
-                  >
-                    <Text style={styles.saveButtonText}>Salvar</Text>
+                    <Feather name="x" size={22} color="#64748B" />
                   </TouchableOpacity>
                 </View>
+
+                <ScrollView 
+                  style={styles.registroScrollView}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {registros.map((exercicio, exercicioIndex) => (
+                    <View key={exercicioIndex} style={styles.exercicioRegistroCard}>
+                      <View style={styles.exercicioRegistroHeader}>
+                        <View style={[styles.exercicioRegistroIcon, { backgroundColor: getExerciseIcon(exercicio.nome).color + '15' }]}>
+                          {renderExerciseIcon(exercicio.nome, 20)}
+                        </View>
+                        <Text style={styles.exercicioRegistroNome} numberOfLines={2} ellipsizeMode="tail">
+                          {exercicio.nome}
+                        </Text>
+                      </View>
+
+                      {/* Cabeçalho da tabela */}
+                      <View style={styles.tableHeader}>
+                        <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>SÉRIE</Text>
+                        <Text style={[styles.tableHeaderCell, { flex: 1 }]}>KG</Text>
+                        <Text style={[styles.tableHeaderCell, { flex: 1 }]}>REPS</Text>
+                      </View>
+
+                      {/* Linhas da tabela */}
+                      {exercicio.series.map((serie, serieIndex) => (
+                        <View key={serieIndex} style={styles.tableRow}>
+                          <View style={[styles.tableCell, { flex: 0.5 }]}>
+                            <Text style={styles.serieNumero}>{serie.numero}</Text>
+                          </View>
+                          
+                          <View style={[styles.tableCell, { flex: 1 }]}>
+                            <TextInput
+                              style={styles.input}
+                              value={serie.kg}
+                              onChangeText={(valor) => atualizarRegistro(exercicioIndex, serieIndex, 'kg', valor)}
+                              keyboardType="numeric"
+                              placeholder="0"
+                              placeholderTextColor="#CBD5E1"
+                            />
+                          </View>
+                          
+                          <View style={[styles.tableCell, { flex: 1 }]}>
+                            <TextInput
+                              style={styles.input}
+                              value={serie.repeticoes}
+                              onChangeText={(valor) => atualizarRegistro(exercicioIndex, serieIndex, 'repeticoes', valor)}
+                              keyboardType="numeric"
+                              placeholder="0"
+                              placeholderTextColor="#CBD5E1"
+                            />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+
+                  <View style={styles.registroModalFooter}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => setRegistroModalVisible(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.saveButton}
+                      onPress={() => {
+                        // Aqui você pode salvar os registros
+                        console.log('Registros salvos:', registros);
+                        setRegistroModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.saveButtonText}>Salvar Registro</Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
-      {/* Modal para Editar Cintura */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={waistModalVisible}
-        onRequestClose={() => setWaistModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setWaistModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                  <MaterialCommunityIcons name="tape-measure" size={28} color="#FBBC04" />
-                  <Text style={styles.modalTitle}>Editar Cintura</Text>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Cintura Atual (cm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editingWaist}
-                    onChangeText={setEditingWaist}
-                    keyboardType="number-pad"
-                    placeholder="Ex: 95"
-                    placeholderTextColor="#94A3B8"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Meta de Cintura (cm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={waistTarget}
-                    onChangeText={setWaistTarget}
-                    keyboardType="number-pad"
-                    placeholder="Ex: 85"
-                    placeholderTextColor="#94A3B8"
-                  />
-                </View>
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setWaistModalVisible(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.saveButton]}
-                    onPress={handleSaveWaist}
-                  >
-                    <Text style={styles.saveButtonText}>Salvar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
   },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // ScrollView
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    padding: 16,
+    paddingBottom: 30,
   },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoContainer: {
-    marginRight: 12,
-  },
-  logoGradient: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  logoText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  appName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  timeContainer: {
-    alignItems: 'flex-end',
-  },
-  currentTime: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1E88E5',
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-
-  // Seções
-  section: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  seeAllButton: {
-    fontSize: 14,
-    color: '#1E88E5',
-    fontWeight: '600',
-  },
-
-  // Progresso do Dia
-  progressPercentage: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#27AE60',
-  },
-  dayProgressContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  dayProgressBar: {
-    height: 12,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  dayProgressFill: {
-    height: '100%',
-    backgroundColor: '#27AE60',
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-
-  // Seção de Água (MELHORADA)
-  waterSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
+  
+  // Main Card
+  mainCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 5,
+    elevation: 4,
   },
-  waterSectionHeader: {
+  
+  // Badge "Treino Hoje"
+  treinoHojeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    gap: 4,
+  },
+  treinoHojeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1E88E5',
+  },
+  
+  // Card Header - AJUSTADO PARA NÃO EMPURRAR OS BOTÕES
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  waterTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  titleContainer: {
+    flex: 1,
+    marginRight: 8,
   },
-  infoButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  cardDescription: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 4,
+    flexShrink: 0,
+  },
+  preconfigButton: {
+    flexDirection: 'row',
+    height: 30,
+    borderRadius: 15,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  waterTip: {
-    fontSize: 14,
-    color: '#EA4335',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 12,
-    backgroundColor: '#FFEBEE',
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: '#EA4335',
-  },
-  waterProgressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  waterPercentageCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 5,
-    borderColor: '#1E88E5',
-    shadowColor: '#1E88E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  waterPercentageText: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#1E88E5',
-  },
-  waterStats: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginLeft: 20,
-  },
-  waterStat: {
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  waterStatLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '700',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  waterStatValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  waterStatDivider: {
-    width: 1,
-    height: 50,
-    backgroundColor: '#E2E8F0',
-  },
-  waterControls: {
-    marginTop: 10,
-  },
-  waterControlsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  glassesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    marginBottom: 24,
-  },
-  glassContainer: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  glassShape: {
-    borderRadius: 8,
-    borderWidth: 3,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  waterFill: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
-  },
-  bubbleContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  bubble: {
-    position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 50,
-  },
-  waterLevelLine: {
-    position: 'absolute',
-    top: '30%',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: 'rgba(30, 136, 229, 0.3)',
-  },
-  waterLightReflection: {
-    position: 'absolute',
-    top: 10,
-    right: 5,
-    width: 15,
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 4,
-    transform: [{ skewY: '-20deg' }],
-  },
-  glassBase: {
-    height: 6,
-    borderRadius: 3,
-    marginTop: -2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  glassAmount: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1E88E5',
-    marginTop: 8,
-  },
-  waterDropIcon: {
-    position: 'absolute',
-    top: '25%',
-    left: '50%',
-    transform: [{ translateX: -10 }],
-    opacity: 0.7,
-  },
-  resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#FFEBEE',
-    borderRadius: 12,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#FFCDD2',
-  },
-  resetButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#EA4335',
-  },
-
-  // Medições Diárias
-  measurementsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  measurementCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  measurementHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  measurementIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  measurementTitleContainer: {
-    flex: 1,
-  },
-  measurementTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  measurementSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  cardEditButton: {
-    padding: 6,
-  },
-  measurementValuesCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  currentMeasurement: {
-    alignItems: 'center',
-  },
-  currentValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  currentUnit: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  measurementProgressCard: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 4,
-  },
-  progressBarSmall: {
-    height: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFillSmall: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  targetContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  targetLabel: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  changeTextCard: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  changePositive: {
-    color: '#27AE60',
-  },
-  changeNegative: {
-    color: '#EA4335',
-  },
-
-  // Calendário Semanal
-  weekCalendar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
+    paddingHorizontal: 8,
+    gap: 4,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  dayCard: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-    minWidth: 40,
-  },
-  dayCardSelected: {
-    backgroundColor: '#1E88E5',
-  },
-  dayCardToday: {
-    borderWidth: 2,
-    borderColor: '#F39C12',
-  },
-  dayName: {
-    fontSize: 12,
+  preconfigButtonText: {
+    fontSize: 10,
     fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 8,
+    color: '#1E88E5',
   },
-  dayNameSelected: {
+  registerButton: {
+    flexDirection: 'row',
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    gap: 4,
+  },
+  registerButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
-  dateCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
+  
+  // Stats Row
+  statsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  dateCircleSelected: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
-  },
-  dateCircleToday: {
-    backgroundColor: '#F39C12',
-    borderColor: '#F39C12',
-  },
-  dateNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  dateNumberSelected: {
-    color: '#1E88E5',
-  },
-
-  // Tarefas
-  taskCard: {
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'space-around',
+    backgroundColor: '#F8FAFC',
     borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1.5,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
     borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  taskCardCompleted: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-  },
-  taskLeftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  taskIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  taskInfo: {
-    flex: 1,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  taskTitleCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#94A3B8',
-  },
-  taskDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 8,
-  },
-  measurementProgress: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    padding: 8,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-  },
-  measurementValues: {
-    flex: 1,
-  },
-  measurementCurrent: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  measurementTarget: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  measurementChange: {
-    marginLeft: 8,
-  },
-  changeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  taskMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  taskTime: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  taskMetaText: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  taskTypeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  taskTypeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  editButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    marginLeft: 12,
-  },
-  completionCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  completionCircleCompleted: {
-    backgroundColor: '#27AE60',
-    borderColor: '#27AE60',
-  },
-  taskSeparator: {
-    height: 12,
-  },
-
-  // Seção de Nutrição
-  nutritionSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  nutritionSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  caloriesContainer: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  caloriesValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  caloriesCurrent: {
-    fontSize: 40,
+  statValue: {
+    fontSize: 15,
     fontWeight: '700',
     color: '#1E293B',
   },
-  caloriesDividerLine: {
+  statLabel: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  statDivider: {
     width: 1,
-    height: 30,
-    backgroundColor: '#CBD5E1',
-    marginHorizontal: 12,
-  },
-  caloriesTotal: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: '#CBD5E1',
-  },
-  caloriesLabel: {
-    fontSize: 14,
-    color: '#64748B',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  arrowContainer: {
-    position: 'absolute',
-    right: -30,
-    top: '50%',
-    marginTop: -8,
-  },
-  macrosContainer: {
-    marginTop: 16,
-  },
-  macroRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  macroItemCompact: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-  },
-  macroLabelCompact: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 4,
-  },
-  macroValueCompact: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  macroProgressBarCompact: {
-    width: '100%',
-    height: 6,
+    height: 20,
     backgroundColor: '#E2E8F0',
-    borderRadius: 3,
-    overflow: 'hidden',
   },
-  macroProgressFillCompact: {
-    height: '100%',
-    borderRadius: 3,
-  },
-
-  // Modais
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginLeft: 12,
-  },
-  modalSection: {
-    marginBottom: 20,
-  },
-  modalSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  modalText: {
-    fontSize: 14,
-    color: '#64748B',
-    lineHeight: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  input: {
-    height: 56,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#1E293B',
-    backgroundColor: '#F8FAFC',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 8,
-  },
-  modalButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  saveButton: {
-    backgroundColor: '#1E88E5',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-
-  // Seção de Treino
-  workoutSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  workoutSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  workoutInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  workoutStats: {
-    flexDirection: 'row',
-    gap: 16,
-    marginRight: 12,
-  },
-  workoutStat: {
-    alignItems: 'center',
-  },
-  workoutStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  workoutStatLabel: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  workoutDetails: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 16,
-  },
-  workoutNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  workoutIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  workoutName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  workoutType: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  exercisesPreview: {
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingTop: 16,
-  },
-  exercisesPreviewTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
+  
+  // Exercises Container
+  exercisesContainer: {
     marginBottom: 12,
   },
-  exerciseTags: {
+  exercisesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 10,
+  },
+  exercisesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  exerciseTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  exerciseChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
     borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    gap: 6,
+    maxWidth: '48%',
   },
-  exerciseTagText: {
+  exerciseChipIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  exerciseChipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#1E293B',
+    flexShrink: 1,
+  },
+  moreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 10,
+    paddingVertical: 8,
+  },
+  moreButtonText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#1E88E5',
   },
-
-  // Seção de Cardio
-  cardioSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-    backgroundColor: '#FFFFFF',
+  
+  // Tip Container
+  tipContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  tipText: {
+    fontSize: 12,
+    color: '#B76E00',
+    flex: 1,
+  },
+  
+  // Espaço para outros cards
+  otherCardsSpace: {
+    backgroundColor: '#F1F5F9',
     borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
   },
-  cardioSectionHeader: {
+  placeholderText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  
+  // Modal Overlay
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  
+  // Modal de Seleção
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  cardioInfoContainer: {
-    flexDirection: 'row',
+  modalTitulo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalLista: {
+    padding: 16,
+    gap: 8,
+  },
+  modalFooter: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  aplicarButton: {
+    backgroundColor: '#1E88E5',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  cardioStats: {
+  aplicarButtonDisabled: {
+    backgroundColor: '#94A3B8',
+    opacity: 0.5,
+  },
+  aplicarButtonTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  treinoItem: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    position: 'relative',
+  },
+  treinoItemSelecionado: {
+    borderColor: '#1E88E5',
+    borderWidth: 2,
+    backgroundColor: '#F0F9FF',
+  },
+  treinoItemHeader: {
     flexDirection: 'row',
-    gap: 16,
-    marginRight: 12,
-  },
-  cardioStat: {
     alignItems: 'center',
+    marginBottom: 6,
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  cardioStatValue: {
+  treinoItemTipo: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+  },
+  treinoItemBadge: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  treinoItemBadgeTexto: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#1E88E5',
+  },
+  treinoItemObs: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 6,
+  },
+  treinoItemExercicios: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 4,
+  },
+  treinoItemExercicio: {
+    fontSize: 12,
+    color: '#1E293B',
+  },
+  treinoItemMais: {
+    fontSize: 11,
+    color: '#1E88E5',
+    fontWeight: '500',
+  },
+  treinoItemCheck: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+  },
+  
+  // Modal de Registro
+  registroModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+    width: '100%',
+  },
+  registroModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  registroModalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  registroModalTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1E293B',
   },
-  cardioStatLabel: {
-    fontSize: 12,
-    color: '#64748B',
+  registroModalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  cardioDetails: {
+  registroScrollView: {
+    maxHeight: '70%',
+    padding: 20,
+  },
+  exercicioRegistroCard: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  cardioNameContainer: {
+  exercicioRegistroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
     gap: 12,
+    marginBottom: 16,
   },
-  cardioIcon: {
-    width: 48,
+  exercicioRegistroIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  exercicioRegistroNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  tableHeaderCell: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  tableCell: {
+    paddingHorizontal: 4,
+  },
+  serieNumero: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  input: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+  },
+  registroModalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  cancelButton: {
+    flex: 1,
     height: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  cardioName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  cardioType: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  cardioInfoRow: {
-    flexDirection: 'row',
-    gap: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingTop: 16,
-  },
-  cardioInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardioInfoText: {
+  cancelButtonText: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#64748B',
   },
-
-  // Espaçamento
-  bottomSpacer: {
-    height: 40,
+  saveButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
