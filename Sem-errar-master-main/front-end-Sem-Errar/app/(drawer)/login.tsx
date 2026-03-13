@@ -134,7 +134,9 @@ export default function LoginScreen() {
       };
 
       await auth?.limparTudoEAutenticar(usuarioReal, data.token);
-      router.replace("/(drawer)/diarias");
+      
+      console.log("✅ Login concluído! Redirecionando...");
+      router.replace("/(drawer)/TreinoDiarioScreen");
       
     } catch (error: any) {
       let mensagem = "Erro ao conectar ao servidor.";
