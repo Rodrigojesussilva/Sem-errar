@@ -116,13 +116,13 @@ export default function BoasVindas4() {
               >
                 <View style={styles.buttonContent}>
                   <MaterialCommunityIcons name="bolt" size={24} color="#FFFFFF" />
-                  <Text style={styles.primaryText}>Vamos lá</Text>
+                  <Text style={styles.primaryText}>Sim, vamos lá.</Text>
                 </View>
               </LinearGradient>
             </Pressable>
 
             <Pressable style={styles.secondaryButton} onPress={() => router.push('/(drawer)/login')}>
-              <Text style={styles.secondaryButtonText}>Já tenho uma conta</Text>
+              <Text style={styles.secondaryButtonText}>Já possuo cadastro</Text>
             </Pressable>
           </View>
         </Animated.View>

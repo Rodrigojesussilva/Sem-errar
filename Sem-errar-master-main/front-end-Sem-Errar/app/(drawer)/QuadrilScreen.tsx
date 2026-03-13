@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   
   // Espaço extra para rolagem
   extraScrollSpace: {
-    height: height * 0.05,
+    height: height * 0.1,
     width: '100%',
   },
 });

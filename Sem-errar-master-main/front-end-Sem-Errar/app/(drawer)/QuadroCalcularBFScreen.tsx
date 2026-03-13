@@ -1,4 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -12,6 +13,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -31,14 +33,14 @@ export default function QuadroCalcularBFScreenDiasFixos() {
 
   const opcoes = [
     {
-      id: 'agora',
+      id: 'sim',
       title: 'Calcular agora',
       subtitle: 'Vamos fazer as medições necessárias',
       icon: 'rocket',
       color: COLORS.dot,
     },
     {
-      id: 'depois',
+      id: 'nao',
       title: 'Calcular ao entrar',
       subtitle: 'Farei as medições mais tarde',
       icon: 'clock-o',
@@ -46,13 +48,23 @@ export default function QuadroCalcularBFScreenDiasFixos() {
     },
   ];
 
-  const handleProximo = () => {
+  const handleProximo = async () => {
     if (!opcaoSelecionada) return;
 
-    if (opcaoSelecionada === 'agora') {
-      router.push('/PescocoScreen');
-    } else {
-      router.push('/PreparandoResultadosScreen');
+    try {
+      // Salva a resposta no AsyncStorage
+      await AsyncStorage.setItem('@fornecerMedidas', opcaoSelecionada);
+      
+      console.log('Resposta salva @fornecerMedidas:', opcaoSelecionada);
+
+      if (opcaoSelecionada === 'sim') {
+        router.push('/PescocoScreen');
+      } else {
+        router.push('/PreparandoResultadosScreen');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar resposta:', error);
+      Alert.alert('Erro', 'Não foi possível salvar sua escolha. Tente novamente.');
     }
   };
 
@@ -126,7 +138,7 @@ export default function QuadroCalcularBFScreenDiasFixos() {
             Vamos calcular seu percentual de gordura?
           </Text>
 
-          {/* INFOBOX AGORA FICA AQUI 👇 */}
+          {/* INFOBOX */}
           <View style={styles.infoBox}>
             <FontAwesome name="info-circle" size={18} color={COLORS.dot} />
             <Text style={styles.infoText}>
