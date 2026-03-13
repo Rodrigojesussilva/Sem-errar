@@ -127,7 +127,7 @@ export default function LoginScreen() {
       await auth?.limparTudoEAutenticar(usuarioReal, data.token);
       
       console.log("✅ Login concluído! Redirecionando...");
-      router.replace("/(drawer)/diarias");
+      router.replace("/(drawer)/TreinoDiarioScreen");
       
     } catch (error: any) {
       console.error("❌ Erro detalhado no login:", error);

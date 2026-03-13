@@ -28,7 +28,7 @@ declare global {
       perfil: undefined;
       historico: undefined;
       resultados: undefined;
-      diarias: undefined;
+      TreinoDiarioScreen: undefined;
       dados: undefined;
       termos: undefined;
       privacidade: undefined;
@@ -76,7 +76,7 @@ type RouteName =
   | 'perfil'
   | 'historico'
   | 'resultados'
-  | 'diarias'
+  | 'TreinoDiarioScreen'
   | 'dados'
   | 'termos'
   | 'privacidade'
@@ -138,15 +138,15 @@ function AuthRedirect() {
 
       // Se está logado e na tela de login/cadastro, redireciona para home
       if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) {
-        console.log('Redirecionando para diarias...');
+        console.log('Redirecionando para TreinoDiarioScreen...');
         (navigation as any).reset({
           index: 0,
-          routes: [{ name: 'diarias' }],
+          routes: [{ name: 'TreinoDiarioScreen' }],
         });
       }
 
       // Se não está logado e tentando acessar telas protegidas, redireciona para login
-      const protectedRoutes: RouteName[] = ['perfil', 'historico', 'resultados', 'diarias', 'dados'];
+      const protectedRoutes: RouteName[] = ['perfil', 'historico', 'resultados', 'TreinoDiarioScreen', 'dados'];
       if (!isLoggedIn && currentRoute && protectedRoutes.includes(currentRoute)) {
         console.log('Redirecionando para login...');
         (navigation as any).reset({
@@ -294,7 +294,7 @@ function CustomDrawerContent(props: any) {
 
   const loggedInScreens = [
     {
-      name: "diarias" as RouteName,
+      name: "TreinoDiarioScreen" as RouteName,
       label: "Desafios Diários",
       iconName: "trophy-award",
       iconLib: MaterialCommunityIcons,
@@ -1028,7 +1028,7 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="diarias"
+          name="TreinoDiarioScreen"
           options={{
             title: "Desafios Diários",
             drawerLabel: "Desafios Diários",

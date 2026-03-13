@@ -56,7 +56,7 @@ export default function RegistrarTreinoScreen() {
   };
 
   const handleVoltar = () => {
-    router.replace('/FrequenciaScreen');
+    router.replace('/TreinoDiarioScreen');
   };
 
   const renderStaticBackground = () => (
@@ -76,7 +76,7 @@ export default function RegistrarTreinoScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
+
       <View style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
         {renderStaticBackground()}
@@ -94,8 +94,8 @@ export default function RegistrarTreinoScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/logo-sem-fundo1.png')} 
+            <Image
+              source={require('../../assets/images/logo-sem-fundo1.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -106,7 +106,7 @@ export default function RegistrarTreinoScreen() {
           </Text>
 
           <Text style={styles.title}>Deseja registrar seu treino agora?</Text>
-          
+
           <View style={styles.opcoesContainer}>
             {opcoes.map((opcao) => {
               const isSelected = opcaoSelecionada === opcao.id;
@@ -116,7 +116,7 @@ export default function RegistrarTreinoScreen() {
                 <Pressable
                   key={opcao.id}
                   style={[
-                    styles.opcaoItem, 
+                    styles.opcaoItem,
                     isSelected && { borderColor: activeColor, borderWidth: 2 }
                   ]}
                   onPress={() => setOpcaoSelecionada(opcao.id)}
@@ -127,7 +127,7 @@ export default function RegistrarTreinoScreen() {
 
                   <View style={{ flex: 1 }}>
                     <Text style={[
-                      styles.opcaoTitulo, 
+                      styles.opcaoTitulo,
                       isSelected && { color: activeColor }
                     ]}>
                       {opcao.title}
@@ -136,7 +136,7 @@ export default function RegistrarTreinoScreen() {
                   </View>
 
                   <View style={[
-                    styles.radioButton, 
+                    styles.radioButton,
                     isSelected && { borderColor: activeColor, backgroundColor: activeColor }
                   ]}>
                     {isSelected && <View style={styles.radioButtonInner} />}

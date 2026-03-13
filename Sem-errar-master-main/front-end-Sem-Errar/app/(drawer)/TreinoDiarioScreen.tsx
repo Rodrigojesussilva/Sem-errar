@@ -1,4 +1,4 @@
-// app/(drawer)/treino.tsx - CARD ROTINA DO DIA COM NOME DO EXERCÍCIO CONTROLADO
+// app/(drawer)/treino.tsx - TELA PRINCIPAL DE TREINO DIÁRIO
 import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -13,9 +13,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View
 } from 'react-native';
 
@@ -100,17 +98,7 @@ interface Treino {
   observacao: string;
 }
 
-// Interface para registro de exercício
-interface ExercicioRegistro {
-  nome: string;
-  series: {
-    numero: number;
-    kg: string;
-    repeticoes: string;
-  }[];
-}
-
-export default function TreinoScreen() {
+export default function TreinoDiarioScreen() {
   const router = useRouter();
   
   // Estado para o treino atual (começa com o padrão)
@@ -121,14 +109,8 @@ export default function TreinoScreen() {
   // Estado para o modal de seleção
   const [modalVisible, setModalVisible] = useState(false);
   
-  // Estado para o modal de registro de treino
-  const [registroModalVisible, setRegistroModalVisible] = useState(false);
-  
   // Estado para o treino temporariamente selecionado no modal
   const [tempTreino, setTempTreino] = useState<Treino | null>(null);
-  
-  // Estado para os registros dos exercícios
-  const [registros, setRegistros] = useState<ExercicioRegistro[]>([]);
   
   // Lista plana de todos os treinos para o modal
   const [todosTreinos, setTodosTreinos] = useState(() => {
@@ -146,24 +128,6 @@ export default function TreinoScreen() {
     });
     return treinos;
   });
-
-  // Inicializa os registros quando o treino muda
-  useEffect(() => {
-    const novosRegistros = treinoAtual.exercicios.map((exercicio, index) => {
-      // Extrai número de séries do formato "3x12" ou "3x30s"
-      const seriesCount = parseInt(treinoAtual.series[index].split('x')[0]) || 3;
-      
-      return {
-        nome: exercicio,
-        series: Array.from({ length: seriesCount }, (_, i) => ({
-          numero: i + 1,
-          kg: '',
-          repeticoes: ''
-        }))
-      };
-    });
-    setRegistros(novosRegistros);
-  }, [treinoAtual]);
 
   // Animações
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -225,13 +189,6 @@ export default function TreinoScreen() {
     }
   };
 
-  // Função para atualizar o registro de um exercício
-  const atualizarRegistro = (exercicioIndex: number, serieIndex: number, campo: 'kg' | 'repeticoes', valor: string) => {
-    const novosRegistros = [...registros];
-    novosRegistros[exercicioIndex].series[serieIndex][campo] = valor;
-    setRegistros(novosRegistros);
-  };
-
   // Função para obter ícone baseado no nome do exercício
   const getExerciseIcon = (exercicio: string) => {
     const nome = exercicio.toLowerCase();
@@ -260,11 +217,21 @@ export default function TreinoScreen() {
   const isDescanso = treinoAtual.tipo === 'Descanso';
   const totalExercicios = treinoAtual.exercicios?.length || 0;
 
+  // Navegar para tela de registro
+  const irParaRegistro = () => {
+    router.push({
+      pathname: '/registrar-treino',
+      params: { 
+        treino: JSON.stringify(treinoAtual)
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#F8FAFC" barStyle="dark-content" />
       
-      {/* HEADER COM NOME "ROTINA DO DIA" */}
+      {/* HEADER COM NOME "TREINO DIÁRIO" */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -273,7 +240,7 @@ export default function TreinoScreen() {
           <Ionicons name="arrow-back" size={22} color="#1E88E5" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Rotina do Dia</Text>
+        <Text style={styles.headerTitle}>Treino Diário</Text>
         
         <TouchableOpacity
           style={styles.shareButton}
@@ -305,7 +272,7 @@ export default function TreinoScreen() {
             <Text style={styles.treinoHojeText}>Treino Hoje</Text>
           </View>
 
-          {/* TÍTULO E BOTÕES - AGORA COM FLEX PRA NÃO EMPURRAR */}
+          {/* TÍTULO E BOTÕES */}
           <View style={styles.cardHeader}>
             <View style={styles.titleContainer}>
               <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
@@ -330,7 +297,7 @@ export default function TreinoScreen() {
               
               <TouchableOpacity
                 style={styles.registerButton}
-                onPress={() => setRegistroModalVisible(true)}
+                onPress={irParaRegistro}
               >
                 <Feather name="check-square" size={14} color="#FFFFFF" />
                 <Text style={styles.registerButtonText}>Registrar</Text>
@@ -483,111 +450,6 @@ export default function TreinoScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* MODAL DE REGISTRO DE TREINO */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={registroModalVisible}
-        onRequestClose={() => setRegistroModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setRegistroModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.registroModalContainer}>
-                <View style={styles.registroModalHeader}>
-                  <View style={styles.registroModalTitleContainer}>
-                    <MaterialCommunityIcons name="clipboard-text" size={24} color="#1E88E5" />
-                    <Text style={styles.registroModalTitle}>Registrar Treino</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setRegistroModalVisible(false)}
-                    style={styles.registroModalCloseButton}
-                  >
-                    <Feather name="x" size={22} color="#64748B" />
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView 
-                  style={styles.registroScrollView}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {registros.map((exercicio, exercicioIndex) => (
-                    <View key={exercicioIndex} style={styles.exercicioRegistroCard}>
-                      <View style={styles.exercicioRegistroHeader}>
-                        <View style={[styles.exercicioRegistroIcon, { backgroundColor: getExerciseIcon(exercicio.nome).color + '15' }]}>
-                          {renderExerciseIcon(exercicio.nome, 20)}
-                        </View>
-                        <Text style={styles.exercicioRegistroNome} numberOfLines={2} ellipsizeMode="tail">
-                          {exercicio.nome}
-                        </Text>
-                      </View>
-
-                      {/* Cabeçalho da tabela */}
-                      <View style={styles.tableHeader}>
-                        <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>SÉRIE</Text>
-                        <Text style={[styles.tableHeaderCell, { flex: 1 }]}>KG</Text>
-                        <Text style={[styles.tableHeaderCell, { flex: 1 }]}>REPS</Text>
-                      </View>
-
-                      {/* Linhas da tabela */}
-                      {exercicio.series.map((serie, serieIndex) => (
-                        <View key={serieIndex} style={styles.tableRow}>
-                          <View style={[styles.tableCell, { flex: 0.5 }]}>
-                            <Text style={styles.serieNumero}>{serie.numero}</Text>
-                          </View>
-                          
-                          <View style={[styles.tableCell, { flex: 1 }]}>
-                            <TextInput
-                              style={styles.input}
-                              value={serie.kg}
-                              onChangeText={(valor) => atualizarRegistro(exercicioIndex, serieIndex, 'kg', valor)}
-                              keyboardType="numeric"
-                              placeholder="0"
-                              placeholderTextColor="#CBD5E1"
-                            />
-                          </View>
-                          
-                          <View style={[styles.tableCell, { flex: 1 }]}>
-                            <TextInput
-                              style={styles.input}
-                              value={serie.repeticoes}
-                              onChangeText={(valor) => atualizarRegistro(exercicioIndex, serieIndex, 'repeticoes', valor)}
-                              keyboardType="numeric"
-                              placeholder="0"
-                              placeholderTextColor="#CBD5E1"
-                            />
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  ))}
-
-                  <View style={styles.registroModalFooter}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => setRegistroModalVisible(false)}
-                    >
-                      <Text style={styles.cancelButtonText}>Cancelar</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.saveButton}
-                      onPress={() => {
-                        // Aqui você pode salvar os registros
-                        console.log('Registros salvos:', registros);
-                        setRegistroModalVisible(false);
-                      }}
-                    >
-                      <Text style={styles.saveButtonText}>Salvar Registro</Text>
-                    </TouchableOpacity>
-                  </View>
-                </ScrollView>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 }
@@ -672,7 +534,7 @@ const styles = StyleSheet.create({
     color: '#1E88E5',
   },
   
-  // Card Header - AJUSTADO PARA NÃO EMPURRAR OS BOTÕES
+  // Card Header
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -965,152 +827,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     right: 14,
-  },
-  
-  // Modal de Registro
-  registroModalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    width: '100%',
-  },
-  registroModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  registroModalTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  registroModalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  registroModalCloseButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  registroScrollView: {
-    maxHeight: '70%',
-    padding: 20,
-  },
-  exercicioRegistroCard: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  exercicioRegistroHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  exercicioRegistroIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  exercicioRegistroNome: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  tableHeaderCell: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  tableCell: {
-    paddingHorizontal: 4,
-  },
-  serieNumero: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-    textAlign: 'center',
-  },
-  input: {
-    height: 44,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: '#1E293B',
-    backgroundColor: '#FFFFFF',
-    textAlign: 'center',
-  },
-  registroModalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  cancelButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  saveButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-  },
-  saveButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });
