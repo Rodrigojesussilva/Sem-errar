@@ -303,7 +303,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
         shadowRadius: 20,
         elevation: 10,
       }}>
-        {/* Ícone de aviso */}
         <View style={{
           width: 80,
           height: 80,
@@ -316,7 +315,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
           <FontAwesome name="exclamation-triangle" size={40} color="#EF4444" />
         </View>
 
-        {/* Título */}
         <Text style={{
           fontSize: 24,
           fontWeight: '800',
@@ -327,7 +325,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
           Reiniciar Cadastro?
         </Text>
 
-        {/* Mensagem */}
         <Text style={{
           fontSize: 16,
           color: '#6B7280',
@@ -339,7 +336,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
           Todos os seus dados atuais serão perdidos e você precisará preencher tudo novamente.
         </Text>
 
-        {/* Barra decorativa */}
         <LinearGradient
           colors={['#622db2', '#4ecdc4']}
           start={{ x: 0, y: 0 }}
@@ -352,13 +348,11 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
           }}
         />
 
-        {/* Botões */}
         <View style={{
           flexDirection: 'row',
           gap: 12,
           width: '100%',
         }}>
-          {/* Botão Cancelar */}
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -383,7 +377,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
             </Text>
           </Pressable>
 
-          {/* Botão Confirmar */}
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -415,7 +408,6 @@ const ModalConfirmacao = ({ visible, onClose, onConfirm }: any) => {
           </Pressable>
         </View>
 
-        {/* Aviso adicional */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -484,7 +476,8 @@ export default function AnaliseScreen() {
       '@pesoUnidade', '@pesoKg', '@pesoLb', '@pesoEmKg',
       '@frequenciaTreino', '@nivelAtividade', '@frequenciaTreinoDescricao',
       '@frequenciaCardio', '@frequenciaCardioDescricao', '@pescocoCm', '@cinturaCm', '@quadrilCm',
-      '@treinaAtualmente'
+      '@treinaAtualmente',
+      '@fornecerMedidas' // CHAVE CORRETA - resposta da QuadroCalcularBFScreen
     ];
 
     const values = await AsyncStorage.multiGet(keys);
@@ -517,6 +510,18 @@ export default function AnaliseScreen() {
       pesoFinalKg = parseFloat(data['@pesoKg']);
     }
 
+    // CORREÇÃO: Usar @fornecerMedidas da QuadroCalcularBFScreen
+    const forneceuMedidas = data['@fornecerMedidas'] === 'sim';
+    
+    const pescocoValido = data['@pescocoCm'] && !isNaN(parseFloat(data['@pescocoCm']));
+    const cinturaValida = data['@cinturaCm'] && !isNaN(parseFloat(data['@cinturaCm']));
+    
+    const quadrilValido = data['@sexo'] === 'feminino' 
+      ? data['@quadrilCm'] && !isNaN(parseFloat(data['@quadrilCm']))
+      : true;
+
+    const medidasCompletas = forneceuMedidas && pescocoValido && cinturaValida && quadrilValido;
+
     return {
       objetivo: data['@objetivo'] || DEFAULT_VALUES.objetivo,
       objetivoCompleto: objetivoCompletoObj,
@@ -524,18 +529,20 @@ export default function AnaliseScreen() {
       idade: parseInt(data['@idade']) || DEFAULT_VALUES.idade,
       alturaCm: alturaFinalCm,
       pesoEmKg: pesoFinalKg,
-      pescocoCm: parseFloat(data['@pescocoCm']) || DEFAULT_VALUES.pescocoCm,
-      cinturaCm: parseFloat(data['@cinturaCm']) || DEFAULT_VALUES.cinturaCm,
-      quadrilCm: data['@quadrilCm'] ? parseFloat(data['@quadrilCm']) : null,
+      pescocoCm: medidasCompletas ? parseFloat(data['@pescocoCm']) : null,
+      cinturaCm: medidasCompletas ? parseFloat(data['@cinturaCm']) : null,
+      quadrilCm: medidasCompletas && data['@quadrilCm'] ? parseFloat(data['@quadrilCm']) : null,
       frequenciaTreino: data['@frequenciaTreino'] || DEFAULT_VALUES.frequenciaTreino,
       nivelAtividade: data['@nivelAtividade'] ? parseFloat(data['@nivelAtividade']) : null,
+      forneceuMedidas: medidasCompletas,
     };
   };
 
   const calcularMetricas = (dados: any) => {
     const {
       objetivo, sexo, idade, alturaCm, pesoEmKg, pescocoCm,
-      cinturaCm, quadrilCm, frequenciaTreino, nivelAtividade
+      cinturaCm, quadrilCm, frequenciaTreino, nivelAtividade,
+      forneceuMedidas
     } = dados;
 
     const alturaMetros = alturaCm / 100;
@@ -545,6 +552,10 @@ export default function AnaliseScreen() {
     const pesoIdealMax = 24.9 * (alturaMetros * alturaMetros);
 
     const calcularBF = () => {
+      if (!forneceuMedidas) {
+        return null;
+      }
+
       const alturaInches = alturaCm * 0.393701;
       const pescocoInches = pescocoCm * 0.393701;
       const cinturaInches = cinturaCm * 0.393701;
@@ -558,16 +569,34 @@ export default function AnaliseScreen() {
       return (1.20 * imc) + (0.23 * idade) - (10.8 * (sexo === 'feminino' ? 1 : 0)) - 5.4;
     };
 
-    const percentualGordura = Math.min(Math.max(calcularBF(), sexo === 'masculino' ? 3 : 8), 50);
-    const massaGordaKg = (percentualGordura / 100) * pesoEmKg;
-    const massaMagraKg = pesoEmKg - massaGordaKg;
+    const percentualGorduraCalc = calcularBF();
+    const temMedidas = forneceuMedidas && percentualGorduraCalc !== null && !isNaN(percentualGorduraCalc);
+    
+    const percentualGordura = temMedidas 
+      ? Math.min(Math.max(percentualGorduraCalc, sexo === 'masculino' ? 3 : 8), 50)
+      : 0;
+      
+    const massaGordaKg = temMedidas ? (percentualGordura / 100) * pesoEmKg : 0;
+    const massaMagraKg = temMedidas ? pesoEmKg - massaGordaKg : pesoEmKg;
 
     const tmb = sexo === 'feminino'
       ? (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) - 161
       : (10 * pesoEmKg) + (6.25 * alturaCm) - (5 * idade) + 5;
 
-    const fatoresAtividade: any = { '0': 1.2, '1-2': 1.375, '3-4': 1.55, '5-6': 1.725 };
-    const fatorAtividade = nivelAtividade || fatoresAtividade[frequenciaTreino] || 1.2;
+    const fatoresAtividade: any = {
+      'nao': 1.2,
+      '1-3': 1.375,
+      '3-5': 1.55,
+      '6-7': 1.725
+    };
+
+    let fatorAtividade;
+    if (nivelAtividade) {
+      fatorAtividade = nivelAtividade;
+    } else {
+      fatorAtividade = fatoresAtividade[frequenciaTreino] || 1.2;
+    }
+
     const tdee = tmb * fatorAtividade;
 
     const getCalorias = () => {
@@ -605,8 +634,13 @@ export default function AnaliseScreen() {
       pesoIdealMin,
       pesoIdealMax,
       percentualGordura,
-      percentualGorduraFormatado: percentualGordura.toFixed(1),
-      classificacaoBF: getClassificacaoBF(percentualGordura, sexo === 'masculino'),
+      percentualGorduraFormatado: temMedidas ? percentualGordura.toFixed(1) : '--',
+      classificacaoBF: temMedidas ? getClassificacaoBF(percentualGordura, sexo === 'masculino') : {
+        classificacao: 'Não calculado',
+        cor: COLORS.textLight,
+        descricao: 'Sem medidas',
+        emoji: '❓'
+      },
       massaGordaKg,
       massaMagraKg,
       tmb,
@@ -635,18 +669,18 @@ export default function AnaliseScreen() {
       pesoAtual: pesoEmKg,
       sexo,
       alturaCm,
+      temMedidas,
     };
-  };
-
-  const handleComecar = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await AsyncStorage.setItem('@onboardingCompleto', 'true');
-    router.replace('/CadastroScreen');
   };
 
   const handleEditar = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(true);
+  };
+
+  const handleFornecerMedidas = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(drawer)/QuadroCalcularBFScreen');
   };
 
   const confirmarReinicio = async () => {
@@ -677,6 +711,7 @@ export default function AnaliseScreen() {
         '@cinturaCm',
         '@quadrilCm',
         '@treinaAtualmente',
+        '@fornecerMedidas',
         '@metricasCompletas',
         '@userDataCompleto'
       ];
@@ -701,6 +736,12 @@ export default function AnaliseScreen() {
         [{ text: 'OK' }]
       );
     }
+  };
+
+  const handleComecar = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await AsyncStorage.setItem('@onboardingCompleto', 'true');
+    router.replace('/CadastroScreen');
   };
 
   if (isLoading) {
@@ -747,7 +788,6 @@ export default function AnaliseScreen() {
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Fundo decorativo */}
       <LinearGradient
         colors={['#F9FAFB', '#F3F4F6']}
         style={StyleSheet.absoluteFill}
@@ -858,7 +898,6 @@ export default function AnaliseScreen() {
         contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Section */}
         <Animated.View style={[{
           marginBottom: 16,
           marginTop: 8,
@@ -907,7 +946,6 @@ export default function AnaliseScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* Card IMC com medidor */}
         <LinearGradient
           colors={['#FFFFFF', '#F9FAFB']}
           style={{
@@ -965,7 +1003,6 @@ export default function AnaliseScreen() {
           </View>
         </LinearGradient>
 
-        {/* Peso Ideal */}
         <LinearGradient
           colors={['#FFFFFF', '#F9FAFB']}
           style={{
@@ -1102,7 +1139,6 @@ export default function AnaliseScreen() {
           </View>
         </LinearGradient>
 
-        {/* Composição Corporal */}
         <LinearGradient
           colors={['#FFFFFF', '#F9FAFB']}
           style={{
@@ -1134,59 +1170,172 @@ export default function AnaliseScreen() {
             </Text>
           </View>
 
-          <View style={{ alignItems: 'center', marginBottom: 24 }}>
-            <ProgressCircle
-              value={metricas.percentualGordura}
-              max={metricas.sexo === 'masculino' ? 35 : 45}
-              color={metricas.classificacaoBF.cor}
-              sublabel={metricas.classificacaoBF.classificacao}
-            />
-          </View>
+          {metricas.temMedidas ? (
+            <>
+              <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                <ProgressCircle
+                  value={metricas.percentualGordura}
+                  max={metricas.sexo === 'masculino' ? 35 : 45}
+                  color={metricas.classificacaoBF.cor}
+                  sublabel={metricas.classificacaoBF.classificacao}
+                />
+              </View>
 
-          <View style={{ gap: 16 }}>
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.info }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 4 }}>
-                  Massa Magra (músculos, ossos e órgãos)
-                </Text>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMain, marginBottom: 6 }}>
-                  {metricas.massaMagraKg.toFixed(1)} kg
-                </Text>
-                <View style={{ height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
-                  <View style={{
-                    height: '100%',
-                    borderRadius: 3,
-                    width: `${(metricas.massaMagraKg / metricas.pesoAtual) * 100}%`,
-                    backgroundColor: COLORS.info
-                  }} />
+              <View style={{ gap: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.info }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 4 }}>
+                      Massa Magra (músculos, ossos e órgãos)
+                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMain, marginBottom: 6 }}>
+                      {metricas.massaMagraKg.toFixed(1)} kg
+                    </Text>
+                    <View style={{ height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{
+                        height: '100%',
+                        borderRadius: 3,
+                        width: `${(metricas.massaMagraKg / metricas.pesoAtual) * 100}%`,
+                        backgroundColor: COLORS.info
+                      }} />
+                    </View>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.warning }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 4 }}>
+                      Gordura Corporal Total
+                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMain, marginBottom: 6 }}>
+                      {metricas.massaGordaKg.toFixed(1)} kg
+                    </Text>
+                    <View style={{ height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{
+                        height: '100%',
+                        borderRadius: 3,
+                        width: `${(metricas.massaGordaKg / metricas.pesoAtual) * 100}%`,
+                        backgroundColor: COLORS.warning
+                      }} />
+                    </View>
+                  </View>
                 </View>
               </View>
-            </View>
+            </>
+          ) : (
+            <View style={{ alignItems: 'center', padding: 20 }}>
+              <View style={{
+                backgroundColor: `${COLORS.warning}20`,
+                paddingHorizontal: 16,
+                paddingVertical: 6,
+                borderRadius: 30,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: `${COLORS.warning}30`,
+              }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '700',
+                  color: COLORS.warning,
+                }}>
+                  ⚠️ NÃO CALCULADO
+                </Text>
+              </View>
 
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.warning }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 4 }}>
-                  Gordura Corporal Total
-                </Text>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMain, marginBottom: 6 }}>
-                  {metricas.massaGordaKg.toFixed(1)} kg
-                </Text>
-                <View style={{ height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: COLORS.textMain,
+                textAlign: 'center',
+                marginBottom: 8,
+              }}>
+                Medidas não fornecidas
+              </Text>
+
+              <Text style={{
+                fontSize: 14,
+                color: COLORS.textLight,
+                textAlign: 'center',
+                lineHeight: 20,
+                marginBottom: 20,
+                paddingHorizontal: 10,
+              }}>
+                Você optou por não informar suas medidas corporais. Para calcular seu percentual de gordura, precisamos de:
+              </Text>
+
+              <View style={{ width: '100%', gap: 12, marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{
-                    height: '100%',
-                    borderRadius: 3,
-                    width: `${(metricas.massaGordaKg / metricas.pesoAtual) * 100}%`,
-                    backgroundColor: COLORS.warning
-                  }} />
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: `${COLORS.primary}10`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome name="arrows-v" size={14} color={COLORS.primary} />
+                  </View>
+                  <Text style={{ fontSize: 14, color: COLORS.textMain, flex: 1 }}>
+                    <Text style={{ fontWeight: '600' }}>Pescoço</Text> - circunferência
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: `${COLORS.primary}10`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome name="arrows-h" size={14} color={COLORS.primary} />
+                  </View>
+                  <Text style={{ fontSize: 14, color: COLORS.textMain, flex: 1 }}>
+                    <Text style={{ fontWeight: '600' }}>Cintura</Text> - circunferência
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: `${COLORS.primary}10`,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome name="arrows-h" size={14} color={COLORS.primary} />
+                  </View>
+                  <Text style={{ fontSize: 14, color: COLORS.textMain, flex: 1 }}>
+                    <Text style={{ fontWeight: '600' }}>Quadril</Text> - circunferência (para mulheres)
+                  </Text>
                 </View>
               </View>
+
+              <Pressable
+                onPress={handleFornecerMedidas}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  borderRadius: 30,
+                  backgroundColor: COLORS.primary,
+                  marginTop: 8,
+                }}
+              >
+                <FontAwesome name="pencil" size={14} color="#FFF" />
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>
+                  Fornecer medidas
+                </Text>
+              </Pressable>
             </View>
-          </View>
+          )}
         </LinearGradient>
 
-        {/* Seu Gasto Calórico */}
         <LinearGradient
           colors={['#FFFFFF', '#F9FAFB']}
           style={{
@@ -1219,7 +1368,6 @@ export default function AnaliseScreen() {
           </View>
 
           <View style={{ gap: 12, marginBottom: 20 }}>
-            {/* TMB */}
             <View style={{ alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.line, flexDirection: 'row' }}>
               <View style={{
                 width: 48,
@@ -1234,16 +1382,15 @@ export default function AnaliseScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, color: COLORS.textLight, fontWeight: '600', marginBottom: 4 }}>
-                  TMB - Taxa Metabólica Basal
+                  Metabolismo em Repouso
                 </Text>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: COLORS.textMain }}>
                   {metricas.tmbFormatado} <Text style={{ fontSize: 13, fontWeight: '400', color: COLORS.textLight }}>kcal/dia</Text>
                 </Text>
-                <Text style={{ fontSize: 12, color: COLORS.textSub, marginTop: 2 }}>Calorias em repouso</Text>
+                <Text style={{ fontSize: 12, color: COLORS.textSub, marginTop: 2 }}>Calorias que seu corpo gasta parado</Text>
               </View>
             </View>
 
-            {/* TDEE */}
             <View style={{ alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.line, flexDirection: 'row' }}>
               <View style={{
                 width: 48,
@@ -1258,7 +1405,7 @@ export default function AnaliseScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, color: COLORS.textLight, fontWeight: '600', marginBottom: 4 }}>
-                  TDEE - Gasto Energético Total
+                  Calorias Gastas por Dia
                 </Text>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: COLORS.textMain }}>
                   {metricas.tdeeFormatado} <Text style={{ fontSize: 13, fontWeight: '400', color: COLORS.textLight }}>kcal/dia</Text>
@@ -1269,7 +1416,6 @@ export default function AnaliseScreen() {
           </View>
         </LinearGradient>
 
-        {/* Mensagem Motivacional */}
         <LinearGradient
           colors={[COLORS.primary, COLORS.secondary]}
           start={{ x: 0, y: 0 }}
@@ -1306,7 +1452,6 @@ export default function AnaliseScreen() {
         <View style={{ height: 20 }} />
       </Animated.ScrollView>
 
-      {/* Botão Flutuante */}
       <SafeAreaView style={{
         position: 'absolute',
         bottom: 0,
@@ -1335,7 +1480,6 @@ export default function AnaliseScreen() {
         </Pressable>
       </SafeAreaView>
 
-      {/* Modal de confirmação estilizado */}
       <ModalConfirmacao
         visible={modalVisible}
         onClose={() => {
