@@ -11,4 +11,4 @@ const API_URL = 'http://192.168.0.18:3000';
 
 console.log('🌐 API_URL configurada:', API_URL);
 
-export default API_URL;s
+export default API_URL;
