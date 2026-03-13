@@ -1,21 +1,21 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useFocusEffect } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
+  Dimensions,
+  Image,
   Pressable,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  View,
-  SafeAreaView,
-  StatusBar,
-  Dimensions,
   TextInput,
-  Image,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -54,20 +54,53 @@ export default function PesoScreen() {
     if (temValor) {
       setIsLoading(true);
       try {
-        await AsyncStorage.setItem('@pesoUnidade', unidadeSelecionada);
+        // Recuperar dados existentes do onboarding
+        const existingData = await AsyncStorage.getItem('@userDataCompleto');
+        let userData = existingData ? JSON.parse(existingData) : {};
+        
+        // Calcular peso em kg
+        let pesoKgValue: number;
+        let pesoLbValue: number | null = null;
+        
         if (unidadeSelecionada === 'kg') {
-          await AsyncStorage.setItem('@pesoKg', pesoKg);
-          await AsyncStorage.setItem('@pesoEmKg', pesoKg);
-          // Limpa valores antigos de lb
-          await AsyncStorage.removeItem('@pesoLb');
+          pesoKgValue = parseFloat(pesoKg);
         } else {
-          await AsyncStorage.setItem('@pesoLb', pesoLb);
-          await AsyncStorage.setItem('@pesoEmKg', converterParaKg(pesoLb));
-          // Limpa valores antigos de kg
-          await AsyncStorage.removeItem('@pesoKg');
+          // Converter lb para kg
+          pesoKgValue = parseFloat((parseFloat(pesoLb) * 0.453592).toFixed(1));
+          pesoLbValue = parseFloat(pesoLb);
         }
+        
+        console.log('📊 Salvando peso:', {
+          unidade: unidadeSelecionada,
+          pesoKg: pesoKgValue,
+          pesoLb: pesoLbValue
+        });
+        
+        // Atualizar objeto completo com os novos dados de peso
+        userData = {
+          ...userData,
+          pesoUnidade: unidadeSelecionada,
+          pesoKg: pesoKgValue, // Campo principal que o backend usa
+          pesoEmKg: pesoKgValue, // Campo de fallback
+          pesoLb: pesoLbValue,
+        };
+        
+        // Salvar objeto completo
+        await AsyncStorage.setItem('@userDataCompleto', JSON.stringify(userData));
+        console.log('✅ @userDataCompleto salvo:', userData);
+        
+        // Manter compatibilidade com chaves antigas
+        await AsyncStorage.setItem('@pesoKg', pesoKgValue.toString());
+        await AsyncStorage.setItem('@pesoEmKg', pesoKgValue.toString());
+        if (pesoLbValue) {
+          await AsyncStorage.setItem('@pesoLb', pesoLbValue.toString());
+        } else {
+          await AsyncStorage.removeItem('@pesoLb');
+        }
+        
         router.push('/(drawer)/TreinoScreen');
       } catch (error) {
+        console.error('❌ Erro ao salvar peso:', error);
         Alert.alert('Erro', 'Não foi possível salvar.');
       } finally {
         setIsLoading(false);
