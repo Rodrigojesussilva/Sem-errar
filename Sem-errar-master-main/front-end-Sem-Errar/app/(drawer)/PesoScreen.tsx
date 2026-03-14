@@ -8,7 +8,6 @@ import {
   Dimensions,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -16,6 +15,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,7 +29,7 @@ const COLORS = {
 
 export default function PesoScreen() {
   const router = useRouter();
-  
+
   const [pesoKg, setPesoKg] = useState<string>('');
   const [unidadeSelecionada, setUnidadeSelecionada] = useState<'kg' | 'lb'>('kg');
   const [pesoLb, setPesoLb] = useState<string>('');
@@ -57,11 +57,11 @@ export default function PesoScreen() {
         // Recuperar dados existentes do onboarding
         const existingData = await AsyncStorage.getItem('@userDataCompleto');
         let userData = existingData ? JSON.parse(existingData) : {};
-        
+
         // Calcular peso em kg
         let pesoKgValue: number;
         let pesoLbValue: number | null = null;
-        
+
         if (unidadeSelecionada === 'kg') {
           pesoKgValue = parseFloat(pesoKg);
         } else {
@@ -69,13 +69,13 @@ export default function PesoScreen() {
           pesoKgValue = parseFloat((parseFloat(pesoLb) * 0.453592).toFixed(1));
           pesoLbValue = parseFloat(pesoLb);
         }
-        
+
         console.log('📊 Salvando peso:', {
           unidade: unidadeSelecionada,
           pesoKg: pesoKgValue,
           pesoLb: pesoLbValue
         });
-        
+
         // Atualizar objeto completo com os novos dados de peso
         userData = {
           ...userData,
@@ -84,11 +84,11 @@ export default function PesoScreen() {
           pesoEmKg: pesoKgValue, // Campo de fallback
           pesoLb: pesoLbValue,
         };
-        
+
         // Salvar objeto completo
         await AsyncStorage.setItem('@userDataCompleto', JSON.stringify(userData));
         console.log('✅ @userDataCompleto salvo:', userData);
-        
+
         // Manter compatibilidade com chaves antigas
         await AsyncStorage.setItem('@pesoKg', pesoKgValue.toString());
         await AsyncStorage.setItem('@pesoEmKg', pesoKgValue.toString());
@@ -97,7 +97,7 @@ export default function PesoScreen() {
         } else {
           await AsyncStorage.removeItem('@pesoLb');
         }
-        
+
         router.push('/(drawer)/TreinoScreen');
       } catch (error) {
         console.error('❌ Erro ao salvar peso:', error);
@@ -117,7 +117,6 @@ export default function PesoScreen() {
     if (parts.length === 2 && parts[1].length > 1) {
       finalValue = parts[0] + '.' + parts[1].charAt(0);
     }
-
     if (type === 'kg') setPesoKg(finalValue);
     else setPesoLb(finalValue);
   };
@@ -125,12 +124,12 @@ export default function PesoScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
+
       {/* FUNDO ÚNICO CONSISTENTE */}
       <View style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
         <View style={styles.visualArea}>
-          <View style={[styles.ellipseLine, { width: width * 1.4, height: width * 1.4, top: -width * 0.5, left: -width * 0.4, transform: [{rotate: '15deg'}] }]}>
+          <View style={[styles.ellipseLine, { width: width * 1.4, height: width * 1.4, top: -width * 0.5, left: -width * 0.4, transform: [{ rotate: '15deg' }] }]}>
             <View style={[styles.staticDot, { bottom: '30%', right: '20%' }]} />
           </View>
           <View style={[styles.ellipseLine, { width: width * 1.2, height: width * 1.2, bottom: -width * 0.6, right: -width * 0.3 }]}>
@@ -150,10 +149,10 @@ export default function PesoScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          
+
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/logo-sem-fundo1.png')} 
+            <Image
+              source={require('../../assets/images/logo-sem-fundo1.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -169,23 +168,24 @@ export default function PesoScreen() {
                 onChangeText={(t) => handlePesoChange(t, unidadeSelecionada)}
                 placeholder="0.0"
                 placeholderTextColor="#DDD"
-                keyboardType="decimal-pad"
+                keyboardType="numeric"
+                maxLength={3}
               />
               <Text style={styles.unitTag}>{unidadeSelecionada}</Text>
             </View>
 
             {unidadeSelecionada === 'lb' && pesoLb && (
-                <Text style={styles.conversionHint}>≈ {converterParaKg(pesoLb)} kg</Text>
+              <Text style={styles.conversionHint}>≈ {converterParaKg(pesoLb)} kg</Text>
             )}
 
             <View style={styles.toggleContainer}>
-              <Pressable 
+              <Pressable
                 onPress={() => setUnidadeSelecionada('kg')}
                 style={[styles.tglBtn, unidadeSelecionada === 'kg' && styles.tglBtnActive]}
               >
                 <Text style={[styles.tglText, unidadeSelecionada === 'kg' && styles.tglTextActive]}>kg</Text>
               </Pressable>
-              <Pressable 
+              <Pressable
                 onPress={() => setUnidadeSelecionada('lb')}
                 style={[styles.tglBtn, unidadeSelecionada === 'lb' && styles.tglBtnActive]}
               >
@@ -230,9 +230,9 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   backButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
-  backIconCircle: { 
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', 
-    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3 
+  backIconCircle: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff',
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.line, elevation: 3
   },
   backText: { color: COLORS.primary, marginLeft: 10, fontWeight: '700', fontSize: 16 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, justifyContent: 'center' },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   logo: { width: width * 0.5, height: 70 },
   title: { fontSize: 26, fontWeight: '900', color: COLORS.textMain, textAlign: 'center', marginBottom: 40 },
   mainInputArea: { marginBottom: 50, alignItems: 'center' },
-  
+
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
