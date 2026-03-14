@@ -1,7 +1,7 @@
 // conf/api.ts
 
 // Para Android Emulator
-const API_URL = 'http://192.168.0.13:3000';
+const API_URL = 'http://192.168.0.18:3000';
 
 // Para iOS Simulator (descomente se estiver no iOS)
 // const API_URL = 'http://localhost:3000';

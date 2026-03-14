@@ -2,25 +2,21 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
-  Platform,
+  Image,
   Pressable,
-  SafeAreaView,
-  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  View,
-  StatusBar,
-  Image,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -854,50 +850,73 @@ export default function AnaliseScreen() {
         }} />
       </View>
 
-      <SafeAreaView style={{ zIndex: 100, backgroundColor: 'transparent' }}>
-        <View style={{
-          paddingHorizontal: 25,
-          paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
-          zIndex: 100,
-        }}>
-          <Pressable
-            onPress={handleEditar}
-            style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' }}
-          >
-            <View style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: '#fff',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: COLORS.line,
-              elevation: 3,
-              shadowColor: '#000',
-              shadowOpacity: 0.1,
-              shadowRadius: 3,
-            }}>
-              <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
-            </View>
+     <SafeAreaView style={{ zIndex: 100, backgroundColor: 'transparent' }}>
+  <View style={{
+    paddingHorizontal: 25,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    zIndex: 100,
+  }}>
+    <Pressable
+      onPress={handleEditar}
+      style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' }}
+    >
+      <View style={{
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.line,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      }}>
+        <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+      </View>
 
-            <Text style={{
-              color: COLORS.primary,
-              marginLeft: 10,
-              fontWeight: '700',
-              fontSize: 16
-            }}>
-              Editar
-            </Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <Text style={{
+        color: COLORS.primary,
+        marginLeft: 10,
+        fontWeight: '700',
+        fontSize: 16
+      }}>
+        Editar
+      </Text>
+    </Pressable>
+
+    {/* Indicador de scroll movido para abaixo do botão editar */}
+    <View style={{ 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      paddingVertical: 8,
+      backgroundColor: 'rgba(78, 205, 196, 0.1)',
+      borderRadius: 20,
+      marginTop: 16,
+    }}>
+      <FontAwesome name="hand-o-up" size={12} color={COLORS.dot} />
+      <Text style={{ 
+        fontSize: 12, 
+        color: COLORS.dot, 
+        marginLeft: 8,
+        fontWeight: '600'
+      }}>
+        Deslize para ver mais informações
+      </Text>
+      <FontAwesome name="hand-o-down" size={12} color={COLORS.dot} style={{ marginLeft: 8 }} />
+    </View>
+  </View>
+</SafeAreaView>
 
       <Animated.ScrollView
         style={[{ flex: 1, zIndex: 10, opacity: fadeAnim }]}
         contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16 }}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
+         
         <Animated.View style={[{
           marginBottom: 16,
           marginTop: 8,
