@@ -1,9 +1,10 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   Pressable,
@@ -13,7 +14,6 @@ import {
   StyleSheet,
   Text,
   View,
-  Alert,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -30,6 +30,13 @@ const COLORS = {
 export default function QuadroCalcularBFScreenDiasFixos() {
   const router = useRouter();
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<string | null>(null);
+
+  // Resetar opção quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      setOpcaoSelecionada(null);
+    }, [])
+  );
 
   const opcoes = [
     {
