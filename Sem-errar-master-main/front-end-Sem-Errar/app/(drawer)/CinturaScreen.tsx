@@ -212,7 +212,7 @@ export default function CinturaScreen() {
                 placeholder="00"
                 placeholderTextColor="#CCC"
                 keyboardType="number-pad"
-                maxLength={4}
+                maxLength={3}
               />
               <Text style={[styles.cmLabel, { color: COLORS.dot }]}>cm</Text>
             </View>

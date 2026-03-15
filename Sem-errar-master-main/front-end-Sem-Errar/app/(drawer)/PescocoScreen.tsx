@@ -170,7 +170,7 @@ export default function PescocoScreen() {
                 placeholder="00"
                 placeholderTextColor="#CCC"
                 keyboardType="number-pad"
-                maxLength={3}
+                maxLength={2}
               />
               <Text style={[styles.cmLabel, { color: COLORS.dot }]}>cm</Text>
             </View>
