@@ -1,20 +1,18 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useFocusEffect } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
+  Dimensions,
+  Image,
   Pressable,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
-  SafeAreaView,
-  StatusBar,
-  Dimensions,
-  Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,39 +24,41 @@ const COLORS = {
   disabled: '#F0F0F0',
 };
 
-export default function ObjetivoScreen() {
-  const router = useRouter();
+interface ObjetivoScreenProps {
+  navigation?: {
+    replace: (screen: string) => void;
+    push: (screen: string) => void;
+  };
+}
+
+export default function ObjetivoScreen({ navigation }: ObjetivoScreenProps) {
   const [objetivoSelecionado, setObjetivoSelecionado] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Limpa a seleção sempre que a tela receber foco
-  useFocusEffect(
-    useCallback(() => {
-      // Reseta o estado para null quando a tela for focada
-      setObjetivoSelecionado(null);
-    }, [])
-  );
+  React.useEffect(() => {
+    setObjetivoSelecionado(null);
+  }, []);
 
   const objetivos = [
     {
       id: 'ganhar-massa',
       title: 'Ganhar massa',
       description: 'Aumentar massa muscular',
-      icon: 'trophy',
+      icon: '🏆',
       color: COLORS.primary,
     },
     {
       id: 'perder-gordura',
       title: 'Perder gordura',
       description: 'Reduzir gordura corporal',
-      icon: 'fire',
+      icon: '🔥',
       color: '#e96f04',
     },
     {
       id: 'outros',
       title: 'Outros',
       description: 'Outro objetivo específico',
-      icon: 'bullseye',
+      icon: '🎯',
       color: COLORS.dot,
     },
   ];
@@ -68,12 +68,20 @@ export default function ObjetivoScreen() {
       setIsLoading(true);
       try {
         await AsyncStorage.setItem('@objetivo', objetivoSelecionado);
-        router.push('/(drawer)/SexoScreen');
+        if (navigation?.push) {
+          navigation.push('SexoScreen');
+        }
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível salvar.');
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleVoltar = () => {
+    if (navigation?.replace) {
+      navigation.replace('Home');
     }
   };
 
@@ -95,20 +103,15 @@ export default function ObjetivoScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       
-      {/* Camada de fundo fixa */}
-      <View style={StyleSheet.absoluteFill}>
+      <View style={StyleSheet.absoluteFillObject}>
         <View style={{ flex: 1, backgroundColor: '#fff' }} />
         {renderStaticBackground()}
       </View>
 
-      {/* Header Fixo - Botão Voltar */}
       <View style={styles.header}>
-        <Pressable 
-          onPress={() => router.replace('/(drawer)')} 
-          style={styles.backButton}
-        >
+        <Pressable onPress={handleVoltar} style={styles.backButton}>
           <View style={styles.backIconCircle}>
-            <FontAwesome name="chevron-left" size={12} color={COLORS.primary} />
+            <Text style={styles.backArrow}>←</Text>
           </View>
           <Text style={styles.backText}>Voltar</Text>
         </Pressable>
@@ -116,11 +119,9 @@ export default function ObjetivoScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          
-          {/* Logo Centralizada */}
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/images/logo-sem-fundo1.png')} 
+              source={require('../assets/images/logo-sem-fundo1.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
@@ -138,7 +139,7 @@ export default function ObjetivoScreen() {
                   onPress={() => setObjetivoSelecionado(objetivo.id)}
                 >
                   <View style={[styles.opcaoIconContainer, { backgroundColor: `${objetivo.color}10` }]}>
-                    <FontAwesome name={objetivo.icon as any} size={22} color={objetivo.color} />
+                    <Text style={{ fontSize: 24, color: objetivo.color }}>{objetivo.icon}</Text>
                   </View>
 
                   <View style={{ flex: 1 }}>
@@ -183,7 +184,10 @@ export default function ObjetivoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff' 
+  },
   visualArea: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
@@ -205,31 +209,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingHorizontal: 25,
+    paddingHorizontal: 20,
     paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
     zIndex: 100,
   },
   backButton: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    alignSelf: 'flex-start' 
+    alignSelf: 'flex-start',
   },
   backIconCircle: { 
-    width: 32, 
-    height: 32, 
-    borderRadius: 16, 
+    width: 56, 
+    height: 56, 
+    borderRadius: 28, 
     backgroundColor: '#fff', 
     justifyContent: 'center', 
-    alignItems: 'center', 
-    borderWidth: 1, 
+    alignItems: 'center',
+    borderWidth: 1.5, 
     borderColor: COLORS.line,
-    elevation: 3,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+  },
+  backArrow: {
+    fontSize: 36,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    includeFontPadding: false,
+    lineHeight: 36,
+    marginTop: -2,
   },
   backText: { 
     color: COLORS.primary, 
-    marginLeft: 10, 
-    fontWeight: '700', 
-    fontSize: 16 
+    marginLeft: 12, 
+    fontWeight: '600', 
+    fontSize: 18,
   },
   scrollContent: {
     flexGrow: 1,
@@ -237,7 +254,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 40,
   },
-  content: { width: '100%', zIndex: 10 },
+  content: { 
+    width: '100%', 
+    zIndex: 10 
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
@@ -254,7 +274,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
-  opcoesContainer: { gap: 15, marginBottom: 35 },
+  opcoesContainer: { 
+    gap: 15, 
+    marginBottom: 35 
+  },
   opcaoItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,8 +304,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 15,
   },
-  opcaoTitulo: { fontSize: 17, fontWeight: '700', color: COLORS.textMain },
-  opcaoDescricao: { fontSize: 14, color: '#888', marginTop: 2 },
+  opcaoTitulo: { 
+    fontSize: 17, 
+    fontWeight: '700', 
+    color: COLORS.textMain 
+  },
+  opcaoDescricao: { 
+    fontSize: 14, 
+    color: '#888', 
+    marginTop: 2 
+  },
   radioButton: {
     width: 22,
     height: 22,
@@ -292,14 +323,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  radioButtonSelecionado: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
-  radioButtonInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+  radioButtonSelecionado: { 
+    borderColor: COLORS.primary, 
+    backgroundColor: COLORS.primary 
+  },
+  radioButtonInner: { 
+    width: 8, 
+    height: 8, 
+    borderRadius: 4, 
+    backgroundColor: '#fff' 
+  },
   buttonWrapper: {
     width: '100%',
     borderRadius: 22,
     overflow: 'hidden',
     elevation: 4,
   },
-  primaryButton: { paddingVertical: 18, alignItems: 'center' },
-  primaryText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  primaryButton: { 
+    paddingVertical: 18, 
+    alignItems: 'center' 
+  },
+  primaryText: { 
+    color: '#fff', 
+    fontSize: 18, 
+    fontWeight: '800' 
+  },
 });

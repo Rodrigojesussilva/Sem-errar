@@ -14,15 +14,24 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.semerrar.app",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Este app precisa de acesso ao reconhecimento de fala para buscar alimentos por voz.",
+        "NSMicrophoneUsageDescription": "Este app precisa de acesso ao microfone para reconhecimento de voz."
+      }
     },
     "android": {
+      "package": "com.semerrar.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +40,15 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-audio",
+      [
+        "expo-speech-transcriber",
+        {
+          "speechRecognitionPermission": "Este app precisa de acesso ao reconhecimento de fala para buscar alimentos.",
+          "microphonePermission": "Este app precisa de acesso ao microfone para capturar sua fala."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

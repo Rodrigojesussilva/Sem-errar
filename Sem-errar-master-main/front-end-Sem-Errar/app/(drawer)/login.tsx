@@ -12,13 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  StatusBar,
 } from "react-native";
 import API_URL from "../../conf/api";
 
@@ -136,7 +136,7 @@ export default function LoginScreen() {
       await auth?.limparTudoEAutenticar(usuarioReal, data.token);
       
       console.log("✅ Login concluído! Redirecionando...");
-      router.replace("/(drawer)/TreinoDiarioScreen");
+      router.replace("/(drawer)/treino/DesafioScreen");
       
     } catch (error: any) {
       let mensagem = "Erro ao conectar ao servidor.";

@@ -28,7 +28,7 @@ declare global {
       perfil: undefined;
       historico: undefined;
       resultados: undefined;
-      TreinoDiarioScreen: undefined;
+      DesafioScreen: undefined;
       dados: undefined;
       termos: undefined;
       privacidade: undefined;
@@ -76,7 +76,7 @@ type RouteName =
   | 'perfil'
   | 'historico'
   | 'resultados'
-  | 'TreinoDiarioScreen'
+  | 'DesafioScreen'
   | 'dados'
   | 'termos'
   | 'privacidade'
@@ -138,15 +138,15 @@ function AuthRedirect() {
 
       // Se está logado e na tela de login/cadastro, redireciona para home
       if (isLoggedIn && (currentRoute === 'login' || currentRoute === 'CadastroScreen')) {
-        console.log('Redirecionando para TreinoDiarioScreen...');
+        console.log('Redirecionando para DesafioScreen...');
         (navigation as any).reset({
           index: 0,
-          routes: [{ name: 'TreinoDiarioScreen' }],
+          routes: [{ name: 'DesafioScreen' }],
         });
       }
 
       // Se não está logado e tentando acessar telas protegidas, redireciona para login
-      const protectedRoutes: RouteName[] = ['perfil', 'historico', 'resultados', 'TreinoDiarioScreen', 'dados'];
+      const protectedRoutes: RouteName[] = ['perfil', 'historico', 'resultados', 'DesafioScreen', 'dados'];
       if (!isLoggedIn && currentRoute && protectedRoutes.includes(currentRoute)) {
         console.log('Redirecionando para login...');
         (navigation as any).reset({
@@ -294,7 +294,7 @@ function CustomDrawerContent(props: any) {
 
   const loggedInScreens = [
     {
-      name: "TreinoDiarioScreen" as RouteName,
+      name: "DesafioScreen" as RouteName,
       label: "Desafios Diários",
       iconName: "trophy-award",
       iconLib: MaterialCommunityIcons,
@@ -1028,7 +1028,7 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="TreinoDiarioScreen"
+          name="DesafioScreen"
           options={{
             title: "Desafios Diários",
             drawerLabel: "Desafios Diários",

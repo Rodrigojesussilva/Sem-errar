@@ -841,7 +841,6 @@ module.exports = {
   },
 
   // ============ LISTAR TODOS OS USUÁRIOS ============
-  // ============ LISTAR TODOS OS USUÁRIOS ============
   async listar(req, res) {
     try {
       const { page = 1, limit = 10, search } = req.query;

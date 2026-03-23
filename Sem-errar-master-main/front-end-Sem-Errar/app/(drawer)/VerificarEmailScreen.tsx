@@ -74,11 +74,7 @@ export default function VerificarEmailScreen() {
       if (inputRefs.current[5]) {
         inputRefs.current[5]?.focus();
       }
-
-      // Verificar se colou um código completo
-      if (codigoCompleto.length === 6 && codigoCompleto.every(d => d !== '')) {
-        setTimeout(() => verificarCodigo(), 300);
-      }
+      // ✅ APENAS preenche os campos, sem verificar automaticamente
     } else {
       // Digitação normal
       novoCodigo[index] = text;
@@ -93,11 +89,7 @@ export default function VerificarEmailScreen() {
       if (!text && index > 0) {
         inputRefs.current[index - 1]?.focus();
       }
-
-      // Verificar se completou 6 dígitos
-      if (novoCodigo.every(d => d !== '')) {
-        setTimeout(() => verificarCodigo(), 300);
-      }
+      // ✅ APENAS navega entre os campos, sem verificar automaticamente
     }
   };
 
@@ -203,9 +195,10 @@ export default function VerificarEmailScreen() {
 
   const verificarCodigo = async () => {
     const codigoCompleto = codigo.join('');
-
-    if (codigoCompleto.length < 6) {
-      Alert.alert('Código incompleto', 'Digite o código de 6 dígitos');
+    
+    // ✅ Verificação básica antes de enviar
+    if (codigoCompleto.length < 6 || codigo.some(d => d === '')) {
+      Alert.alert('Atenção', 'Digite o código completo de 6 dígitos');
       return;
     }
 
